@@ -803,8 +803,11 @@
   const EJS_TEMPLATE = 'template_yfe626s';
   const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
 
-  // Initialize EmailJS as soon as script runs
-  emailjs.init(EJS_KEY);
+  // EmailJS v4 correct initialization
+  (function(){
+    if(window.emailjs) emailjs.init({ publicKey: EJS_KEY });
+    else window.addEventListener('load', () => emailjs.init({ publicKey: EJS_KEY }));
+  })();
   // ─────────────────────────────────────────────────────────
 
   async function submitForm() {

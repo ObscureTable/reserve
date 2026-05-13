@@ -656,7 +656,12 @@
   const EJS_SERVICE  = 'service_xosaoro';
   const EJS_TEMPLATE = 'template_yfe626s';
   const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
-  emailjs.init(EJS_KEY);
+
+  // EmailJS v4 correct initialization
+  (function(){
+    if(window.emailjs) emailjs.init({ publicKey: EJS_KEY });
+    else window.addEventListener('load', () => emailjs.init({ publicKey: EJS_KEY }));
+  })();
   // ─────────────────────────────────────────────────────────
 
   function fmtDateDesk(d) { if(!d)return'—'; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}); }
