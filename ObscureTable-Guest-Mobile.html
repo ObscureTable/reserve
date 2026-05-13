@@ -447,7 +447,11 @@
       card.className = 'menu-card';
       card.dataset.val = m.name;
       card.innerHTML = `<div class="menu-card-icon">${m.icon}</div><div class="menu-card-body"><div class="menu-card-name">${m.name}</div><div class="menu-card-desc">${m.desc}</div><div class="menu-card-price">${m.price}</div></div>`;
-      card.onclick = () => selectMenu(card);
+      card.onclick = () => {
+        document.querySelectorAll('.menu-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedMenu = m.name;
+      };
       grid.appendChild(card);
     });
   }
