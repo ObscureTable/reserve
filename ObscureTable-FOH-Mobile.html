@@ -476,7 +476,17 @@
 
   document.getElementById('fDate').min=todayStr();
   document.getElementById('resList').innerHTML=`<div class="list-empty"><span>⏳</span><span>Connecting…</span></div>`;
-  // renderList will be called by Firebase onValue listener once data arrives
+
+  // Poll until Firebase data arrives and renders
+  const _renderPoll = setInterval(() => {
+    if (window.reservations && window.reservations.length >= 0 && window.renderList) {
+      window.renderList();
+      if (window.reservations.length > 0) clearInterval(_renderPoll);
+    }
+  }, 500);
+
+  // Stop polling after 15 seconds regardless
+  setTimeout(() => clearInterval(_renderPoll), 15000);
 </script>
 </body>
 </html>

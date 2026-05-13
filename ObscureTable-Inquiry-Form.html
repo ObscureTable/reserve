@@ -656,6 +656,7 @@
   const EJS_SERVICE  = 'service_xosaoro';
   const EJS_TEMPLATE = 'template_yfe626s';
   const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
+  emailjs.init(EJS_KEY);
   // ─────────────────────────────────────────────────────────
 
   function fmtDateDesk(d) { if(!d)return'—'; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}); }
@@ -722,7 +723,7 @@ dashboard using the code above.
         subject:  `New Inquiry — ${code} — ${lastName}, ${firstName}`,
         message,
         reply_to: email || phone,
-      }, EJS_KEY);
+      });
 
       document.getElementById('codeDisplay').textContent = code;
       document.getElementById('codeBar').style.display = 'flex';

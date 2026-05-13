@@ -802,6 +802,9 @@
   const EJS_SERVICE  = 'service_xosaoro';
   const EJS_TEMPLATE = 'template_yfe626s';
   const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
+
+  // Initialize EmailJS as soon as script runs
+  emailjs.init(EJS_KEY);
   // ─────────────────────────────────────────────────────────
 
   async function submitForm() {
@@ -860,7 +863,7 @@ dashboard using the code above.
         subject:  `New Inquiry — ${generatedCode} — ${lastName}, ${firstName}`,
         message,
         reply_to: email || phone,
-      }, EJS_KEY);
+      });
 
       document.getElementById('successCode').textContent = generatedCode;
       document.getElementById('mainForm').style.display = 'none';
