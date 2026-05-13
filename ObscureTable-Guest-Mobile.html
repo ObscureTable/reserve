@@ -803,7 +803,7 @@
   function generateCode(l,d,t) { const L=l.replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X'); const dd=d.replace(/-/g,'').slice(4); const hr=t.split(':')[0]; const r=Math.random().toString(36).substring(2,5).toUpperCase(); return`OT-${L}${dd}-${hr}${r}`; }
 
   // ── EmailJS Configuration ─────────────────────────────────
-  const EJS_SERVICE  = 'service_xosaoro';
+  const EJS_SERVICE  = 'service_xo8aoro';
   const EJS_TEMPLATE = 'template_yfe626s';
   const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
 
@@ -880,7 +880,8 @@ dashboard using the code above.
     } catch(err) {
       console.error('EmailJS error:', err);
       document.getElementById('successCode').textContent = generatedCode;
-      document.getElementById('successNote').style.display = 'block';
+      const note = document.getElementById('successNote');
+      if (note) note.style.display = 'block';
       document.getElementById('mainForm').style.display = 'none';
       document.getElementById('successScreen').classList.add('show');
       window.scrollTo({ top: 0 });
