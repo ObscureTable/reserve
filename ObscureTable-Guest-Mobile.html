@@ -29,6 +29,13 @@
   window._fbWriteReservation = async (id, data) => {
     await set(ref(db, `reservations/${id}`), data);
   };
+
+  // Signal ready — flush any queued writes
+  window._fbReady = true;
+  if (window._fbQueue) {
+    window._fbQueue.forEach(([id, data]) => window._fbWriteReservation(id, data).catch(console.warn));
+    window._fbQueue = [];
+  }
 </script>
 <style>
   :root {
@@ -882,8 +889,12 @@ dashboard using the code above.
       tags: dietary ? ['Dietary'] : [],
       created: fbId,
     };
-    if (window._fbWriteReservation) {
+    if (window._fbReady && window._fbWriteReservation) {
       window._fbWriteReservation(fbId, fbData).catch(e => console.warn('Firebase sync failed:', e));
+    } else {
+      // Queue it — Firebase module still loading
+      window._fbQueue = window._fbQueue || [];
+      window._fbQueue.push([fbId, fbData]);
     }
   }
 
