@@ -46,7 +46,17 @@
   onValue(RES, (snapshot) => {
     const val = snapshot.val();
     window.reservations = val ? Object.values(val) : [];
-    if (window.renderList) window.renderList();
+    // renderList may not be defined yet — retry until it is
+    if (window.renderList) {
+      window.renderList();
+    } else {
+      const retry = setInterval(() => {
+        if (window.renderList) {
+          window.renderList();
+          clearInterval(retry);
+        }
+      }, 100);
+    }
   });
 
   // ── Signal that Firebase is ready ─────────────────────────
@@ -466,7 +476,7 @@
 
   document.getElementById('fDate').min=todayStr();
   document.getElementById('resList').innerHTML=`<div class="list-empty"><span>⏳</span><span>Connecting…</span></div>`;
-  document.addEventListener('fbReady',()=>renderList());
+  // renderList will be called by Firebase onValue listener once data arrives
 </script>
 </body>
 </html>
