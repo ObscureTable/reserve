@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5f0e8">
+<title>Obscure Table — FOH</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, update, remove, push } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGyboz57n06VHx_6N6nkSfi6CjcousUMU",
+    authDomain: "obscure-table.firebaseapp.com",
+    databaseURL: "https://obscure-table-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "obscure-table",
+    storageBucket: "obscure-table.firebasestorage.app",
+    messagingSenderId: "170560318474",
+    appId: "1:170560318474:web:734bb2a7f6404fac43c3f3"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  const RES = ref(db, 'reservations');
+
+  // ── Expose DB ops to global scope ─────────────────────────
+  window._fbSave = async (id, data) => {
+    await set(ref(db, `reservations/${id}`), data);
+  };
+  window._fbUpdate = async (id, data) => {
+    await update(ref(db, `reservations/${id}`), data);
+  };
+  window._fbDelete = async (id) => {
+    await remove(ref(db, `reservations/${id}`));
+  };
+  window._fbPush = async (data) => {
+    const nr = push(RES);
+    await set(nr, { ...data, id: nr.key });
+    return nr.key;
+  };
+
+  // ── Live listener — updates reservations array in real time ─
+  onValue(RES, (snapshot) => {
+    const val = snapshot.val();
+    window.reservations = val ? Object.values(val) : [];
+    if (window.renderList) window.renderList();
+  });
+
+  // ── Signal that Firebase is ready ─────────────────────────
+  window._fbReady = true;
+  document.dispatchEvent(new Event('fbReady'));
+</script>
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #ede6d4;
+    --surface2: #e4dbc6;
+    --border: rgba(120,85,30,0.18);
+    --gold: #8b6428;
+    --gold-btn: #9b7238;
+    --ink: #1a1208;
+    --muted: #7a6040;
+    --stone: #5a4828;
+    --green: #2a7a5a;
+    --blue: #2a5a9a;
+    --red: #9a2a1a;
+    --amber: #9a5a18;
+    --purple: #6a3a9a;
+    --safe: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--ink); font-family: 'Cormorant Garamond', Georgia, serif; -webkit-font-smoothing: antialiased; }
+
+  .app { display: flex; flex-direction: column; height: 100%; height: 100dvh; max-width: 430px; margin: 0 auto; position: relative; }
+
+  /* Top Bar */
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 12px; border-bottom: 1.5px solid var(--border); background: var(--bg); flex-shrink: 0; padding-top: max(14px, env(safe-area-inset-top, 14px)); box-shadow: 0 2px 8px rgba(120,85,30,0.07); }
+  .topbar-name { font-size: 22px; font-weight: 300; letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink); line-height: 1; }
+  .topbar-sub { font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.25em; color: var(--gold); text-transform: uppercase; margin-top: 2px; }
+  .topbar-time { font-family: 'Courier Prime', monospace; font-size: 15px; color: var(--stone); text-align: right; font-weight: 700; }
+  .topbar-date { font-family: 'Courier Prime', monospace; font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Stats */
+  .stats-strip { display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1.5px solid var(--border); flex-shrink: 0; background: var(--surface); }
+  .stat { padding: 11px 0; text-align: center; border-right: 1px solid var(--border); }
+  .stat:last-child { border-right: none; }
+  .stat-val { font-size: 26px; font-weight: 300; color: var(--gold); line-height: 1; }
+  .stat-label { font-family: 'Courier Prime', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+
+  /* Search */
+  .search-wrap { padding: 10px 14px; border-bottom: 1.5px solid var(--border); background: var(--bg); flex-shrink: 0; display: flex; gap: 8px; align-items: center; }
+  .search-input { flex: 1; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; color: var(--ink); padding: 11px 14px; font-family: 'Cormorant Garamond', serif; font-size: 17px; outline: none; }
+  .search-input::placeholder { color: #b8a888; font-style: italic; }
+  .search-input:focus { border-color: var(--gold); }
+
+  /* Filter pills */
+  .filter-pills { display: flex; gap: 7px; padding: 9px 14px; overflow-x: auto; border-bottom: 1.5px solid var(--border); flex-shrink: 0; scrollbar-width: none; background: var(--bg); }
+  .filter-pills::-webkit-scrollbar { display: none; }
+  .pill { background: var(--surface); border: 1.5px solid var(--border); border-radius: 20px; color: var(--muted); padding: 7px 14px; font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; transition: all 0.15s; flex-shrink: 0; font-weight: 400; }
+  .pill.active { background: rgba(139,100,40,0.1); border-color: var(--gold); color: var(--gold); font-weight: 700; }
+
+  /* List */
+  .list { flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none; background: var(--bg); }
+  .list::-webkit-scrollbar { display: none; }
+  .list-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 200px; color: var(--muted); font-style: italic; font-size: 18px; gap: 10px; }
+
+  .list-section-head { padding: 9px 16px 5px; font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); background: var(--surface); position: sticky; top: 0; z-index: 10; border-bottom: 1px solid var(--border); font-weight: 700; }
+
+  /* Cards */
+  .res-card { padding: 15px 16px; border-bottom: 1.5px solid rgba(120,85,30,0.1); display: flex; align-items: flex-start; gap: 14px; cursor: pointer; transition: background 0.12s; background: #fff; margin: 6px 10px; border-radius: 12px; border: 1.5px solid var(--border); margin-bottom: 6px; box-shadow: 0 1px 4px rgba(120,85,30,0.06); }
+  .res-card:active { background: var(--surface); }
+
+  .res-time-col { display: flex; flex-direction: column; align-items: center; min-width: 48px; flex-shrink: 0; }
+  .res-time { font-family: 'Courier Prime', monospace; font-size: 15px; color: var(--ink); font-weight: 700; line-height: 1; }
+  .res-ampm { font-family: 'Courier Prime', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.08em; }
+  .res-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; }
+
+  .res-body { flex: 1; min-width: 0; }
+  .res-name { font-size: 18px; font-weight: 400; color: var(--ink); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .res-meta { display: flex; align-items: center; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+  .res-meta-item { font-family: 'Courier Prime', monospace; font-size: 11px; color: var(--muted); letter-spacing: 0.06em; }
+  .res-tags { display: flex; gap: 5px; margin-top: 5px; flex-wrap: wrap; }
+  .res-tag { font-family: 'Courier Prime', monospace; font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 8px; border-radius: 3px; border: 1.5px solid; }
+  .res-tag.vip { color: var(--gold); border-color: rgba(139,100,40,0.35); background: rgba(139,100,40,0.06); }
+  .res-tag.allergy { color: var(--red); border-color: rgba(154,42,26,0.3); background: rgba(154,42,26,0.05); }
+  .res-tag.dietary { color: var(--green); border-color: rgba(42,122,90,0.3); background: rgba(42,122,90,0.05); }
+  .res-tag.note { color: var(--stone); border-color: rgba(90,72,40,0.25); }
+
+  .res-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+  .res-party { font-size: 15px; color: var(--stone); font-family: 'Courier Prime', monospace; font-weight: 700; }
+  .res-status { font-family: 'Courier Prime', monospace; font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; font-weight: 700; }
+  .res-chevron { color: rgba(139,100,40,0.3); font-size: 18px; margin-top: 2px; }
+
+  /* Bottom Nav */
+  .bottom-nav { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1.5px solid var(--border); background: var(--bg); flex-shrink: 0; padding-bottom: max(8px, var(--safe)); box-shadow: 0 -2px 10px rgba(120,85,30,0.08); }
+  .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 12px 0 8px; cursor: pointer; background: none; border: none; transition: opacity 0.15s; }
+  .nav-btn:active { opacity: 0.6; }
+  .nav-icon { font-size: 22px; line-height: 1; }
+  .nav-label { font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); font-weight: 400; }
+  .nav-btn.active .nav-label { color: var(--gold); font-weight: 700; }
+  .nav-add { display: flex; align-items: center; justify-content: center; cursor: pointer; background: none; border: none; padding: 6px 0 8px; }
+  .nav-add-circle { width: 50px; height: 50px; border-radius: 50%; background: var(--gold-btn); display: flex; align-items: center; justify-content: center; font-size: 28px; color: #fff; font-weight: 300; line-height: 1; box-shadow: 0 4px 16px rgba(139,100,40,0.35); margin-top: -18px; }
+
+  /* Sheet */
+  .sheet-overlay { position: fixed; inset: 0; background: rgba(26,18,8,0.5); z-index: 200; display: none; backdrop-filter: blur(3px); }
+  .sheet-overlay.open { display: block; }
+  .sheet { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%) translateY(100%); width: 100%; max-width: 430px; background: var(--bg); border-top: 1.5px solid var(--border); border-radius: 20px 20px 0 0; z-index: 201; max-height: 92dvh; overflow-y: auto; transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1); scrollbar-width: none; padding-bottom: max(24px, var(--safe)); box-shadow: 0 -8px 40px rgba(120,85,30,0.12); }
+  .sheet::-webkit-scrollbar { display: none; }
+  .sheet.open { transform: translateX(-50%) translateY(0); }
+  .sheet-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 14px auto 0; }
+  .sheet-head { padding: 16px 22px 14px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1.5px solid var(--border); }
+  .sheet-title { font-size: 22px; font-weight: 300; letter-spacing: 0.04em; color: var(--ink); }
+  .sheet-close { background: none; border: none; color: var(--muted); font-size: 26px; cursor: pointer; padding: 0; line-height: 1; }
+  .sheet-body { padding: 22px; }
+
+  /* Form fields in sheet */
+  .field-group { margin-bottom: 20px; }
+  .field-label { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; display: block; font-weight: 700; }
+  .field-input { width: 100%; background: #fff; border: 1.5px solid var(--border); border-radius: 12px; color: var(--ink); padding: 14px 16px; font-family: 'Cormorant Garamond', serif; font-size: 18px; outline: none; appearance: none; -webkit-appearance: none; transition: border-color 0.2s; }
+  .field-input:focus { border-color: var(--gold); }
+  .field-input::placeholder { color: #b8a888; font-style: italic; }
+  select.field-input { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238b6428' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; background-color: #fff; padding-right: 40px; }
+  select.field-input option { background: #fff; color: var(--ink); }
+  textarea.field-input { resize: none; height: 80px; line-height: 1.5; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Stepper */
+  .stepper { display: flex; align-items: center; background: #fff; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .stepper-btn { background: var(--surface); border: none; color: var(--gold); font-size: 28px; padding: 12px 22px; cursor: pointer; line-height: 1; font-weight: 300; }
+  .stepper-btn:active { background: var(--surface2); }
+  .stepper-val { flex: 1; text-align: center; font-size: 22px; color: var(--ink); font-weight: 300; }
+
+  /* Tags */
+  .tag-grid { display: flex; gap: 8px; flex-wrap: wrap; }
+  .tag-toggle { background: var(--surface); border: 1.5px solid var(--border); border-radius: 20px; color: var(--muted); padding: 8px 16px; font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; transition: all 0.15s; font-weight: 400; }
+  .tag-toggle.on { background: rgba(139,100,40,0.1); border-color: var(--gold); color: var(--gold); font-weight: 700; }
+
+  /* Code display */
+  .code-display { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 16px 18px; margin-bottom: 18px; display: flex; align-items: center; justify-content: space-between; }
+  .code-display-val { font-family: 'Courier Prime', monospace; font-size: 17px; font-weight: 700; letter-spacing: 0.12em; color: var(--gold); }
+  .copy-btn { background: rgba(139,100,40,0.1); border: 1.5px solid rgba(139,100,40,0.25); border-radius: 8px; color: var(--gold); font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 7px 12px; cursor: pointer; font-weight: 700; }
+
+  /* Confirm btn */
+  .btn-confirm { width: 100%; background: var(--gold-btn); border: none; border-radius: 14px; color: #fff; padding: 17px; font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer; font-weight: 700; margin-top: 4px; box-shadow: 0 4px 16px rgba(139,100,40,0.25); }
+  .btn-confirm:disabled { background: #d8cdb8; color: #a89878; cursor: not-allowed; box-shadow: none; }
+
+  /* Action buttons */
+  .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 14px; }
+  .action-btn { border-radius: 12px; padding: 14px 10px; font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; border: 1.5px solid; text-align: center; transition: opacity 0.15s; font-weight: 700; }
+  .action-btn:active { opacity: 0.7; }
+  .action-seated { background: rgba(42,122,90,0.1); border-color: var(--green); color: var(--green); }
+  .action-complete { background: rgba(90,72,40,0.08); border-color: var(--stone); color: var(--stone); }
+  .action-noshow { background: rgba(154,90,24,0.08); border-color: var(--amber); color: var(--amber); }
+  .action-cancel { background: rgba(154,42,26,0.08); border-color: var(--red); color: var(--red); }
+  .action-edit { background: rgba(139,100,40,0.08); border-color: var(--gold); color: var(--gold); }
+
+  /* Detail blocks */
+  .detail-block { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 4px 0; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(120,85,30,0.05); }
+  .detail-row { display: flex; justify-content: space-between; align-items: baseline; padding: 13px 18px; border-bottom: 1px solid rgba(120,85,30,0.08); }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .detail-val { font-size: 17px; color: var(--ink); text-align: right; max-width: 60%; }
+  .notes-block { background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 14px 16px; font-style: italic; font-size: 16px; color: var(--stone); line-height: 1.65; margin-bottom: 14px; }
+
+  /* Toast */
+  .toast { position: fixed; top: max(70px, env(safe-area-inset-top, 70px)); left: 50%; transform: translateX(-50%) translateY(-80px); background: var(--ink); border-radius: 10px; padding: 12px 22px; font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.1em; color: #f5f0e8; z-index: 999; white-space: nowrap; transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); box-shadow: 0 8px 24px rgba(0,0,0,0.18); pointer-events: none; font-weight: 700; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* List wrapper padding */
+  .list-inner { padding: 8px 0 8px; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Top Bar -->
+  <div class="topbar">
+    <div><div class="topbar-name">Obscure</div><div class="topbar-sub">Table · FOH</div></div>
+    <div style="text-align:right"><div class="topbar-time" id="clock">—</div><div class="topbar-date" id="dateDisplay">—</div></div>
+  </div>
+  <!-- Stats -->
+  <div class="stats-strip">
+    <div class="stat"><div class="stat-val" id="statBookings">0</div><div class="stat-label">Bookings</div></div>
+    <div class="stat"><div class="stat-val" id="statCovers">0</div><div class="stat-label">Covers</div></div>
+    <div class="stat"><div class="stat-val" id="statSeated">0</div><div class="stat-label">Seated</div></div>
+    <div class="stat"><div class="stat-val" id="statWait">0</div><div class="stat-label">Waitlist</div></div>
+  </div>
+  <!-- Search -->
+  <div class="search-wrap">
+    <input class="search-input" id="searchInput" type="search" placeholder="Name, code, phone…" oninput="renderList()">
+  </div>
+  <!-- Pills -->
+  <div class="filter-pills">
+    <div class="pill active" onclick="setFilter('all',this)">All</div>
+    <div class="pill" onclick="setFilter('confirmed',this)">Confirmed</div>
+    <div class="pill" onclick="setFilter('seated',this)">Seated</div>
+    <div class="pill" onclick="setFilter('waitlist',this)">Waitlist</div>
+    <div class="pill" onclick="setFilter('completed',this)">Done</div>
+    <div class="pill" onclick="setFilter('cancelled',this)">Cancelled</div>
+    <div class="pill" onclick="setFilter('noshow',this)">No-Show</div>
+  </div>
+  <!-- List -->
+  <div class="list" id="resList"></div>
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="navToday" onclick="setView('today',this)"><div class="nav-icon">📋</div><div class="nav-label">Today</div></button>
+    <button class="nav-add" onclick="openAddSheet()"><div class="nav-add-circle">+</div></button>
+    <button class="nav-btn" id="navAll" onclick="setView('all',this)"><div class="nav-icon">📅</div><div class="nav-label">All Dates</div></button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Add Sheet -->
+<div class="sheet-overlay" id="addOverlay" onclick="closeAddSheet()"></div>
+<div class="sheet" id="addSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div class="sheet-title" id="addSheetTitle">New Booking</div><button class="sheet-close" onclick="closeAddSheet()">×</button></div>
+  <div class="sheet-body">
+    <div class="field-row">
+      <div class="field-group"><label class="field-label">Last Name *</label><input class="field-input" id="fLastName" type="text" placeholder="Surname" autocapitalize="words"></div>
+      <div class="field-group"><label class="field-label">First Name *</label><input class="field-input" id="fFirstName" type="text" placeholder="Given name" autocapitalize="words"></div>
+    </div>
+    <div class="field-group"><label class="field-label">Phone *</label><input class="field-input" id="fPhone" type="tel" placeholder="555-0000"></div>
+    <div class="field-group"><label class="field-label">Email</label><input class="field-input" id="fEmail" type="email" placeholder="optional"></div>
+    <div class="field-row">
+      <div class="field-group"><label class="field-label">Date *</label><input class="field-input" id="fDate" type="date"></div>
+      <div class="field-group"><label class="field-label">Time *</label>
+        <select class="field-input" id="fTime">
+          <option value="">—</option>
+          <option value="17:00">5:00 PM</option><option value="17:30">5:30 PM</option>
+          <option value="18:00">6:00 PM</option><option value="18:30">6:30 PM</option>
+          <option value="19:00">7:00 PM</option><option value="19:30">7:30 PM</option>
+          <option value="20:00">8:00 PM</option><option value="20:30">8:30 PM</option>
+          <option value="21:00">9:00 PM</option><option value="21:30">9:30 PM</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-group">
+      <label class="field-label">Party Size *</label>
+      <div class="stepper"><button class="stepper-btn" onclick="changeParty(-1)">−</button><div class="stepper-val"><span id="partyVal">2</span> guests</div><button class="stepper-btn" onclick="changeParty(1)">+</button></div>
+    </div>
+    <div class="field-group"><label class="field-label">Section</label><select class="field-input" id="fSection"><option value="">No preference</option><option>Main Dining</option><option>Chef's Counter</option><option>Cellar Room</option><option>Terrace</option><option>Bar Lounge</option></select></div>
+    <div class="field-group"><label class="field-label">Occasion</label><select class="field-input" id="fOccasion"><option value="">—</option><option>Anniversary</option><option>Birthday</option><option>Business Dinner</option><option>Date Night</option><option>Celebration</option><option>Tasting Menu</option></select></div>
+    <div class="field-group"><label class="field-label">Status</label><select class="field-input" id="fStatus"><option value="confirmed">Confirmed</option><option value="waitlist">Waitlist</option><option value="seated">Seated</option></select></div>
+    <div class="field-group"><label class="field-label">Tags</label><div class="tag-grid"><div class="tag-toggle" data-tag="VIP" onclick="toggleTag(this)">VIP</div><div class="tag-toggle" data-tag="Allergy" onclick="toggleTag(this)">Allergy</div><div class="tag-toggle" data-tag="Dietary" onclick="toggleTag(this)">Dietary</div><div class="tag-toggle" data-tag="Regular" onclick="toggleTag(this)">Regular</div><div class="tag-toggle" data-tag="First Visit" onclick="toggleTag(this)">First Visit</div></div></div>
+    <div class="field-group"><label class="field-label">Notes</label><textarea class="field-input" id="fNotes" placeholder="Dietary needs, seating preferences, requests…"></textarea></div>
+    <div id="editCodeWrap" style="display:none"><label class="field-label">Booking Code</label><div class="code-display"><div class="code-display-val" id="editCodeVal">—</div><button class="copy-btn" onclick="copyCode()">Copy</button></div></div>
+    <button class="btn-confirm" id="confirmBtn" onclick="saveBooking()">Confirm Booking</button>
+  </div>
+</div>
+
+<!-- Detail Sheet -->
+<div class="sheet-overlay" id="detailOverlay" onclick="closeDetail()"></div>
+<div class="sheet" id="detailSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div class="sheet-title" id="detailName">—</div>
+      <div id="detailCode" style="font-family:'Courier Prime',monospace;font-size:13px;letter-spacing:0.1em;color:var(--gold);cursor:pointer;font-weight:700" onclick="copyDetailCode()">—</div>
+    </div>
+    <button class="sheet-close" onclick="closeDetail()">×</button>
+  </div>
+  <div class="sheet-body" id="detailBody"></div>
+</div>
+
+<script>
+  const todayStr=()=>new Date().toISOString().split('T')[0];
+  const STATUS_META={
+    confirmed:{label:'Confirmed',color:'#8b6428'},
+    seated:{label:'Seated',color:'#2a7a5a'},
+    completed:{label:'Completed',color:'#5a4828'},
+    cancelled:{label:'Cancelled',color:'#9a2a1a'},
+    waitlist:{label:'Waitlist',color:'#6a3a9a'},
+    noshow:{label:'No-Show',color:'#9a5a18'},
+  };
+
+  window.reservations = [];
+  let currentFilter='all', currentView='today', editingId=null, partySize=2;
+
+  function updateClock(){const now=new Date();const h=now.getHours(),m=now.getMinutes();const ampm=h>=12?'PM':'AM';const hr=h>12?h-12:h||12;document.getElementById('clock').textContent=`${hr}:${String(m).padStart(2,'0')} ${ampm}`;document.getElementById('dateDisplay').textContent=now.toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});}
+  updateClock();setInterval(updateClock,10000);
+
+  function fmtTime(t){const[h,m]=(t||'00:00').split(':').map(Number);return{hr:`${h>12?h-12:h||12}:${String(m).padStart(2,'0')}`,ampm:h>=12?'PM':'AM'};}
+  function generateCode(l,d,t){const L=l.replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X');const dd=d.replace(/-/g,'').slice(4);const hr=t.split(':')[0];const r=Math.random().toString(36).substring(2,5).toUpperCase();return`OT-${L}${dd}-${hr}${r}`;}
+  function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
+
+  function updateStats(){
+    const today=window.reservations.filter(r=>r.date===todayStr());
+    const active=today.filter(r=>!['cancelled','noshow'].includes(r.status));
+    document.getElementById('statBookings').textContent=active.length;
+    document.getElementById('statCovers').textContent=active.reduce((s,r)=>s+(r.party||0),0);
+    document.getElementById('statSeated').textContent=today.filter(r=>r.status==='seated').length;
+    document.getElementById('statWait').textContent=window.reservations.filter(r=>r.status==='waitlist').length;
+  }
+
+  function setFilter(f,el){currentFilter=f;document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));el.classList.add('active');renderList();}
+  function setView(v,el){currentView=v;document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));el.classList.add('active');renderList();}
+
+  window.renderList = function(){
+    const q=document.getElementById('searchInput').value.toLowerCase();
+    const list=document.getElementById('resList');
+    let data=[...window.reservations].filter(r=>{
+      if(currentView==='today'&&r.date!==todayStr())return false;
+      if(currentFilter!=='all'&&r.status!==currentFilter)return false;
+      if(q&&!`${r.name||''} ${r.first||''} ${r.code||''} ${r.phone||''}`.toLowerCase().includes(q))return false;
+      return true;
+    }).sort((a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
+    if(!data.length){list.innerHTML=`<div class="list-empty"><span>✦</span><span>No reservations found</span></div>`;updateStats();return;}
+    let html='<div class="list-inner">',lastDate='';
+    data.forEach(r=>{
+      if(currentView==='all'&&r.date!==lastDate){const d=new Date(r.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});html+=`<div class="list-section-head">${d}</div>`;lastDate=r.date;}
+      const sm=STATUS_META[r.status]||STATUS_META.confirmed;
+      const{hr,ampm}=fmtTime(r.time);
+      const tagHtml=(r.tags||[]).map(t=>{const cls=t==='VIP'?'vip':t==='Allergy'?'allergy':t==='Dietary'?'dietary':'note';return`<span class="res-tag ${cls}">${t}</span>`;}).join('');
+      html+=`<div class="res-card" onclick="openDetail('${r.id}')">
+        <div class="res-time-col"><div class="res-time">${hr}</div><div class="res-ampm">${ampm}</div><div class="res-dot" style="background:${sm.color}"></div></div>
+        <div class="res-body">
+          <div class="res-name">${r.name||''}, ${r.first||''}</div>
+          <div class="res-meta"><span class="res-meta-item">${r.party||0}x</span>${r.section?`<span class="res-meta-item">· ${r.section}</span>`:''} ${r.occasion?`<span class="res-meta-item" style="font-style:italic">· ${r.occasion}</span>`:''}</div>
+          ${tagHtml||r.notes?`<div class="res-tags">${tagHtml}${r.notes?'<span class="res-tag note">Note</span>':''}</div>`:''}
+        </div>
+        <div class="res-right"><div class="res-party">${r.party||0}✦</div><div class="res-status" style="color:${sm.color}">${sm.label}</div><div class="res-chevron">›</div></div>
+      </div>`;
+    });
+    html+='</div>';
+    list.innerHTML=html;
+    updateStats();
+  };
+
+  function openAddSheet(){editingId=null;partySize=2;document.getElementById('addSheetTitle').textContent='New Booking';['fLastName','fFirstName','fPhone','fEmail','fNotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('fDate').value=todayStr();document.getElementById('fTime').value='19:00';document.getElementById('fSection').value='';document.getElementById('fOccasion').value='';document.getElementById('fStatus').value='confirmed';document.getElementById('partyVal').textContent=2;document.getElementById('editCodeWrap').style.display='none';document.getElementById('confirmBtn').textContent='Confirm Booking';document.querySelectorAll('.tag-toggle').forEach(t=>t.classList.remove('on'));document.getElementById('addOverlay').classList.add('open');document.getElementById('addSheet').classList.add('open');}
+  function closeAddSheet(){document.getElementById('addOverlay').classList.remove('open');document.getElementById('addSheet').classList.remove('open');}
+  function changeParty(d){partySize=Math.max(1,Math.min(20,partySize+d));document.getElementById('partyVal').textContent=partySize;}
+  function toggleTag(el){el.classList.toggle('on');}
+  function getSelectedTags(){return[...document.querySelectorAll('.tag-toggle.on')].map(t=>t.dataset.tag);}
+
+  async function saveBooking(){
+    const last=document.getElementById('fLastName').value.trim();
+    const first=document.getElementById('fFirstName').value.trim();
+    const phone=document.getElementById('fPhone').value.trim();
+    const date=document.getElementById('fDate').value;
+    const time=document.getElementById('fTime').value;
+    if(!last||!first||!phone||!date||!time){toast('Please fill required fields');return;}
+    const btn=document.getElementById('confirmBtn');
+    btn.textContent='Saving…';btn.disabled=true;
+    const data={name:last,first,phone,email:document.getElementById('fEmail').value.trim(),date,time,party:partySize,section:document.getElementById('fSection').value,occasion:document.getElementById('fOccasion').value,status:document.getElementById('fStatus').value,notes:document.getElementById('fNotes').value.trim(),tags:getSelectedTags()};
+    try{
+      if(editingId){await window._fbUpdate(editingId,data);toast('Updated ✓');}
+      else{const code=generateCode(last,date,time);const id=Date.now();await window._fbSave(id,{...data,id,code,created:Date.now()});toast(`Booked · ${code}`);}
+      closeAddSheet();
+    }catch(e){toast('Save failed — check connection');}
+    finally{btn.textContent=editingId?'Save Changes':'Confirm Booking';btn.disabled=false;}
+  }
+
+  function openDetail(id){
+    const r=window.reservations.find(x=>String(x.id)===String(id));if(!r)return;
+    const sm=STATUS_META[r.status]||STATUS_META.confirmed;
+    const{hr,ampm}=fmtTime(r.time);
+    document.getElementById('detailName').textContent=`${r.name}, ${r.first}`;
+    document.getElementById('detailCode').textContent=(r.code||'—')+' · tap to copy';
+    const actions=[];
+    if(['confirmed','waitlist'].includes(r.status))actions.push(`<div class="action-btn action-seated" onclick="updateStatus('${id}','seated')">Mark Seated</div>`);
+    if(r.status==='seated')actions.push(`<div class="action-btn action-complete" onclick="updateStatus('${id}','completed')">Complete</div>`);
+    if(!['cancelled','completed','noshow'].includes(r.status)){actions.push(`<div class="action-btn action-noshow" onclick="updateStatus('${id}','noshow')">No-Show</div>`);actions.push(`<div class="action-btn action-cancel" onclick="updateStatus('${id}','cancelled')">Cancel</div>`);}
+    actions.push(`<div class="action-btn action-edit" onclick="openEdit('${id}')">Edit</div>`);
+    const tagHtml=(r.tags||[]).map(t=>{const cls=t==='VIP'?'vip':t==='Allergy'?'allergy':t==='Dietary'?'dietary':'note';return`<span class="res-tag ${cls}" style="padding:4px 10px;font-size:11px">${t}</span>`;}).join('');
+    const dateStr=new Date(r.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+    document.getElementById('detailBody').innerHTML=`
+      <div style="margin-bottom:14px"><div class="action-grid">${actions.join('')}</div></div>
+      <div style="margin-bottom:14px"><div class="action-btn action-delete" style="width:100%;background:rgba(154,42,26,0.07);border:1.5px solid rgba(154,42,26,0.35);border-radius:12px;padding:14px;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;text-align:center;color:#9a2a1a;font-weight:700" onclick="deleteReservation('${id}')">🗑 Delete Reservation</div></div>
+      <div class="detail-block">
+        <div class="detail-row"><span class="detail-key">Status</span><span class="detail-val" style="color:${sm.color};font-weight:600">${sm.label}</span></div>
+        <div class="detail-row"><span class="detail-key">Date</span><span class="detail-val">${dateStr}</span></div>
+        <div class="detail-row"><span class="detail-key">Time</span><span class="detail-val">${hr} ${ampm}</span></div>
+        <div class="detail-row"><span class="detail-key">Party</span><span class="detail-val">${r.party} Guest${r.party>1?'s':''}</span></div>
+        <div class="detail-row"><span class="detail-key">Menu</span><span class="detail-val">${r.menu||r.section||'—'}</span></div>
+        ${r.occasion?`<div class="detail-row"><span class="detail-key">Occasion</span><span class="detail-val">${r.occasion}</span></div>`:''}
+      </div>
+      <div class="detail-block">
+        <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val"><a href="tel:${r.phone}" style="color:var(--gold);text-decoration:none;font-weight:700">${r.phone}</a></span></div>
+        ${r.email?`<div class="detail-row"><span class="detail-key">Email</span><span class="detail-val" style="font-size:14px">${r.email}</span></div>`:''}
+      </div>
+      ${r.dietary?`<div class="detail-block"><div class="detail-row"><span class="detail-key">Dietary</span><span class="detail-val">${r.dietary}</span></div></div>`:''}
+      ${r.notes?`<div class="notes-block">"${r.notes}"</div>`:''}
+      ${tagHtml?`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px">${tagHtml}</div>`:''}
+      <div style="text-align:center;margin-top:8px"><span style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--muted)">Created ${new Date(r.created||Date.now()).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</span></div>`;
+    document.getElementById('detailOverlay').classList.add('open');
+    document.getElementById('detailSheet').classList.add('open');
+  }
+
+  function closeDetail(){document.getElementById('detailOverlay').classList.remove('open');document.getElementById('detailSheet').classList.remove('open');}
+  function copyDetailCode(){const code=document.getElementById('detailCode').textContent.split(' ·')[0];navigator.clipboard.writeText(code).catch(()=>{});toast('Code copied');}
+  function copyCode(){navigator.clipboard.writeText(document.getElementById('editCodeVal').textContent).catch(()=>{});toast('Code copied');}
+
+  async function updateStatus(id,status){
+    try{await window._fbUpdate(id,{status});toast(`${STATUS_META[status].label} ✓`);closeDetail();}
+    catch(e){toast('Update failed — check connection');}
+  }
+
+  async function deleteReservation(id){
+    const r=window.reservations.find(x=>String(x.id)===String(id));if(!r)return;
+    if(!window.confirm(`Delete reservation for ${r.name}, ${r.first}?\n\nThis cannot be undone.`))return;
+    try{await window._fbDelete(id);closeDetail();toast('Reservation deleted');}
+    catch(e){toast('Delete failed — check connection');}
+  }
+
+  function openEdit(id){
+    const r=window.reservations.find(x=>String(x.id)===String(id));if(!r)return;closeDetail();
+    setTimeout(()=>{
+      editingId=id;partySize=r.party||2;
+      document.getElementById('addSheetTitle').textContent='Edit Booking';
+      document.getElementById('fLastName').value=r.name||'';document.getElementById('fFirstName').value=r.first||'';
+      document.getElementById('fPhone').value=r.phone||'';document.getElementById('fEmail').value=r.email||'';
+      document.getElementById('fDate').value=r.date||'';document.getElementById('fTime').value=r.time||'';
+      document.getElementById('fSection').value=r.section||'';document.getElementById('fOccasion').value=r.occasion||'';
+      document.getElementById('fStatus').value=r.status||'confirmed';document.getElementById('fNotes').value=r.notes||'';
+      document.getElementById('partyVal').textContent=r.party||2;
+      document.getElementById('editCodeWrap').style.display='block';document.getElementById('editCodeVal').textContent=r.code||'';
+      document.getElementById('confirmBtn').textContent='Save Changes';
+      document.querySelectorAll('.tag-toggle').forEach(t=>t.classList.toggle('on',(r.tags||[]).includes(t.dataset.tag)));
+      document.getElementById('addOverlay').classList.add('open');document.getElementById('addSheet').classList.add('open');
+    },200);
+  }
+
+  document.getElementById('fDate').min=todayStr();
+  document.getElementById('resList').innerHTML=`<div class="list-empty"><span>⏳</span><span>Connecting…</span></div>`;
+  document.addEventListener('fbReady',()=>renderList());
+</script>
+</body>
+</html>

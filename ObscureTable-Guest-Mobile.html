@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5f0e8">
+<title>Obscure Table — Reserve</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGyboz57n06VHx_6N6nkSfi6CjcousUMU",
+    authDomain: "obscure-table.firebaseapp.com",
+    databaseURL: "https://obscure-table-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "obscure-table",
+    storageBucket: "obscure-table.firebasestorage.app",
+    messagingSenderId: "170560318474",
+    appId: "1:170560318474:web:734bb2a7f6404fac43c3f3"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+
+  window._fbWriteReservation = async (id, data) => {
+    await set(ref(db, `reservations/${id}`), data);
+  };
+</script>
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #ede6d6;
+    --surface2: #e4dbc8;
+    --border: rgba(120,85,30,0.2);
+    --gold: #8b6428;
+    --gold-btn: #9b7238;
+    --ink: #1a1208;
+    --muted: #7a6040;
+    --stone: #5a4828;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bot: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Cormorant Garamond', Georgia, serif; min-height: 100dvh; -webkit-font-smoothing: antialiased; }
+
+  .header { background: var(--bg); border-bottom: 1.5px solid var(--border); padding: max(20px, calc(var(--safe-top) + 16px)) 20px 18px; text-align: center; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 12px rgba(120,85,30,0.08); }
+  .header-eye { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.28em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+  .header-wordmark { font-size: 34px; font-weight: 300; letter-spacing: 0.22em; text-transform: uppercase; color: var(--ink); line-height: 1; }
+  .header-sub { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--gold); margin-top: 4px; }
+
+  .progress-wrap { padding: 14px 20px 0; background: var(--bg); }
+  .progress-steps { display: flex; align-items: center; margin-bottom: 8px; }
+  .step-dot { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--muted); flex-shrink: 0; transition: all 0.3s; background: var(--surface); }
+  .step-dot.active { border-color: var(--gold); color: var(--gold); background: rgba(139,100,40,0.1); font-weight: 700; }
+  .step-dot.done { border-color: var(--gold); color: #fff; background: var(--gold); }
+  .step-line { flex: 1; height: 1.5px; background: var(--border); transition: background 0.3s; }
+  .step-line.done { background: rgba(139,100,40,0.4); }
+  .step-labels { display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1.5px solid var(--border); }
+  .step-label { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: center; flex: 1; transition: color 0.3s; }
+  .step-label.active { color: var(--gold); font-weight: 700; }
+
+  .scroll-body { padding: 0 20px calc(110px + var(--safe-bot)); }
+  .step-panel { display: none; animation: fadeIn 0.25s ease; }
+  .step-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .step-intro { padding: 24px 0 20px; border-bottom: 1.5px solid var(--border); margin-bottom: 26px; }
+  .step-intro-title { font-size: 30px; font-weight: 300; letter-spacing: 0.05em; color: var(--ink); margin-bottom: 5px; }
+  .step-intro-sub { font-style: italic; font-size: 18px; color: var(--muted); }
+
+  .field { margin-bottom: 22px; }
+  .field-label { display: block; font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 9px; font-weight: 700; }
+  .req { color: #b84a3a; margin-left: 2px; }
+
+  .field-input { width: 100%; background: #fff; border: 1.5px solid var(--border); border-radius: 12px; color: var(--ink); padding: 16px 18px; font-family: 'Cormorant Garamond', serif; font-size: 20px; outline: none; appearance: none; -webkit-appearance: none; transition: border-color 0.2s, box-shadow 0.2s; }
+  .field-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(139,100,40,0.1); }
+  .field-input::placeholder { color: #b8a888; font-style: italic; }
+  select.field-input { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='9' viewBox='0 0 13 9'%3E%3Cpath d='M1 1l5.5 6 5.5-6' stroke='%238b6428' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; background-color: #fff; padding-right: 44px; }
+  select.field-input option { background: #fff; color: var(--ink); }
+  textarea.field-input { resize: none; height: 100px; line-height: 1.6; }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  /* Stepper */
+  .stepper { display: flex; align-items: center; background: #fff; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .stepper-btn { background: var(--surface); border: none; color: var(--gold); font-size: 30px; padding: 12px 24px; cursor: pointer; line-height: 1; font-weight: 300; transition: background 0.15s; }
+  .stepper-btn:active { background: var(--surface2); }
+  .stepper-display { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stepper-num { font-size: 34px; font-weight: 300; color: var(--ink); line-height: 1; }
+  .stepper-word { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+  /* Time Grid */
+  .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .time-chip { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; padding: 15px 8px; text-align: center; cursor: pointer; transition: all 0.15s; }
+  .time-chip:active { opacity: 0.7; }
+  .time-chip.selected { background: rgba(139,100,40,0.08); border-color: var(--gold); border-width: 2px; }
+  .time-chip.blocked { background: var(--surface2); border-color: var(--border); cursor: not-allowed; opacity: 0.45; pointer-events: none; }
+  .time-chip-hr { font-size: 22px; font-weight: 400; color: var(--ink); line-height: 1; }
+  .time-chip-ampm { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; color: var(--muted); margin-top: 3px; }
+
+  /* Blocked date notice */
+  .blocked-notice { background: rgba(154,42,26,0.06); border: 1.5px solid rgba(154,42,26,0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: none; }
+  .blocked-notice-text { font-size: 16px; color: #9a2a1a; font-style: italic; line-height: 1.5; }
+
+  /* Menu cards */
+  .menu-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  .menu-card { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 18px 16px; cursor: pointer; transition: all 0.15s; display: flex; align-items: flex-start; gap: 14px; }
+  .menu-card:active { opacity: 0.7; }
+  .menu-card.selected { background: rgba(139,100,40,0.07); border-color: var(--gold); border-width: 2px; }
+  .menu-card-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
+  .menu-card-body { flex: 1; }
+  .menu-card-name { font-size: 18px; font-weight: 400; color: var(--ink); margin-bottom: 3px; }
+  .menu-card-desc { font-size: 14px; color: var(--muted); font-style: italic; line-height: 1.5; }
+  .menu-card-price { font-family: 'Courier Prime', monospace; font-size: 12px; color: var(--gold); margin-top: 4px; letter-spacing: 0.06em; font-weight: 700; }
+
+  /* Check rows */
+  .check-list { display: flex; flex-direction: column; gap: 8px; }
+  .check-row { display: flex; align-items: center; gap: 16px; padding: 16px 18px; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; cursor: pointer; transition: all 0.15s; }
+  .check-row:active { opacity: 0.7; }
+  .check-row.checked { background: rgba(139,100,40,0.07); border-color: var(--gold); }
+  .check-box { width: 26px; height: 26px; border-radius: 7px; border: 1.5px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+  .check-row.checked .check-box { background: var(--gold); border-color: var(--gold); }
+  .check-tick { color: #fff; font-size: 15px; font-weight: 700; display: none; }
+  .check-row.checked .check-tick { display: block; }
+  .check-text { font-size: 19px; color: var(--ink); flex: 1; }
+  .check-sub { font-size: 20px; }
+
+  /* Dietary chips */
+  .check-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .check-chip { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 10px; cursor: pointer; text-align: center; transition: all 0.15s; }
+  .check-chip:active { opacity: 0.7; }
+  .check-chip.checked { background: rgba(139,100,40,0.07); border-color: var(--gold); border-width: 2px; }
+  .check-chip-icon { font-size: 24px; margin-bottom: 7px; }
+  .check-chip-label { font-size: 16px; color: var(--ink); line-height: 1.3; }
+
+  /* Others text input that appears when "Other" is checked */
+  .others-reveal { display: none; margin-top: 10px; animation: fadeIn 0.2s ease; }
+  .others-reveal.show { display: block; }
+
+  /* Review */
+  .review-block { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(120,85,30,0.06); }
+  .review-block-title { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); padding: 13px 18px; border-bottom: 1.5px solid var(--border); background: rgba(139,100,40,0.05); font-weight: 700; }
+  .review-row { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 18px; border-bottom: 1px solid rgba(120,85,30,0.08); }
+  .review-row:last-child { border-bottom: none; }
+  .review-key { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .review-val { font-size: 18px; color: var(--ink); text-align: right; max-width: 65%; }
+
+  .policy-strip { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  .policy-title { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; font-weight: 700; }
+  .policy-text { font-size: 16px; color: var(--muted); line-height: 1.75; font-style: italic; }
+
+  .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 1.5px solid var(--border); padding: 14px 20px max(20px, var(--safe-bot)); display: flex; gap: 12px; z-index: 100; box-shadow: 0 -4px 20px rgba(120,85,30,0.1); }
+  .btn-back { background: transparent; border: 1.5px solid var(--border); border-radius: 14px; color: var(--stone); padding: 16px 22px; font-family: 'Courier Prime', monospace; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; flex-shrink: 0; }
+  .btn-back:active { background: var(--surface); }
+  .btn-next { flex: 1; background: var(--gold-btn); border: none; border-radius: 14px; color: #fff; padding: 16px; font-family: 'Courier Prime', monospace; font-size: 15px; letter-spacing: 0.16em; text-transform: uppercase; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(139,100,40,0.3); transition: background 0.2s; }
+  .btn-next:active { background: #6b4a18; }
+
+  .success-screen { display: none; min-height: 100dvh; flex-direction: column; align-items: center; justify-content: center; padding: 40px 24px max(40px, var(--safe-bot)); text-align: center; animation: fadeIn 0.4s ease; background: var(--bg); }
+  .success-screen.show { display: flex; }
+  .success-mark { width: 76px; height: 76px; border-radius: 50%; border: 2px solid rgba(139,100,40,0.35); display: flex; align-items: center; justify-content: center; font-size: 32px; margin-bottom: 24px; color: var(--gold); background: rgba(139,100,40,0.07); }
+  .success-title { font-size: 38px; font-weight: 300; letter-spacing: 0.08em; color: var(--ink); margin-bottom: 8px; }
+  .success-sub { font-style: italic; font-size: 18px; color: var(--muted); margin-bottom: 32px; line-height: 1.7; }
+  .success-code-wrap { background: #fff; border: 1.5px solid var(--border); border-radius: 18px; padding: 26px 28px; width: 100%; max-width: 340px; margin-bottom: 24px; box-shadow: 0 4px 20px rgba(120,85,30,0.1); }
+  .success-code-label { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; font-weight: 700; }
+  .success-code-val { font-family: 'Courier Prime', monospace; font-size: 26px; font-weight: 700; letter-spacing: 0.14em; color: var(--gold); margin-bottom: 14px; }
+  .success-note { font-style: italic; font-size: 15px; color: var(--muted); line-height: 1.7; }
+  .btn-copy-success { background: var(--gold-btn); border: none; border-radius: 14px; color: #fff; padding: 17px 40px; font-family: 'Courier Prime', monospace; font-size: 14px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; cursor: pointer; margin-bottom: 14px; box-shadow: 0 4px 16px rgba(139,100,40,0.25); }
+  .btn-new { background: transparent; border: 1.5px solid var(--border); border-radius: 14px; color: var(--muted); padding: 14px 28px; font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }
+
+  .toast { position: fixed; top: max(90px, calc(var(--safe-top) + 90px)); left: 50%; transform: translateX(-50%) translateY(-60px); background: var(--ink); border-radius: 10px; padding: 13px 24px; font-family: 'Courier Prime', monospace; font-size: 14px; letter-spacing: 0.1em; color: #f5f0e8; z-index: 999; white-space: nowrap; transition: transform 0.28s cubic-bezier(0.32,0.72,0,1); box-shadow: 0 8px 24px rgba(0,0,0,0.18); pointer-events: none; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!--
+  ╔══════════════════════════════════════════════════════╗
+  ║  OBSCURE TABLE — BLOCKED DATES CONFIGURATION         ║
+  ║  Add dates below in "YYYY-MM-DD" format              ║
+  ║  Example: "2025-12-25" blocks Christmas Day          ║
+  ╚══════════════════════════════════════════════════════╝
+-->
+<script>
+  const BLOCKED_DATES = [
+    // "2025-12-25",
+    // "2025-12-26",
+    // "2026-01-01",
+    // Add your blocked dates here — one per line
+  ];
+
+  const BLOCKED_MESSAGE = "We're sorry, this date is unavailable. Please select another date or provide an alternate.";
+
+  // ── MENU OPTIONS — edit names, descriptions and prices here ──
+  const MENU_OPTIONS = [
+    { icon: "🍽️", name: "Obscure Table Menu without the Chicharonillo", desc: "Our signature tasting menu, served without the Chicharonillo.", price: "PHP 4,850 per person" },
+    { icon: "🍽️", name: "Obscure Table Grand Menu with Chicharonillo", desc: "The full Obscure Table experience featuring the celebrated Chicharonillo.", price: "PHP 8,500 per person" },
+    { icon: "🍽️", name: "Whole Chicharonillo with Accoutrements", desc: "A whole Chicharonillo served with its full accompaniments.", price: "PHP 14,950" },
+    { icon: "🍽️", name: "Half Chicharonillo with Accoutrements", desc: "Half a Chicharonillo served with its full accompaniments.", price: "PHP 7,475" },
+    { icon: "🍽️", name: "Quarter Chicharonillo with Accoutrements", desc: "A quarter Chicharonillo served with its full accompaniments.", price: "PHP 3,750" },
+  ];
+</script>
+
+<div class="toast" id="toast"></div>
+
+<div id="mainForm">
+  <div class="header">
+    <div class="header-eye">Private Dining &amp; Reservations</div>
+    <div class="header-wordmark">Obscure</div>
+    <div class="header-sub">Table</div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-steps">
+      <div class="step-dot active" id="dot1">1</div><div class="step-line" id="line1"></div>
+      <div class="step-dot" id="dot2">2</div><div class="step-line" id="line2"></div>
+      <div class="step-dot" id="dot3">3</div><div class="step-line" id="line3"></div>
+      <div class="step-dot" id="dot4">4</div><div class="step-line" id="line4"></div>
+      <div class="step-dot" id="dot5">5</div>
+    </div>
+    <div class="step-labels">
+      <span class="step-label active" id="lbl1">You</span>
+      <span class="step-label" id="lbl2">When</span>
+      <span class="step-label" id="lbl3">Menu</span>
+      <span class="step-label" id="lbl4">Details</span>
+      <span class="step-label" id="lbl5">Review</span>
+    </div>
+  </div>
+
+  <div class="scroll-body">
+
+    <!-- Step 1: Guest Info -->
+    <div class="step-panel active" id="step1">
+      <div class="step-intro"><div class="step-intro-title">About you</div><div class="step-intro-sub">So we know who to expect</div></div>
+      <div class="field-row">
+        <div class="field"><label class="field-label">Last Name <span class="req">✦</span></label><input class="field-input" id="fLastName" type="text" placeholder="Surname" autocomplete="family-name" autocapitalize="words"></div>
+        <div class="field"><label class="field-label">First Name <span class="req">✦</span></label><input class="field-input" id="fFirstName" type="text" placeholder="Given" autocomplete="given-name" autocapitalize="words"></div>
+      </div>
+      <div class="field"><label class="field-label">Phone <span class="req">✦</span></label><input class="field-input" id="fPhone" type="tel" placeholder="+1 555 000 0000" autocomplete="tel"></div>
+      <div class="field"><label class="field-label">Email</label><input class="field-input" id="fEmail" type="email" placeholder="For your confirmation" autocomplete="email"></div>
+    </div>
+
+    <!-- Step 2: Date & Time -->
+    <div class="step-panel" id="step2">
+      <div class="step-intro"><div class="step-intro-title">When</div><div class="step-intro-sub">Choose your preferred evening</div></div>
+
+      <div class="field">
+        <label class="field-label">Date <span class="req">✦</span></label>
+        <input class="field-input" id="fDate" type="date" onchange="checkBlockedDate(this.value)">
+        <div class="blocked-notice" id="blockedNotice">
+          <div class="blocked-notice-text" id="blockedMsg"></div>
+        </div>
+      </div>
+
+      <div class="field"><label class="field-label">Alternate Date</label><input class="field-input" id="fAltDate" type="date"></div>
+
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+          <label class="field-label" style="margin-bottom:0">Preferred Time <span class="req">✦</span></label>
+          <button onclick="toggleTimeEditor()" id="editTimesBtn" style="background:rgba(139,100,40,0.1);border:1.5px solid rgba(139,100,40,0.3);border-radius:8px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:5px 12px;cursor:pointer;font-weight:700">✏ Edit Times</button>
+        </div>
+
+        <!-- Time Editor Panel (staff only) -->
+        <div id="timeEditorPanel" style="display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
+          <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px">Manage Time Slots</div>
+          <div id="timeEditorSlots" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--border);padding-top:12px">
+            <input type="time" id="newTimeInput" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none">
+            <button onclick="addTimeSlot()" style="background:var(--gold-btn);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;padding:10px 16px;cursor:pointer;font-weight:700;white-space:nowrap">+ Add</button>
+          </div>
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--muted);margin-top:8px;letter-spacing:0.08em">Tap a slot to enable/disable it. Changes save automatically.</div>
+        </div>
+
+        <div class="time-grid" id="timeGrid"></div>
+      </div>
+
+      <div class="field">
+        <label class="field-label">Party Size <span class="req">✦</span></label>
+        <div class="stepper"><button class="stepper-btn" onclick="changeParty(-1)">−</button><div class="stepper-display"><div class="stepper-num" id="partyNum">2</div><div class="stepper-word" id="partyWord">Guests</div></div><button class="stepper-btn" onclick="changeParty(1)">+</button></div>
+      </div>
+    </div>
+
+    <!-- Step 3: Menu Choice -->
+    <div class="step-panel" id="step3">
+      <div class="step-intro"><div class="step-intro-title">Menu</div><div class="step-intro-sub">How would you like to dine?</div></div>
+
+      <!-- Menu Editor (staff only) -->
+      <div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+        <button onclick="toggleMenuEditor()" id="editMenuBtn" style="background:rgba(139,100,40,0.1);border:1.5px solid rgba(139,100,40,0.3);border-radius:8px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:6px 14px;cursor:pointer;font-weight:700">✏ Edit Menu</button>
+      </div>
+
+      <div id="menuEditorPanel" style="display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:14px">Manage Menu Options</div>
+        <div id="menuEditorItems" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+
+        <!-- Add new menu item form -->
+        <div style="border-top:1.5px solid var(--border);padding-top:14px">
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;font-weight:700">Add New Option</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input id="newMenuIcon" type="text" maxlength="4" placeholder="🍽️" style="width:58px;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:11px 10px;font-size:20px;outline:none;text-align:center">
+            <input id="newMenuName" type="text" placeholder="Menu name" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:11px 14px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none">
+          </div>
+          <input id="newMenuDesc" type="text" placeholder="Short description…" style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:11px 14px;font-family:'Cormorant Garamond',serif;font-size:15px;outline:none;margin-bottom:8px">
+          <div style="display:flex;gap:8px">
+            <input id="newMenuPrice" type="text" placeholder="Price (e.g. From $85pp)" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:11px 14px;font-family:'Cormorant Garamond',serif;font-size:15px;outline:none">
+            <button onclick="addMenuItem()" style="background:var(--gold-btn);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:11px 16px;cursor:pointer;font-weight:700;white-space:nowrap">+ Add</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-grid" id="menuGrid"></div>
+    </div>
+
+    <!-- Step 4: Occasion & Dietary -->
+    <div class="step-panel" id="step4">
+      <div class="step-intro"><div class="step-intro-title">Details</div><div class="step-intro-sub">Help us prepare for your evening</div></div>
+
+      <!-- Occasion -->
+      <div class="field">
+        <label class="field-label">Occasion</label>
+        <div class="check-list">
+          <div class="check-row" onclick="toggleCheck(this)" data-val="Anniversary"><div class="check-box"><div class="check-tick">✓</div></div><div class="check-text">Anniversary</div><div class="check-sub">🥂</div></div>
+          <div class="check-row" onclick="toggleCheck(this)" data-val="Birthday"><div class="check-box"><div class="check-tick">✓</div></div><div class="check-text">Birthday</div><div class="check-sub">🎂</div></div>
+          <div class="check-row" onclick="toggleCheck(this)" data-val="Business Dinner"><div class="check-box"><div class="check-tick">✓</div></div><div class="check-text">Business Dinner</div><div class="check-sub">💼</div></div>
+          <div class="check-row" onclick="toggleCheck(this)" data-val="Date Night"><div class="check-box"><div class="check-tick">✓</div></div><div class="check-text">Date Night</div><div class="check-sub">✨</div></div>
+          <div class="check-row" onclick="toggleCheck(this)" data-val="Celebration"><div class="check-box"><div class="check-tick">✓</div></div><div class="check-text">Celebration</div><div class="check-sub">🎉</div></div>
+          <div class="check-row" id="occasionOtherRow" onclick="toggleOccasionOther(this)" data-val="Other"><div class="check-box"><div class="check-tick">✓</div></div><div class="check-text">Other</div><div class="check-sub">✏️</div></div>
+        </div>
+        <div class="others-reveal" id="occasionOtherReveal">
+          <textarea class="field-input" id="occasionOtherText" placeholder="Please tell us about your occasion…" style="margin-top:10px;height:80px"></textarea>
+        </div>
+      </div>
+
+      <!-- Dietary -->
+      <div class="field">
+        <label class="field-label">Dietary Requirements</label>
+        <div class="check-grid-2">
+          <div class="check-chip" onclick="toggleChip(this)" data-val="Vegetarian"><div class="check-chip-icon">🥦</div><div class="check-chip-label">Vegetarian</div></div>
+          <div class="check-chip" onclick="toggleChip(this)" data-val="Vegan"><div class="check-chip-icon">🌱</div><div class="check-chip-label">Vegan</div></div>
+          <div class="check-chip" onclick="toggleChip(this)" data-val="Gluten-Free"><div class="check-chip-icon">🌾</div><div class="check-chip-label">Gluten-Free</div></div>
+          <div class="check-chip" onclick="toggleChip(this)" data-val="Nut Allergy"><div class="check-chip-icon">⚠️</div><div class="check-chip-label">Nut Allergy</div></div>
+          <div class="check-chip" onclick="toggleChip(this)" data-val="Shellfish"><div class="check-chip-icon">🦐</div><div class="check-chip-label">Shellfish Allergy</div></div>
+          <div class="check-chip" onclick="toggleChip(this)" data-val="Dairy-Free"><div class="check-chip-icon">🥛</div><div class="check-chip-label">Dairy-Free</div></div>
+          <div class="check-chip" id="dietaryOtherChip" onclick="toggleDietaryOther(this)" data-val="Other" style="grid-column: 1 / -1;"><div class="check-chip-icon">✏️</div><div class="check-chip-label">Other / Please specify</div></div>
+        </div>
+        <div class="others-reveal" id="dietaryOtherReveal">
+          <input class="field-input" id="dietaryOtherText" type="text" placeholder="Please describe your dietary requirements…" style="margin-top:0">
+        </div>
+      </div>
+
+      <div class="field"><label class="field-label">Special Requests</label><textarea class="field-input" id="fNotes" placeholder="Seating preferences, wine requests, celebrations, accessibility needs…"></textarea></div>
+      <div class="field"><label class="field-label">How did you hear about us?</label>
+        <select class="field-input" id="fSource">
+          <option value="">—</option>
+          <option>Word of Mouth</option>
+          <option>Instagram</option>
+          <option>Press / Editorial</option>
+          <option>Hotel Concierge</option>
+          <option>Returning Guest</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Step 5: Review -->
+    <div class="step-panel" id="step5">
+      <div class="step-intro"><div class="step-intro-title">Review</div><div class="step-intro-sub">Confirm your details before submitting</div></div>
+      <div id="reviewContent"></div>
+      <div class="policy-strip">
+        <div class="policy-title">Cancellation Policy</div>
+        <div class="policy-text">We kindly ask for 48 hours notice for parties of 1–6, and 72 hours for 7 or more. A booking code will be generated on submission — please quote it in all correspondence with our team.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="footer-nav">
+    <button class="btn-back" id="backBtn" onclick="prevStep()" style="display:none">← Back</button>
+    <button class="btn-next" id="nextBtn" onclick="nextStep()">Continue →</button>
+  </div>
+</div>
+
+<!-- Success -->
+<div class="success-screen" id="successScreen">
+  <div class="success-mark">✦</div>
+  <div class="success-title">Inquiry Sent</div>
+  <p class="success-sub">Thank you. Your inquiry has been sent to<br>our team. We'll be in touch within 24 hours.</p>
+  <div class="success-code-wrap">
+    <div class="success-code-label">Your Booking Reference</div>
+    <div class="success-code-val" id="successCode">—</div>
+    <p class="success-note">Keep this code. Quote it in all correspondence with our front of house team.</p>
+  </div>
+  <button class="btn-copy-success" onclick="copySuccess()">Copy Booking Code</button>
+  <button class="btn-new" onclick="resetForm()">Make Another Inquiry</button>
+</div>
+
+<script>
+  // ── State ─────────────────────────────────────────────────
+  let currentStep=1, partySize=2, selectedTime='', selectedMenu='', generatedCode='';
+  let dateBlocked = false;
+
+  // ── Date setup ────────────────────────────────────────────
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('fDate').min = todayStr;
+  document.getElementById('fAltDate').min = todayStr;
+
+  // ── Menu Manager ──────────────────────────────────────────
+  function loadMenuItems() {
+    try {
+      const stored = localStorage.getItem('ot_menu_items');
+      if (stored) return JSON.parse(stored);
+    } catch(e) {}
+    // Default items on first load
+    return [
+      { id:1, icon:"🍽️", name:"Obscure Table Menu without the Chicharonillo", desc:"Our signature tasting menu, served without the Chicharonillo.", price:"PHP 4,850 per person" },
+      { id:2, icon:"🍽️", name:"Obscure Table Grand Menu with Chicharonillo", desc:"The full Obscure Table experience featuring the celebrated Chicharonillo.", price:"PHP 8,500 per person" },
+      { id:3, icon:"🍽️", name:"Whole Chicharonillo with Accoutrements", desc:"A whole Chicharonillo served with its full accompaniments.", price:"PHP 14,950" },
+      { id:4, icon:"🍽️", name:"Half Chicharonillo with Accoutrements", desc:"Half a Chicharonillo served with its full accompaniments.", price:"PHP 7,475" },
+      { id:5, icon:"🍽️", name:"Quarter Chicharonillo with Accoutrements", desc:"A quarter Chicharonillo served with its full accompaniments.", price:"PHP 3,750" },
+    ];
+  }
+
+  function saveMenuItems(items) {
+    try { localStorage.setItem('ot_menu_items', JSON.stringify(items)); } catch(e) {}
+  }
+
+  function renderMenuGrid() {
+    const items = loadMenuItems();
+    const grid = document.getElementById('menuGrid');
+    grid.innerHTML = '';
+    if (items.length === 0) {
+      grid.innerHTML = `<div style="text-align:center;font-style:italic;color:var(--muted);padding:24px;font-size:16px;grid-column:1/-1">No menu options yet. Tap Edit Menu to add options.</div>`;
+      return;
+    }
+    items.forEach(m => {
+      const card = document.createElement('div');
+      card.className = 'menu-card';
+      card.dataset.val = m.name;
+      card.innerHTML = `<div class="menu-card-icon">${m.icon}</div><div class="menu-card-body"><div class="menu-card-name">${m.name}</div><div class="menu-card-desc">${m.desc}</div><div class="menu-card-price">${m.price}</div></div>`;
+      card.onclick = () => selectMenu(card);
+      grid.appendChild(card);
+    });
+  }
+
+  function renderMenuEditor() {
+    const items = loadMenuItems();
+    const container = document.getElementById('menuEditorItems');
+    container.innerHTML = '';
+    if (items.length === 0) {
+      container.innerHTML = `<div style="text-align:center;font-style:italic;color:var(--muted);font-size:15px;padding:10px 0">No menu options yet. Add one below.</div>`;
+      return;
+    }
+    items.forEach(m => {
+      const row = document.createElement('div');
+      row.style.cssText = 'background:#fff;border:1.5px solid var(--border);border-radius:10px;overflow:hidden';
+
+      // View mode
+      const view = document.createElement('div');
+      view.style.cssText = 'display:flex;align-items:flex-start;gap:12px;padding:12px 14px';
+      view.innerHTML = `
+        <div style="font-size:22px;flex-shrink:0">${m.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--ink);font-weight:400">${m.name}</div>
+          <div style="font-size:13px;color:var(--muted);font-style:italic;margin-top:2px;line-height:1.4">${m.desc}</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--gold);margin-top:3px;font-weight:700">${m.price}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:5px;flex-shrink:0">
+          <button onclick="editMenuItem(${m.id})" style="background:rgba(139,100,40,0.08);border:1.5px solid rgba(139,100,40,0.25);border-radius:6px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:5px 10px;cursor:pointer;font-weight:700">Edit</button>
+          <button onclick="removeMenuItem(${m.id})" style="background:rgba(154,42,26,0.07);border:1.5px solid rgba(154,42,26,0.2);border-radius:6px;color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:5px 10px;cursor:pointer;font-weight:700">Remove</button>
+        </div>`;
+
+      // Edit mode (hidden by default)
+      const edit = document.createElement('div');
+      edit.id = `menuEdit_${m.id}`;
+      edit.style.cssText = 'display:none;background:rgba(139,100,40,0.04);border-top:1.5px solid var(--border);padding:12px 14px';
+      edit.innerHTML = `
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input id="eIcon_${m.id}" value="${m.icon}" maxlength="4" style="width:52px;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:9px 8px;font-size:20px;outline:none;text-align:center">
+          <input id="eName_${m.id}" value="${m.name}" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:9px 12px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none">
+        </div>
+        <input id="eDesc_${m.id}" value="${m.desc}" style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:9px 12px;font-family:'Cormorant Garamond',serif;font-size:14px;outline:none;margin-bottom:8px">
+        <div style="display:flex;gap:8px">
+          <input id="ePrice_${m.id}" value="${m.price}" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:9px 12px;font-family:'Cormorant Garamond',serif;font-size:14px;outline:none">
+          <button onclick="saveMenuEdit(${m.id})" style="background:var(--gold-btn);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:9px 14px;cursor:pointer;font-weight:700">Save</button>
+          <button onclick="cancelMenuEdit(${m.id})" style="background:transparent;border:1.5px solid var(--border);border-radius:8px;color:var(--muted);font-family:'Courier Prime',monospace;font-size:10px;padding:9px 12px;cursor:pointer">✕</button>
+        </div>`;
+
+      row.appendChild(view);
+      row.appendChild(edit);
+      container.appendChild(row);
+    });
+  }
+
+  function toggleMenuEditor() {
+    const panel = document.getElementById('menuEditorPanel');
+    const btn = document.getElementById('editMenuBtn');
+    const open = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    btn.textContent = open ? '✕ Close' : '✏ Edit Menu';
+    if (open) renderMenuEditor();
+  }
+
+  function editMenuItem(id) {
+    document.getElementById(`menuEdit_${id}`).style.display = 'block';
+  }
+
+  function cancelMenuEdit(id) {
+    document.getElementById(`menuEdit_${id}`).style.display = 'none';
+  }
+
+  function saveMenuEdit(id) {
+    const items = loadMenuItems();
+    const item = items.find(m=>m.id===id);
+    if (!item) return;
+    const name = document.getElementById(`eName_${id}`).value.trim();
+    if (!name) { toast('Name cannot be empty'); return; }
+    item.icon  = document.getElementById(`eIcon_${id}`).value.trim() || '🍽️';
+    item.name  = name;
+    item.desc  = document.getElementById(`eDesc_${id}`).value.trim();
+    item.price = document.getElementById(`ePrice_${id}`).value.trim();
+    saveMenuItems(items);
+    if (selectedMenu === item.name) selectedMenu = item.name;
+    renderMenuEditor();
+    renderMenuGrid();
+    toast('Menu option updated ✓');
+  }
+
+  function removeMenuItem(id) {
+    const items = loadMenuItems();
+    const item = items.find(m=>m.id===id);
+    if (!confirm(`Remove "${item?.name}"?`)) return;
+    saveMenuItems(items.filter(m=>m.id!==id));
+    if (selectedMenu === item?.name) selectedMenu = '';
+    renderMenuEditor();
+    renderMenuGrid();
+    toast('Menu option removed');
+  }
+
+  function addMenuItem() {
+    const icon  = document.getElementById('newMenuIcon').value.trim() || '🍽️';
+    const name  = document.getElementById('newMenuName').value.trim();
+    const desc  = document.getElementById('newMenuDesc').value.trim();
+    const price = document.getElementById('newMenuPrice').value.trim();
+    if (!name) { toast('Please enter a menu name'); return; }
+    const items = loadMenuItems();
+    const newId = Date.now();
+    items.push({ id:newId, icon, name, desc, price });
+    saveMenuItems(items);
+    document.getElementById('newMenuIcon').value  = '';
+    document.getElementById('newMenuName').value  = '';
+    document.getElementById('newMenuDesc').value  = '';
+    document.getElementById('newMenuPrice').value = '';
+    renderMenuEditor();
+    renderMenuGrid();
+    toast(`"${name}" added ✓`);
+  }
+
+  renderMenuGrid();
+
+  // ── Blocked date check ────────────────────────────────────
+  function checkBlockedDate(val) {
+    const notice = document.getElementById('blockedNotice');
+    const msg = document.getElementById('blockedMsg');
+    if (BLOCKED_DATES.includes(val)) {
+      dateBlocked = true;
+      msg.textContent = BLOCKED_MESSAGE;
+      notice.style.display = 'block';
+      // Clear selected time
+      document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('selected'));
+      selectedTime = '';
+      // Disable all time chips
+      document.querySelectorAll('.time-chip').forEach(c => c.classList.add('blocked'));
+    } else {
+      dateBlocked = false;
+      notice.style.display = 'none';
+      document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('blocked'));
+    }
+  }
+
+  // ── Progress ──────────────────────────────────────────────
+  function updateProgress() {
+    for (let i=1; i<=5; i++) {
+      const d=document.getElementById(`dot${i}`), l=document.getElementById(`lbl${i}`);
+      if (i<currentStep) { d.className='step-dot done'; d.textContent='✓'; }
+      else if (i===currentStep) { d.className='step-dot active'; d.textContent=i; }
+      else { d.className='step-dot'; d.textContent=i; }
+      if (l) l.className='step-label'+(i===currentStep?' active':'');
+    }
+    for (let i=1; i<5; i++) { const l=document.getElementById(`line${i}`); if(l) l.className='step-line'+(i<currentStep?' done':''); }
+    document.getElementById('backBtn').style.display = currentStep>1 ? 'block' : 'none';
+    document.getElementById('nextBtn').textContent = currentStep===5 ? 'Submit Inquiry' : 'Continue →';
+  }
+
+  function showStep(n) {
+    document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById(`step${n}`).classList.add('active');
+    window.scrollTo({top:0, behavior:'smooth'});
+    if (n===5) buildReview();
+    updateProgress();
+  }
+
+  function validateStep(n) {
+    if (n===1) {
+      if (!document.getElementById('fLastName').value.trim() || !document.getElementById('fFirstName').value.trim() || !document.getElementById('fPhone').value.trim()) {
+        toast('Please fill in your name and phone number'); return false;
+      }
+    }
+    if (n===2) {
+      if (!document.getElementById('fDate').value) { toast('Please select a date'); return false; }
+      if (dateBlocked) { toast('This date is unavailable — please choose another'); return false; }
+      if (!selectedTime) { toast('Please select a time'); return false; }
+    }
+    if (n===3) {
+      if (!selectedMenu) { toast('Please select a menu option'); return false; }
+    }
+    return true;
+  }
+
+  function nextStep() { if(currentStep===5){submitForm();return;} if(!validateStep(currentStep))return; currentStep++; showStep(currentStep); }
+  function prevStep() { if(currentStep>1){currentStep--;showStep(currentStep);} }
+
+  function changeParty(d) { partySize=Math.max(1,Math.min(20,partySize+d)); document.getElementById('partyNum').textContent=partySize; document.getElementById('partyWord').textContent=partySize===1?'Guest':'Guests'; }
+
+  function selectTime(el) {
+    if (el.dataset.disabled==='true') return;
+    document.querySelectorAll('.time-chip').forEach(c=>c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedTime = el.dataset.val;
+  }
+
+  // ── Time Slot Manager ─────────────────────────────────────
+  const DEFAULT_SLOTS = [
+    {val:'17:00',active:true},{val:'17:30',active:true},
+    {val:'18:00',active:true},{val:'18:30',active:true},
+    {val:'19:00',active:true},{val:'19:30',active:true},
+    {val:'20:00',active:true},{val:'20:30',active:true},
+    {val:'21:00',active:true},{val:'21:30',active:true},
+  ];
+
+  function loadSlots() {
+    try { return JSON.parse(localStorage.getItem('ot_timeslots')) || DEFAULT_SLOTS; }
+    catch(e) { return DEFAULT_SLOTS; }
+  }
+
+  function saveSlots(slots) {
+    try { localStorage.setItem('ot_timeslots', JSON.stringify(slots)); } catch(e) {}
+  }
+
+  function fmt12(val) {
+    const [h,m] = val.split(':').map(Number);
+    return { hr:`${h>12?h-12:h||12}:${String(m).padStart(2,'0')}`, ampm:h>=12?'PM':'AM' };
+  }
+
+  function renderTimeGrid() {
+    const slots = loadSlots();
+    const grid = document.getElementById('timeGrid');
+    grid.innerHTML = '';
+    const active = slots.filter(s=>s.active);
+    active.forEach(s => {
+      const {hr,ampm} = fmt12(s.val);
+      const chip = document.createElement('div');
+      chip.className = 'time-chip';
+      chip.dataset.val = s.val;
+      chip.innerHTML = `<div class="time-chip-hr">${hr}</div><div class="time-chip-ampm">${ampm}</div>`;
+      chip.onclick = () => selectTime(chip);
+      grid.appendChild(chip);
+    });
+    if (active.length === 0) {
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;font-style:italic;color:var(--muted);padding:20px;font-size:16px">No time slots active. Tap Edit Times to add slots.</div>`;
+    }
+  }
+
+  function renderTimeEditor() {
+    const slots = loadSlots();
+    const container = document.getElementById('timeEditorSlots');
+    container.innerHTML = '';
+    [...slots].sort((a,b)=>a.val.localeCompare(b.val)).forEach(s => {
+      const {hr,ampm} = fmt12(s.val);
+      const row = document.createElement('div');
+      row.style.cssText = `display:flex;align-items:center;gap:10px;background:#fff;border-radius:8px;padding:10px 14px;border:1.5px solid ${s.active?'rgba(139,100,40,0.3)':'rgba(120,85,30,0.1)'}`;
+      row.innerHTML = `
+        <div style="flex:1;font-family:'Cormorant Garamond',serif;font-size:18px;color:${s.active?'var(--ink)':'var(--muted)'}">${hr} ${ampm}</div>
+        <span style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;font-weight:700;color:${s.active?'#2a7a5a':'var(--muted)'}">${s.active?'ON':'OFF'}</span>
+        <button onclick="toggleSlot('${s.val}')" style="background:${s.active?'rgba(42,122,90,0.1)':'rgba(120,85,30,0.06)'};border:1.5px solid ${s.active?'#2a7a5a':'var(--border)'};border-radius:6px;color:${s.active?'#2a7a5a':'var(--muted)'};font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.08em;padding:6px 12px;cursor:pointer;text-transform:uppercase;font-weight:700">${s.active?'Disable':'Enable'}</button>
+        <button onclick="removeSlot('${s.val}')" style="background:rgba(154,42,26,0.08);border:1.5px solid rgba(154,42,26,0.25);border-radius:6px;color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:12px;padding:6px 10px;cursor:pointer;font-weight:700">✕</button>`;
+      container.appendChild(row);
+    });
+  }
+
+  function toggleTimeEditor() {
+    const panel = document.getElementById('timeEditorPanel');
+    const btn = document.getElementById('editTimesBtn');
+    const open = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    btn.textContent = open ? '✕ Close' : '✏ Edit Times';
+    if (open) renderTimeEditor();
+  }
+
+  function toggleSlot(val) {
+    const slots = loadSlots();
+    const s = slots.find(x=>x.val===val);
+    if (s) s.active = !s.active;
+    saveSlots(slots);
+    renderTimeEditor();
+    renderTimeGrid();
+    if (selectedTime === val) selectedTime = '';
+    toast(`${fmt12(val).hr} ${fmt12(val).ampm} ${s.active?'enabled':'disabled'}`);
+  }
+
+  function removeSlot(val) {
+    if (!confirm(`Remove ${fmt12(val).hr} ${fmt12(val).ampm}?`)) return;
+    saveSlots(loadSlots().filter(s=>s.val!==val));
+    renderTimeEditor();
+    renderTimeGrid();
+    if (selectedTime === val) selectedTime = '';
+    toast('Time slot removed');
+  }
+
+  function addTimeSlot() {
+    const input = document.getElementById('newTimeInput');
+    const val = input.value;
+    if (!val) { toast('Please select a time first'); return; }
+    const slots = loadSlots();
+    if (slots.find(s=>s.val===val)) { toast('That slot already exists'); return; }
+    slots.push({val, active:true});
+    slots.sort((a,b)=>a.val.localeCompare(b.val));
+    saveSlots(slots);
+    input.value = '';
+    renderTimeEditor();
+    renderTimeGrid();
+    toast(`${fmt12(val).hr} ${fmt12(val).ampm} added ✓`);
+  }
+
+  renderTimeGrid();
+
+  function toggleCheck(el) { el.classList.toggle('checked'); }
+
+  function toggleOccasionOther(el) {
+    el.classList.toggle('checked');
+    const reveal = document.getElementById('occasionOtherReveal');
+    reveal.classList.toggle('show', el.classList.contains('checked'));
+    if (!el.classList.contains('checked')) document.getElementById('occasionOtherText').value='';
+  }
+
+  function toggleDietaryOther(el) {
+    el.classList.toggle('checked');
+    const reveal = document.getElementById('dietaryOtherReveal');
+    reveal.classList.toggle('show', el.classList.contains('checked'));
+    if (!el.classList.contains('checked')) document.getElementById('dietaryOtherText').value='';
+  }
+
+  function toggleChip(el) { el.classList.toggle('checked'); }
+
+  function getOccasions() {
+    const vals = [...document.querySelectorAll('.check-row.checked:not(#occasionOtherRow)')].map(e=>e.dataset.val);
+    const otherRow = document.getElementById('occasionOtherRow');
+    if (otherRow.classList.contains('checked')) {
+      const txt = document.getElementById('occasionOtherText').value.trim();
+      if (txt) vals.push(txt);
+      else vals.push('Other');
+    }
+    return vals.join(', ');
+  }
+
+  function getDietary() {
+    const vals = [...document.querySelectorAll('.check-chip.checked:not(#dietaryOtherChip)')].map(e=>e.dataset.val);
+    const otherChip = document.getElementById('dietaryOtherChip');
+    if (otherChip.classList.contains('checked')) {
+      const txt = document.getElementById('dietaryOtherText').value.trim();
+      if (txt) vals.push(txt);
+    }
+    return vals.join(', ');
+  }
+
+  function fmtTime(t) { if(!t)return'—'; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; }
+  function fmtDate(d) { if(!d)return'—'; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}); }
+
+  function buildReview() {
+    const rows=(pairs)=>pairs.filter(([,v])=>v).map(([k,v])=>`<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${v}</span></div>`).join('');
+    const occasions = getOccasions();
+    const dietary = getDietary();
+    const notes = document.getElementById('fNotes').value.trim();
+    document.getElementById('reviewContent').innerHTML=`
+      <div class="review-block"><div class="review-block-title">Guest</div>${rows([['Name',`${document.getElementById('fLastName').value.trim()}, ${document.getElementById('fFirstName').value.trim()}`],['Phone',document.getElementById('fPhone').value.trim()],['Email',document.getElementById('fEmail').value.trim()]])}</div>
+      <div class="review-block"><div class="review-block-title">Reservation</div>${rows([['Date',fmtDate(document.getElementById('fDate').value)],['Alt Date',document.getElementById('fAltDate').value?fmtDate(document.getElementById('fAltDate').value):''],['Time',fmtTime(selectedTime)],['Party',`${partySize} Guest${partySize>1?'s':''}`],['Menu',selectedMenu]])}</div>
+      ${occasions||dietary||notes?`<div class="review-block"><div class="review-block-title">Details</div>${rows([['Occasion',occasions],['Dietary',dietary],['Notes',notes]])}</div>`:''}`;
+  }
+
+  function generateCode(l,d,t) { const L=l.replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X'); const dd=d.replace(/-/g,'').slice(4); const hr=t.split(':')[0]; const r=Math.random().toString(36).substring(2,5).toUpperCase(); return`OT-${L}${dd}-${hr}${r}`; }
+
+  // ── EmailJS Configuration ─────────────────────────────────
+  const EJS_SERVICE  = 'service_xosaoro';
+  const EJS_TEMPLATE = 'template_yfe626s';
+  const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
+  // ─────────────────────────────────────────────────────────
+
+  async function submitForm() {
+    const lastName  = document.getElementById('fLastName').value.trim();
+    const firstName = document.getElementById('fFirstName').value.trim();
+    const phone     = document.getElementById('fPhone').value.trim();
+    const date      = document.getElementById('fDate').value;
+    const altDate   = document.getElementById('fAltDate').value;
+    const email     = document.getElementById('fEmail').value.trim();
+    const notes     = document.getElementById('fNotes').value.trim();
+    const source    = document.getElementById('fSource').value;
+    const occasions = getOccasions();
+    const dietary   = getDietary();
+
+    generatedCode = generateCode(lastName, date, selectedTime);
+
+    const btn = document.getElementById('nextBtn');
+    btn.textContent = 'Sending…';
+    btn.disabled = true;
+
+    const message = `
+OBSCURE TABLE — NEW RESERVATION INQUIRY
+════════════════════════════════════════
+
+BOOKING CODE: ${generatedCode}
+
+GUEST DETAILS
+─────────────
+Name:    ${lastName}, ${firstName}
+Phone:   ${phone}
+Email:   ${email || '—'}
+
+RESERVATION
+───────────
+Date:       ${fmtDate(date)}
+Alt Date:   ${altDate ? fmtDate(altDate) : '—'}
+Time:       ${fmtTime(selectedTime)}
+Party Size: ${partySize} Guest${partySize > 1 ? 's' : ''}
+Menu:       ${selectedMenu || '—'}
+
+DETAILS
+───────
+Occasion:    ${occasions || '—'}
+Dietary:     ${dietary || '—'}
+Requests:    ${notes || '—'}
+Heard via:   ${source || '—'}
+
+════════════════════════════════════════
+Please enter this booking into the FOH
+dashboard using the code above.
+    `.trim();
+
+    try {
+      await emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
+        to_email: 'obscuretableph@gmail.com',
+        subject:  `New Inquiry — ${generatedCode} — ${lastName}, ${firstName}`,
+        message,
+        reply_to: email || phone,
+      }, EJS_KEY);
+
+      document.getElementById('successCode').textContent = generatedCode;
+      document.getElementById('mainForm').style.display = 'none';
+      document.getElementById('successScreen').classList.add('show');
+      window.scrollTo({ top: 0 });
+
+    } catch(err) {
+      console.error('EmailJS error:', err);
+      document.getElementById('successCode').textContent = generatedCode;
+      document.getElementById('successNote').style.display = 'block';
+      document.getElementById('mainForm').style.display = 'none';
+      document.getElementById('successScreen').classList.add('show');
+      window.scrollTo({ top: 0 });
+    }
+
+    // ── Write to Firebase — syncs to FOH dashboard instantly ──
+    const fbId = Date.now();
+    const fbData = {
+      id: fbId, code: generatedCode,
+      name: lastName, first: firstName, phone, email,
+      date, time: selectedTime, party: partySize,
+      menu: selectedMenu || '—',
+      section: '', occasion: occasions || '',
+      dietary: dietary || '', notes, source,
+      status: 'confirmed',
+      tags: dietary ? ['Dietary'] : [],
+      created: fbId,
+    };
+    if (window._fbWriteReservation) {
+      window._fbWriteReservation(fbId, fbData).catch(e => console.warn('Firebase sync failed:', e));
+    }
+  }
+
+  function toast(msg) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2500); }
+  function copySuccess() { navigator.clipboard.writeText(generatedCode).catch(()=>{}); toast('Booking code copied'); }
+  function resetForm() { location.reload(); }
+
+  updateProgress();
+</script>
+</body>
+</html>
