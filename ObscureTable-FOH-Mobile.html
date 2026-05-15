@@ -145,7 +145,7 @@
   .res-chevron { color: rgba(139,100,40,0.3); font-size: 18px; margin-top: 2px; }
 
   /* Bottom Nav */
-  .bottom-nav { display: grid; grid-template-columns: repeat(4, 1fr); border-top: 1.5px solid var(--border); background: var(--bg); flex-shrink: 0; padding-bottom: max(8px, var(--safe)); box-shadow: 0 -2px 10px rgba(120,85,30,0.08); }
+  .bottom-nav { display: grid; grid-template-columns: 1fr 1fr 44px 1fr 1fr; border-top: 1.5px solid var(--border); background: var(--bg); flex-shrink: 0; padding-bottom: max(8px, var(--safe)); box-shadow: 0 -2px 10px rgba(120,85,30,0.08); }
   .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 12px 0 8px; cursor: pointer; background: none; border: none; transition: opacity 0.15s; }
   .nav-btn:active { opacity: 0.6; }
   .nav-icon { font-size: 22px; line-height: 1; }
@@ -261,6 +261,7 @@
     <button class="nav-btn active" id="navToday" onclick="setView('today',this)"><div class="nav-icon">📋</div><div class="nav-label">Today</div></button>
     <button class="nav-add" onclick="openAddSheet()"><div class="nav-add-circle">+</div></button>
     <button class="nav-btn" id="navAll" onclick="setView('all',this)"><div class="nav-icon">📅</div><div class="nav-label">All Dates</div></button>
+    <button class="nav-btn" id="navGuests" onclick="setView('guests',this)"><div class="nav-icon">👥</div><div class="nav-label">Guests</div></button>
     <button class="nav-btn" id="navReports" onclick="setView('reports',this)"><div class="nav-icon">📊</div><div class="nav-label">Reports</div></button>
   </div>
 </div>
@@ -287,6 +288,44 @@
   </div>
 
   <div style="padding:16px" id="reportsContent"></div>
+</div>
+
+<!-- Guest Directory Panel -->
+<div id="guestsPanel" style="display:none;position:fixed;inset:0;background:var(--bg);z-index:300;overflow-y:auto;padding-bottom:80px">
+  <!-- Header -->
+  <div style="background:var(--bg);border-bottom:1.5px solid var(--border);padding:max(14px,env(safe-area-inset-top,14px)) 20px 14px;position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(120,85,30,0.07)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div>
+        <div style="font-size:22px;font-weight:300;letter-spacing:0.16em;text-transform:uppercase;color:var(--ink)">Guests</div>
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.2em;color:var(--gold);text-transform:uppercase;margin-top:2px">Directory</div>
+      </div>
+      <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--muted)" id="guestCount">0 guests</div>
+    </div>
+    <input id="guestSearch" type="search" placeholder="Search by name, phone, email…" oninput="renderGuestDirectory()" style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:10px;color:var(--ink);padding:10px 14px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none;box-sizing:border-box">
+  </div>
+  <!-- Sort bar -->
+  <div style="display:flex;gap:8px;padding:10px 16px;background:var(--surface);border-bottom:1.5px solid var(--border);overflow-x:auto;scrollbar-width:none">
+    <div class="pill active" id="gsort_visits" onclick="setGuestSort('visits',this)">Most Visits</div>
+    <div class="pill" id="gsort_name" onclick="setGuestSort('name',this)">A–Z</div>
+    <div class="pill" id="gsort_recent" onclick="setGuestSort('recent',this)">Recent</div>
+    <div class="pill" id="gsort_covers" onclick="setGuestSort('covers',this)">Most Covers</div>
+  </div>
+  <!-- Guest list -->
+  <div id="guestDirectoryList" style="padding:12px 14px;display:flex;flex-direction:column;gap:10px"></div>
+</div>
+
+<!-- Guest Profile Sheet -->
+<div class="sheet-overlay" id="guestProfileOverlay" onclick="closeGuestProfile()"></div>
+<div class="sheet" id="guestProfileSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <div class="sheet-title" id="guestProfileName">—</div>
+      <div id="guestProfileMeta" style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--muted)"></div>
+    </div>
+    <button class="sheet-close" onclick="closeGuestProfile()">×</button>
+  </div>
+  <div class="sheet-body" id="guestProfileBody"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -386,13 +425,210 @@
     currentView=v;
     document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
     if(el) el.classList.add('active');
+    document.getElementById('reportsPanel').style.display='none';
+    document.getElementById('guestsPanel').style.display='none';
     if(v==='reports'){
       document.getElementById('reportsPanel').style.display='block';
       renderReports();
+    } else if(v==='guests'){
+      document.getElementById('guestsPanel').style.display='block';
+      renderGuestDirectory();
     } else {
-      document.getElementById('reportsPanel').style.display='none';
       renderList();
     }
+  }
+
+  // ── Guest Directory ───────────────────────────────────────
+  let guestSort = 'visits';
+  let guestNotes = {}; // { guestKey: noteText } — stored locally
+
+  function loadGuestNotes() {
+    try { return JSON.parse(localStorage.getItem('ot_guest_notes')||'{}'); } catch(e) { return {}; }
+  }
+  function saveGuestNotes(notes) {
+    try { localStorage.setItem('ot_guest_notes', JSON.stringify(notes)); } catch(e) {}
+  }
+
+  function buildGuestMap() {
+    const map = {};
+    window.reservations.forEach(r => {
+      const key = `${(r.name||'').trim()}_${(r.phone||'').trim()}`;
+      if (!key || key === '_') return;
+      if (!map[key]) {
+        map[key] = {
+          key, name: r.name||'', first: r.first||'',
+          phone: r.phone||'', email: r.email||'',
+          visits: 0, totalCovers: 0, bookings: [],
+          occasions: [], dietary: [], tags: new Set(),
+          lastDate: '', firstDate: '',
+        };
+      }
+      const g = map[key];
+      g.visits++;
+      g.totalCovers += r.party||0;
+      g.bookings.push(r);
+      if (r.occasion && r.occasion!=='—') g.occasions.push(r.occasion);
+      if (r.dietary && r.dietary!=='—') g.dietary.push(r.dietary);
+      (r.tags||[]).forEach(t=>g.tags.add(t));
+      if (!g.lastDate || r.date > g.lastDate) g.lastDate = r.date;
+      if (!g.firstDate || r.date < g.firstDate) g.firstDate = r.date;
+    });
+    return Object.values(map);
+  }
+
+  function setGuestSort(sort, el) {
+    guestSort = sort;
+    document.querySelectorAll('[id^="gsort_"]').forEach(p=>p.classList.remove('active'));
+    el.classList.add('active');
+    renderGuestDirectory();
+  }
+
+  function renderGuestDirectory() {
+    const notes = loadGuestNotes();
+    const q = (document.getElementById('guestSearch')?.value||'').toLowerCase();
+    let guests = buildGuestMap();
+
+    // Search filter
+    if (q) guests = guests.filter(g =>
+      `${g.name} ${g.first} ${g.phone} ${g.email}`.toLowerCase().includes(q)
+    );
+
+    // Sort
+    if (guestSort==='visits') guests.sort((a,b)=>b.visits-a.visits);
+    else if (guestSort==='name') guests.sort((a,b)=>a.name.localeCompare(b.name));
+    else if (guestSort==='recent') guests.sort((a,b)=>b.lastDate.localeCompare(a.lastDate));
+    else if (guestSort==='covers') guests.sort((a,b)=>b.totalCovers-a.totalCovers);
+
+    document.getElementById('guestCount').textContent = `${guests.length} guest${guests.length!==1?'s':''}`;
+
+    const list = document.getElementById('guestDirectoryList');
+    if (!guests.length) {
+      list.innerHTML = `<div style="text-align:center;padding:48px 0;font-style:italic;color:var(--muted);font-size:16px">No guests found</div>`;
+      return;
+    }
+
+    list.innerHTML = guests.map(g => {
+      const fmtLast = g.lastDate ? new Date(g.lastDate+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—';
+      const tags = [...g.tags];
+      const tagHtml = tags.map(t=>{
+        const cls = t==='VIP'?'vip':t==='Allergy'?'allergy':t==='Dietary'?'dietary':'note';
+        return `<span class="res-tag ${cls}" style="font-size:9px;padding:2px 6px">${t}</span>`;
+      }).join('');
+      const hasNote = notes[g.key];
+      return `<div onclick="openGuestProfile('${encodeURIComponent(g.key)}')" style="background:#fff;border:1.5px solid var(--border);border-radius:14px;padding:16px;cursor:pointer;transition:border-color 0.15s;box-shadow:0 1px 4px rgba(120,85,30,0.06)">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <div style="width:42px;height:42px;border-radius:50%;background:rgba(139,100,40,0.1);border:1.5px solid rgba(139,100,40,0.25);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px;color:var(--gold);font-family:'Cormorant Garamond',serif;font-weight:600">${(g.name||'?')[0]}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:18px;color:var(--ink);font-weight:400;line-height:1.2">${g.name}, ${g.first}</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--muted);margin-top:2px">${g.phone}</div>
+            <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap">
+              ${tagHtml}
+              ${hasNote?'<span style="font-family:\'Courier Prime\',monospace;font-size:9px;color:var(--gold);border:1px solid rgba(139,100,40,0.3);border-radius:3px;padding:2px 6px">📝 Note</span>':''}
+            </div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-size:22px;font-weight:300;color:var(--gold);line-height:1">${g.visits}</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted)">${g.visits===1?'visit':'visits'}</div>
+            <div style="font-size:11px;color:var(--stone);margin-top:4px">${g.totalCovers} covers</div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid rgba(120,85,30,0.08)">
+          <span style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--muted)">Last visit: ${fmtLast}</span>
+          <span style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--gold)">›</span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  function openGuestProfile(encodedKey) {
+    const key = decodeURIComponent(encodedKey);
+    const notes = loadGuestNotes();
+    const guests = buildGuestMap();
+    const g = guests.find(x=>x.key===key);
+    if (!g) return;
+
+    document.getElementById('guestProfileName').textContent = `${g.name}, ${g.first}`;
+    document.getElementById('guestProfileMeta').textContent = `${g.visits} visit${g.visits!==1?'s':''} · ${g.totalCovers} covers total`;
+
+    const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'}) : '—';
+    const fmtTime = t => { if(!t)return'—'; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; };
+
+    const occasions = [...new Set(g.occasions)].join(', ') || '—';
+    const dietary = [...new Set(g.dietary)].join(', ') || '—';
+    const tags = [...g.tags];
+    const tagHtml = tags.map(t=>{const cls=t==='VIP'?'vip':t==='Allergy'?'allergy':t==='Dietary'?'dietary':'note';return`<span class="res-tag ${cls}" style="padding:4px 10px;font-size:11px">${t}</span>`;}).join('');
+
+    const bookingsHtml = [...g.bookings].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{
+      const sm = STATUS_META[r.status]||STATUS_META.confirmed;
+      const pm = PAYMENT_META[r.payment||'unpaid']||PAYMENT_META.unpaid;
+      return `<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
+          <div>
+            <div style="font-size:15px;color:var(--ink)">${fmtDate(r.date)} · ${fmtTime(r.time)}</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--muted);margin-top:2px">${r.code||'—'} · ${r.party||0} guests</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;color:${sm.color};font-weight:700;text-transform:uppercase">${sm.label}</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;color:${pm.color};margin-top:3px">${pm.label}</div>
+          </div>
+        </div>
+        ${r.menu&&r.menu!=='—'?`<div style="font-size:13px;color:var(--muted);font-style:italic;margin-top:4px">${r.menu}</div>`:''}
+        ${r.notes?`<div style="font-size:13px;color:var(--stone);font-style:italic;margin-top:4px;padding-top:6px;border-top:1px solid rgba(120,85,30,0.08)">"${r.notes}"</div>`:''}
+      </div>`;
+    }).join('');
+
+    const currentNote = notes[key] || '';
+
+    document.getElementById('guestProfileBody').innerHTML = `
+      <!-- Contact -->
+      <div class="detail-block" style="margin-bottom:12px">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);padding:10px 16px;border-bottom:1.5px solid var(--border);background:rgba(139,100,40,0.05);font-weight:700">Contact</div>
+        <div class="detail-row"><span class="detail-key">Phone</span><span class="detail-val"><a href="tel:${g.phone}" style="color:var(--gold);text-decoration:none;font-weight:700">${g.phone}</a></span></div>
+        ${g.email?`<div class="detail-row"><span class="detail-key">Email</span><span class="detail-val" style="font-size:14px">${g.email}</span></div>`:''}
+      </div>
+
+      <!-- Guest summary -->
+      <div class="detail-block" style="margin-bottom:12px">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);padding:10px 16px;border-bottom:1.5px solid var(--border);background:rgba(139,100,40,0.05);font-weight:700">Profile</div>
+        <div class="detail-row"><span class="detail-key">Total Visits</span><span class="detail-val">${g.visits}</span></div>
+        <div class="detail-row"><span class="detail-key">Total Covers</span><span class="detail-val">${g.totalCovers}</span></div>
+        <div class="detail-row"><span class="detail-key">First Visit</span><span class="detail-val">${fmtDate(g.firstDate)}</span></div>
+        <div class="detail-row"><span class="detail-key">Last Visit</span><span class="detail-val">${fmtDate(g.lastDate)}</span></div>
+        <div class="detail-row"><span class="detail-key">Occasions</span><span class="detail-val" style="font-size:14px">${occasions}</span></div>
+        ${dietary!=='—'?`<div class="detail-row"><span class="detail-key">Dietary</span><span class="detail-val" style="font-size:14px;color:#9a2a1a">${dietary}</span></div>`:''}
+      </div>
+
+      ${tagHtml?`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px">${tagHtml}</div>`:''}
+
+      <!-- Private staff notes -->
+      <div style="margin-bottom:16px">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px">Staff Notes <span style="color:var(--muted);font-size:9px">(private — not visible to guest)</span></div>
+        <textarea id="guestNoteInput" placeholder="Add private notes about this guest — preferences, allergies, VIP details, past feedback…" style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;color:var(--ink);padding:14px 16px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none;resize:none;height:100px;line-height:1.6;box-sizing:border-box">${currentNote}</textarea>
+        <button onclick="saveGuestNote('${encodeURIComponent(key)}')" style="width:100%;background:var(--gold-btn);border:none;border-radius:12px;color:#fff;padding:14px;font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;cursor:pointer;margin-top:8px;box-shadow:0 4px 16px rgba(139,100,40,0.25)">Save Note</button>
+      </div>
+
+      <!-- Visit history -->
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px">Visit History (${g.bookings.length})</div>
+      ${bookingsHtml}
+    `;
+
+    document.getElementById('guestProfileOverlay').classList.add('open');
+    document.getElementById('guestProfileSheet').classList.add('open');
+  }
+
+  function saveGuestNote(encodedKey) {
+    const key = decodeURIComponent(encodedKey);
+    const text = document.getElementById('guestNoteInput').value.trim();
+    const notes = loadGuestNotes();
+    if (text) notes[key] = text; else delete notes[key];
+    saveGuestNotes(notes);
+    toast('Note saved ✓');
+  }
+
+  function closeGuestProfile() {
+    document.getElementById('guestProfileOverlay').classList.remove('open');
+    document.getElementById('guestProfileSheet').classList.remove('open');
+    if (currentView==='guests') renderGuestDirectory();
   }
 
   // ── Reports Engine ────────────────────────────────────────
