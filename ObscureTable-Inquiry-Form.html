@@ -231,9 +231,23 @@
     <div class="section-label">Reservation Details</div>
     <div class="form-grid cols-3">
       <div class="field">
-        <label>Preferred Date <span class="req">✦</span></label>
-        <input type="date" id="date" required onchange="checkBlockedDate(this.value)">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
+          <label style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:700">Preferred Date <span style="color:#9a2a1a">✦</span></label>
+          <button onclick="promptDatePin()" id="editDatesBtn" style="background:rgba(138,96,32,0.08);border:1.5px solid rgba(138,96,32,0.25);color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 12px;cursor:pointer;font-weight:700">🚫 Block Dates</button>
+        </div>
+        <input type="date" id="date" required onchange="checkBlockedDate(this.value)" style="width:100%;background:#fff;border:none;border-bottom:2px solid rgba(110,78,22,0.3);color:var(--ink);padding:10px 2px;font-family:'EB Garamond',serif;font-size:18px;outline:none;appearance:none;transition:border-color 0.2s">
         <div class="blocked-notice" id="blockedNotice"><p id="blockedMsg"></p></div>
+
+        <!-- Blocked Dates Editor (PIN protected) -->
+        <div id="dateEditorPanel" style="display:none;background:var(--surface);border:1.5px solid var(--border);padding:16px;margin-top:10px">
+          <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px">Blocked Dates</div>
+          <div id="blockedDatesList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:10px;align-items:flex-end;border-top:1px solid var(--border);padding-top:12px">
+            <input type="date" id="newBlockedDate" style="flex:1;background:#fff;border:none;border-bottom:2px solid rgba(110,78,22,0.3);color:var(--ink);padding:8px 2px;font-family:'EB Garamond',serif;font-size:17px;outline:none">
+            <button onclick="addBlockedDate()" style="background:#9a2a1a;border:none;color:#fff;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:9px 18px;cursor:pointer;font-weight:700;white-space:nowrap">Block Date</button>
+          </div>
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--muted);margin-top:8px;letter-spacing:0.08em">Blocked dates will be unavailable to guests. Click Unblock to restore.</div>
+        </div>
       </div>
       <div class="field">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
@@ -393,6 +407,69 @@
     else if (pin !== null) alert('Incorrect PIN');
   }
 
+  // ── Blocked Dates Manager ─────────────────────────────────
+  let datePinUnlocked = false;
+
+  function promptDatePin() {
+    if (datePinUnlocked) { toggleDateEditor(); return; }
+    const pin = prompt('Enter staff PIN to manage blocked dates:');
+    if (pin === STAFF_PIN) { datePinUnlocked = true; toggleDateEditor(); }
+    else if (pin !== null) alert('Incorrect PIN');
+  }
+
+  function loadBlockedDates() {
+    try { return JSON.parse(localStorage.getItem('ot_blocked_dates') || '[]'); } catch(e) { return []; }
+  }
+
+  function saveBlockedDates(dates) {
+    try { localStorage.setItem('ot_blocked_dates', JSON.stringify(dates)); } catch(e) {}
+  }
+
+  function toggleDateEditor() {
+    const panel = document.getElementById('dateEditorPanel');
+    const btn = document.getElementById('editDatesBtn');
+    const open = panel.style.display === 'none';
+    panel.style.display = open ? 'block' : 'none';
+    btn.textContent = open ? '✕ Close' : '🚫 Block Dates';
+    if (open) renderBlockedDates();
+  }
+
+  function renderBlockedDates() {
+    const dates = loadBlockedDates();
+    const container = document.getElementById('blockedDatesList');
+    if (dates.length === 0) {
+      container.innerHTML = `<div style="font-style:italic;color:var(--muted);font-size:15px;padding:6px 0">No dates blocked. All dates are available to guests.</div>`;
+      return;
+    }
+    container.innerHTML = [...dates].sort().map(d => {
+      const fmt = new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
+      return `<div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid rgba(154,42,26,0.25);padding:10px 14px">
+        <div>
+          <div style="font-size:16px;color:var(--ink);font-family:'EB Garamond',serif">${fmt}</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#9a2a1a;margin-top:2px;letter-spacing:0.06em;font-weight:700">BLOCKED</div>
+        </div>
+        <button onclick="removeBlockedDate('${d}')" style="background:rgba(154,42,26,0.06);border:1px solid rgba(154,42,26,0.25);color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:11px;padding:6px 14px;cursor:pointer;font-weight:700">✕ Unblock</button>
+      </div>`;
+    }).join('');
+  }
+
+  function addBlockedDate() {
+    const input = document.getElementById('newBlockedDate');
+    const val = input.value;
+    if (!val) { alert('Please select a date to block'); return; }
+    const dates = loadBlockedDates();
+    if (dates.includes(val)) { alert('This date is already blocked'); return; }
+    dates.push(val);
+    saveBlockedDates(dates);
+    input.value = '';
+    renderBlockedDates();
+  }
+
+  function removeBlockedDate(val) {
+    saveBlockedDates(loadBlockedDates().filter(d => d !== val));
+    renderBlockedDates();
+  }
+
   // ── Menu Manager ──────────────────────────────────────────
   let menuOrder = {}; // { itemId: quantity }
 
@@ -414,6 +491,19 @@
     try { localStorage.setItem('ot_menu_items_desktop', JSON.stringify(items)); } catch(e) {}
   }
 
+  // ── Menu Exclusivity Rules ────────────────────────────────
+  const GRAND_MENU_NAMES = ['Obscure Table Grand Menu with Chicharonillo', 'Obscure Table Menu without the Chicharonillo'];
+  const INDIVIDUAL_NAMES = ['Whole Chicharonillo with Accoutrements', 'Half Chicharonillo with Accoutrements', 'Quarter Chicharonillo with Accoutrements'];
+
+  function getConflict() {
+    const items = loadMenuItems();
+    const grandIds = items.filter(m=>GRAND_MENU_NAMES.includes(m.name)).map(m=>m.id);
+    const indivIds = items.filter(m=>INDIVIDUAL_NAMES.includes(m.name)).map(m=>m.id);
+    const hasGrand = grandIds.some(id=>menuOrder[id]>0);
+    const hasIndiv = indivIds.some(id=>menuOrder[id]>0);
+    return { hasGrand, hasIndiv, grandIds, indivIds };
+  }
+
   // ── Multi-select menu with quantity ───────────────────────
   function renderMenuGrid() {
     const items = loadMenuItems();
@@ -423,23 +513,28 @@
       grid.innerHTML = `<div style="text-align:center;font-style:italic;color:var(--muted);padding:24px;font-size:16px">No menu options. Click Edit Menu to add.</div>`;
       updateOrderSummary(); return;
     }
+    const { hasGrand, hasIndiv } = getConflict();
     items.forEach(m => {
       const qty = menuOrder[m.id] || 0;
+      const isGrand = GRAND_MENU_NAMES.includes(m.name);
+      const isIndiv = INDIVIDUAL_NAMES.includes(m.name);
+      const locked = (isGrand && hasIndiv && qty === 0) || (isIndiv && hasGrand && qty === 0);
       const card = document.createElement('div');
-      card.style.cssText = `background:#fff;border:1.5px solid ${qty>0?'var(--gold)':'var(--border)'};padding:18px 20px;transition:border-color 0.2s;display:flex;align-items:center;gap:20px`;
+      card.style.cssText = `background:${locked?'var(--surface)':'#fff'};border:1.5px solid ${locked?'rgba(110,78,22,0.1)':qty>0?'var(--gold)':'var(--border)'};padding:18px 20px;transition:all 0.2s;display:flex;align-items:center;gap:20px;opacity:${locked?'0.5':'1'}`;
       card.innerHTML = `
         <div style="font-size:24px;flex-shrink:0">${m.icon}</div>
         <div style="flex:1;min-width:0">
-          <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:var(--ink);font-weight:400">${m.name}</div>
+          <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:${locked?'var(--muted)':'var(--ink)'};font-weight:400">${m.name}</div>
           <div style="font-size:14px;color:var(--muted);font-style:italic;margin-top:3px;line-height:1.4">${m.desc}</div>
-          <div style="font-family:'Courier Prime',monospace;font-size:12px;color:var(--gold);margin-top:5px;font-weight:700">${m.price}</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:12px;color:${locked?'var(--muted)':'var(--gold)'};margin-top:5px;font-weight:700">${m.price}</div>
+          ${locked?`<div style="font-family:'Courier Prime',monospace;font-size:9px;color:#9a2a1a;margin-top:4px;letter-spacing:0.06em;font-weight:700">NOT AVAILABLE WITH CURRENT SELECTION</div>`:''}
         </div>
-        <div style="display:flex;align-items:center;gap:0;background:var(--surface);border:1.5px solid var(--border);flex-shrink:0">
-          <button onclick="changeQty(${m.id},-1)" style="background:none;border:none;color:var(--gold);font-size:22px;padding:8px 16px;cursor:pointer;font-weight:300;line-height:1">−</button>
+        <div style="display:flex;align-items:center;gap:0;background:var(--surface);border:1.5px solid var(--border);flex-shrink:0;${locked?'pointer-events:none;opacity:0.4':''}">
+          <button onclick="changeQty(${m.id},-1)" style="background:none;border:none;color:var(--gold);font-size:22px;padding:8px 16px;cursor:${locked?'not-allowed':'pointer'};font-weight:300;line-height:1">−</button>
           <div style="min-width:40px;text-align:center;font-family:'EB Garamond',serif;font-size:18px;color:var(--ink);padding:0 4px">
             ${qty>0?qty:'<span style="color:var(--muted);font-size:14px;font-style:italic">0</span>'}
           </div>
-          <button onclick="changeQty(${m.id},1)" style="background:none;border:none;color:var(--gold);font-size:22px;padding:8px 16px;cursor:pointer;font-weight:300;line-height:1">+</button>
+          <button onclick="changeQty(${m.id},1)" style="background:none;border:none;color:var(--gold);font-size:22px;padding:8px 16px;cursor:${locked?'not-allowed':'pointer'};font-weight:300;line-height:1">+</button>
         </div>`;
       grid.appendChild(card);
     });
@@ -447,8 +542,24 @@
   }
 
   function changeQty(id, delta) {
+    const items = loadMenuItems();
+    const item = items.find(m=>String(m.id)===String(id));
+    if (!item) return;
     const current = menuOrder[id] || 0;
     const next = Math.max(0, current + delta);
+    if (delta > 0) {
+      const { hasGrand, hasIndiv } = getConflict();
+      const isGrand = GRAND_MENU_NAMES.includes(item.name);
+      const isIndiv = INDIVIDUAL_NAMES.includes(item.name);
+      if (isGrand && hasIndiv) {
+        alert('Please remove individual Chicharonillo items first before adding a full menu.');
+        return;
+      }
+      if (isIndiv && hasGrand) {
+        alert('Please remove the full menu first before adding individual Chicharonillo items.');
+        return;
+      }
+    }
     if (next === 0) delete menuOrder[id]; else menuOrder[id] = next;
     renderMenuGrid();
   }
@@ -588,9 +699,10 @@
   let dateBlocked = false;
 
   function checkBlockedDate(val) {
+    const BLOCKED = loadBlockedDates();
     const notice = document.getElementById('blockedNotice');
     const msg = document.getElementById('blockedMsg');
-    if (BLOCKED_DATES.includes(val)) {
+    if (BLOCKED.includes(val)) {
       dateBlocked = true;
       msg.textContent = BLOCKED_MESSAGE;
       notice.style.display = 'block';
