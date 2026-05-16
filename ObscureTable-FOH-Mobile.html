@@ -378,7 +378,10 @@
       <div class="sheet-title" id="detailName">—</div>
       <div id="detailCode" style="font-family:'Courier Prime',monospace;font-size:13px;letter-spacing:0.1em;color:var(--gold);cursor:pointer;font-weight:700" onclick="copyDetailCode()">—</div>
     </div>
-    <button class="sheet-close" onclick="closeDetail()">×</button>
+    <div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+      <button class="sheet-close" onclick="closeDetail()">×</button>
+      <button id="copyPaymentBtn" onclick="copyForPaymentEmail()" style="background:rgba(139,100,40,0.12);border:1.5px solid rgba(139,100,40,0.35);border-radius:8px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:5px 10px;cursor:pointer;font-weight:700;white-space:nowrap">⎘ Copy for Payment Email</button>
+    </div>
   </div>
   <div class="sheet-body" id="detailBody"></div>
 </div>
@@ -865,6 +868,7 @@
   }
 
   function openDetail(id){
+    _currentDetailId = id;
     const r=window.reservations.find(x=>String(x.id)===String(id));if(!r)return;
     const sm=STATUS_META[r.status]||STATUS_META.confirmed;
     const{hr,ampm}=fmtTime(r.time);
@@ -918,6 +922,44 @@
 
   function closeDetail(){document.getElementById('detailOverlay').classList.remove('open');document.getElementById('detailSheet').classList.remove('open');}
   function copyDetailCode(){const code=document.getElementById('detailCode').textContent.split(' ·')[0];navigator.clipboard.writeText(code).catch(()=>{});toast('Code copied');}
+
+  // ── Copy for Payment Email ────────────────────────────────
+  let _currentDetailId = null;
+
+  function copyForPaymentEmail() {
+    const r = window.reservations.find(x=>String(x.id)===String(_currentDetailId));
+    if (!r) { toast('No reservation loaded'); return; }
+
+    // Format date
+    const fmtDate = d => {
+      if (!d) return '';
+      return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+    };
+
+    // Format time
+    const fmtTime = t => {
+      if (!t) return '';
+      const [h,m] = t.split(':').map(Number);
+      return `${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`;
+    };
+
+    const guestName = `${r.first||''} ${r.name||''}`.trim();
+    const text = [
+      guestName,
+      r.code||'',
+      fmtDate(r.date),
+      fmtTime(r.time),
+      r.party ? `${r.party}` : '',
+      '',
+    ].join('\t');
+
+    navigator.clipboard.writeText(text).then(() => {
+      toast('Copied — paste into Payment Email Builder');
+    }).catch(() => {
+      // Fallback: show the values
+      toast('Copy failed — check browser permissions');
+    });
+  }
   function copyCode(){navigator.clipboard.writeText(document.getElementById('editCodeVal').textContent).catch(()=>{});toast('Code copied');}
 
   async function updateStatus(id,status){
