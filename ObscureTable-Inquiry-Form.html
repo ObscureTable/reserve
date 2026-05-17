@@ -492,16 +492,19 @@
   }
 
   // ── Menu Exclusivity Rules ────────────────────────────────
-  const GRAND_MENU_NAMES = ['Obscure Table Grand Menu with Chicharonillo', 'Obscure Table Menu without the Chicharonillo'];
+  const GRAND_MENU_NAME = 'Obscure Table Grand Menu with Chicharonillo';
+  const PLAIN_MENU_NAME = 'Obscure Table Menu without the Chicharonillo';
   const INDIVIDUAL_NAMES = ['Whole Chicharonillo with Accoutrements', 'Half Chicharonillo with Accoutrements', 'Quarter Chicharonillo with Accoutrements'];
 
   function getConflict() {
     const items = loadMenuItems();
-    const grandIds = items.filter(m=>GRAND_MENU_NAMES.includes(m.name)).map(m=>m.id);
-    const indivIds = items.filter(m=>INDIVIDUAL_NAMES.includes(m.name)).map(m=>m.id);
-    const hasGrand = grandIds.some(id=>menuOrder[id]>0);
-    const hasIndiv = indivIds.some(id=>menuOrder[id]>0);
-    return { hasGrand, hasIndiv, grandIds, indivIds };
+    const grandItem = items.find(m=>m.name===GRAND_MENU_NAME);
+    const plainItem = items.find(m=>m.name===PLAIN_MENU_NAME);
+    const indivItems = items.filter(m=>INDIVIDUAL_NAMES.includes(m.name));
+    const hasGrand = grandItem && menuOrder[grandItem.id] > 0;
+    const hasPlain = plainItem && menuOrder[plainItem.id] > 0;
+    const hasIndiv = indivItems.some(m=>menuOrder[m.id]>0);
+    return { hasGrand, hasPlain, hasIndiv, grandItem, plainItem, indivItems };
   }
 
   // ── Multi-select menu with quantity ───────────────────────
@@ -513,12 +516,15 @@
       grid.innerHTML = `<div style="text-align:center;font-style:italic;color:var(--muted);padding:24px;font-size:16px">No menu options. Click Edit Menu to add.</div>`;
       updateOrderSummary(); return;
     }
-    const { hasGrand, hasIndiv } = getConflict();
+    const { hasGrand, hasPlain, hasIndiv } = getConflict();
     items.forEach(m => {
       const qty = menuOrder[m.id] || 0;
-      const isGrand = GRAND_MENU_NAMES.includes(m.name);
+      const isGrand = m.name === GRAND_MENU_NAME;
+      const isPlain = m.name === PLAIN_MENU_NAME;
       const isIndiv = INDIVIDUAL_NAMES.includes(m.name);
-      const locked = (isGrand && hasIndiv && qty === 0) || (isIndiv && hasGrand && qty === 0);
+      const locked = (hasGrand && !isGrand && qty === 0) ||
+                     (hasPlain && isIndiv && qty === 0) ||
+                     (hasIndiv && isPlain && qty === 0);
       const card = document.createElement('div');
       card.style.cssText = `background:${locked?'var(--surface)':'#fff'};border:1.5px solid ${locked?'rgba(110,78,22,0.1)':qty>0?'var(--gold)':'var(--border)'};padding:18px 20px;transition:all 0.2s;display:flex;align-items:center;gap:20px;opacity:${locked?'0.5':'1'}`;
       card.innerHTML = `
@@ -548,15 +554,24 @@
     const current = menuOrder[id] || 0;
     const next = Math.max(0, current + delta);
     if (delta > 0) {
-      const { hasGrand, hasIndiv } = getConflict();
-      const isGrand = GRAND_MENU_NAMES.includes(item.name);
+      const { hasGrand, hasPlain, hasIndiv } = getConflict();
+      const isGrand = item.name === GRAND_MENU_NAME;
+      const isPlain = item.name === PLAIN_MENU_NAME;
       const isIndiv = INDIVIDUAL_NAMES.includes(item.name);
-      if (isGrand && hasIndiv) {
-        alert('Please remove individual Chicharonillo items first before adding a full menu.');
+      if (isGrand && (hasPlain || hasIndiv)) {
+        alert('Please remove other selections first before choosing the Grand Menu.');
         return;
       }
-      if (isIndiv && hasGrand) {
-        alert('Please remove the full menu first before adding individual Chicharonillo items.');
+      if (hasGrand && !isGrand) {
+        alert('Please remove the Grand Menu first before adding other items.');
+        return;
+      }
+      if (isPlain && hasIndiv) {
+        alert('Please remove individual Chicharonillo items first.');
+        return;
+      }
+      if (isIndiv && hasPlain) {
+        alert('Please remove the set menu first before adding individual Chicharonillo items.');
         return;
       }
     }

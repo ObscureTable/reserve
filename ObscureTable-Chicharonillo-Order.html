@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5f0e8">
+<title>OT Chicharonillo — Pickup Order</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyDGyboz57n06VHx_6N6nkSfi6CjcousUMU",
+    authDomain: "obscure-table.firebaseapp.com",
+    databaseURL: "https://obscure-table-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "obscure-table",
+    storageBucket: "obscure-table.firebasestorage.app",
+    messagingSenderId: "170560318474",
+    appId: "1:170560318474:web:734bb2a7f6404fac43c3f3"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  window._fbWriteOrder = async (id, data) => {
+    await set(ref(db, `chicharonillo_orders/${id}`), data);
+  };
+  window._fbReady = true;
+  if (window._fbQueue) {
+    window._fbQueue.forEach(([id,data]) => window._fbWriteOrder(id,data).catch(console.warn));
+    window._fbQueue = [];
+  }
+</script>
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #ede6d6;
+    --surface2: #e4dbc8;
+    --border: rgba(120,85,30,0.2);
+    --gold: #b84a08;
+    --gold-btn: #c85510;
+    --ink: #1a1208;
+    --muted: #7a5030;
+    --stone: #5a3820;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bot: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Cormorant Garamond', Georgia, serif; min-height: 100dvh; -webkit-font-smoothing: antialiased; }
+
+  .header { background: var(--bg); border-bottom: 1.5px solid var(--border); padding: max(16px, calc(var(--safe-top) + 12px)) 20px 14px; text-align: center; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 12px rgba(120,85,30,0.08); }
+  .header-sub { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-top: 6px; font-weight: 700; }
+
+  .progress-wrap { padding: 14px 20px 0; background: var(--bg); }
+  .progress-steps { display: flex; align-items: center; margin-bottom: 8px; }
+  .step-dot { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--muted); flex-shrink: 0; transition: all 0.3s; background: var(--surface); }
+  .step-dot.active { border-color: var(--gold); color: var(--gold); background: rgba(184,74,8,0.1); font-weight: 700; }
+  .step-dot.done { border-color: var(--gold); color: #fff; background: var(--gold); }
+  .step-line { flex: 1; height: 1.5px; background: var(--border); transition: background 0.3s; }
+  .step-line.done { background: rgba(184,74,8,0.4); }
+  .step-labels { display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1.5px solid var(--border); }
+  .step-label { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: center; flex: 1; transition: color 0.3s; }
+  .step-label.active { color: var(--gold); font-weight: 700; }
+
+  .scroll-body { padding: 0 20px calc(110px + var(--safe-bot)); }
+  .step-panel { display: none; animation: fadeIn 0.25s ease; }
+  .step-panel.active { display: block; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+
+  .step-intro { padding: 24px 0 20px; border-bottom: 1.5px solid var(--border); margin-bottom: 26px; }
+  .step-intro-title { font-size: 30px; font-weight: 300; letter-spacing: 0.05em; color: var(--ink); margin-bottom: 5px; }
+  .step-intro-sub { font-style: italic; font-size: 18px; color: var(--muted); }
+
+  .field { margin-bottom: 22px; }
+  .field-label { display: block; font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 9px; font-weight: 700; }
+  .req { color: #b84a3a; margin-left: 2px; }
+
+  .field-input { width: 100%; background: #fff; border: 1.5px solid var(--border); border-radius: 12px; color: var(--ink); padding: 16px 18px; font-family: 'Cormorant Garamond', serif; font-size: 20px; outline: none; appearance: none; -webkit-appearance: none; transition: border-color 0.2s, box-shadow 0.2s; }
+  .field-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184,74,8,0.1); }
+  .field-input::placeholder { color: #b8a888; font-style: italic; }
+  textarea.field-input { resize: none; height: 100px; line-height: 1.6; }
+
+  /* Stepper */
+  .stepper { display: flex; align-items: center; background: #fff; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .stepper-btn { background: var(--surface); border: none; color: var(--gold); font-size: 30px; padding: 12px 24px; cursor: pointer; line-height: 1; font-weight: 300; transition: background 0.15s; }
+  .stepper-btn:active { background: var(--surface2); }
+  .stepper-display { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .stepper-num { font-size: 34px; font-weight: 300; color: var(--ink); line-height: 1; }
+  .stepper-word { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+  /* Time Grid */
+  .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .time-chip { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; padding: 15px 8px; text-align: center; cursor: pointer; transition: all 0.15s; }
+  .time-chip.selected { background: rgba(184,74,8,0.08); border-color: var(--gold); border-width: 2px; }
+  .time-chip.blocked { background: var(--surface2); border-color: var(--border); cursor: not-allowed; opacity: 0.45; pointer-events: none; }
+  .time-chip-hr { font-size: 22px; font-weight: 400; color: var(--ink); line-height: 1; }
+  .time-chip-ampm { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; color: var(--muted); margin-top: 3px; }
+
+  /* Blocked date notice */
+  .blocked-notice { background: rgba(154,42,26,0.06); border: 1.5px solid rgba(154,42,26,0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: none; }
+  .blocked-notice-text { font-size: 16px; color: #9a2a1a; font-style: italic; line-height: 1.5; }
+
+  /* Order card */
+  .order-card { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 18px 16px; margin-bottom: 12px; transition: all 0.15s; }
+  .order-card.selected { background: rgba(184,74,8,0.07); border-color: var(--gold); border-width: 2px; }
+  .order-card-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
+  .order-card-name { font-size: 18px; font-weight: 400; color: var(--ink); margin-bottom: 3px; }
+  .order-card-desc { font-size: 14px; color: var(--muted); font-style: italic; line-height: 1.5; }
+  .order-card-price { font-family: 'Courier Prime', monospace; font-size: 12px; color: var(--gold); margin-top: 4px; letter-spacing: 0.06em; font-weight: 700; }
+
+  /* Review */
+  .review-block { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(120,85,30,0.06); }
+  .review-block-title { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); padding: 13px 18px; border-bottom: 1.5px solid var(--border); background: rgba(184,74,8,0.05); font-weight: 700; }
+  .review-row { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 18px; border-bottom: 1px solid rgba(120,85,30,0.08); }
+  .review-row:last-child { border-bottom: none; }
+  .review-key { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
+  .review-val { font-size: 18px; color: var(--ink); text-align: right; max-width: 65%; }
+
+  /* Policy */
+  .policy-strip { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
+  .policy-title { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; font-weight: 700; }
+  .policy-text { font-size: 16px; color: var(--muted); line-height: 1.75; font-style: italic; }
+
+  /* Footer nav */
+  .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 1.5px solid var(--border); padding: 14px 20px max(20px, var(--safe-bot)); display: flex; gap: 12px; z-index: 100; box-shadow: 0 -4px 20px rgba(120,85,30,0.1); }
+  .btn-back { background: transparent; border: 1.5px solid var(--border); border-radius: 14px; color: var(--stone); padding: 16px 22px; font-family: 'Courier Prime', monospace; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; flex-shrink: 0; }
+  .btn-next { flex: 1; background: var(--gold-btn); border: none; border-radius: 14px; color: #fff; padding: 18px; font-family: 'Courier Prime', monospace; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(184,74,8,0.3); transition: background 0.2s; }
+  .btn-next:active { background: var(--gold); }
+
+  /* Success */
+  .success-screen { display: none; text-align: center; padding: 40px 24px 120px; }
+  .success-screen.show { display: block; }
+  .success-mark { font-size: 52px; margin-bottom: 14px; }
+  .success-title { font-size: 36px; font-weight: 300; letter-spacing: 0.08em; color: var(--ink); margin-bottom: 8px; }
+  .success-sub { font-style: italic; font-size: 17px; color: var(--muted); margin-bottom: 28px; line-height: 1.7; }
+  .success-code-wrap { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
+  .success-code-label { font-family: 'Courier Prime', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
+  .success-code-val { font-family: 'Courier Prime', monospace; font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: 0.08em; word-break: break-all; }
+  .success-note { font-style: italic; font-size: 14px; color: var(--muted); line-height: 1.7; margin-top: 10px; }
+  .btn-copy-success { background: var(--gold-btn); border: none; border-radius: 14px; color: #fff; padding: 16px 32px; font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; cursor: pointer; margin-bottom: 14px; }
+  .btn-new { background: transparent; border: 1.5px solid var(--border); border-radius: 14px; color: var(--muted); padding: 16px 32px; font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; cursor: pointer; }
+
+  /* PIN-locked editor buttons */
+  .pin-btn { background: rgba(184,74,8,0.08); border: 1.5px solid rgba(184,74,8,0.25); border-radius: 8px; color: var(--gold); font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 12px; cursor: pointer; font-weight: 700; }
+
+  /* Editor panels */
+  .editor-panel { display: none; background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 10px; }
+  .editor-title { font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 12px; }
+  .editor-item { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; margin-bottom: 8px; }
+  .editor-item-label { font-size: 16px; color: var(--ink); }
+  .editor-item-tag { font-family: 'Courier Prime', monospace; font-size: 9px; color: var(--gold); font-weight: 700; letter-spacing: 0.06em; margin-top: 2px; }
+  .editor-remove { background: rgba(154,42,26,0.07); border: 1.5px solid rgba(154,42,26,0.2); border-radius: 6px; color: #9a2a1a; font-family: 'Courier Prime', monospace; font-size: 11px; padding: 5px 10px; cursor: pointer; font-weight: 700; }
+  .editor-add-row { display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px; }
+  .editor-input { flex: 1; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; color: var(--ink); padding: 12px 14px; font-family: 'Cormorant Garamond', serif; font-size: 18px; outline: none; }
+  .editor-input:focus { border-color: var(--gold); }
+  .editor-add-btn { background: var(--gold-btn); border: none; border-radius: 10px; color: #fff; font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 16px; cursor: pointer; font-weight: 700; white-space: nowrap; }
+  .editor-hint { font-family: 'Courier Prime', monospace; font-size: 9px; color: var(--muted); margin-top: 8px; letter-spacing: 0.08em; }
+
+  /* Order summary */
+  .order-summary { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-top: 18px; }
+  .order-summary-title { font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 12px; }
+  .order-summary-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid rgba(120,85,30,0.08); }
+  .order-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 12px; margin-top: 4px; }
+  .order-total-label { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+  .order-total-val { font-family: 'Courier Prime', monospace; font-size: 18px; color: var(--gold); font-weight: 700; }
+
+  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(184,74,8,0.92); color: #fff; padding: 12px 22px; border-radius: 24px; font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.1em; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjc1IDEyNTciPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojZDg2NjNmO30uY2xzLTJ7ZmlsbDojMDU0YTUxO308L3N0eWxlPjwvZGVmcz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik01MTguMTUsNzc2LjgzYy01MC40OSwwLTk3LjI1LTIyLjY2LTEwNi43MS03My40NC04LjAzLTQzLjYsMi44Ny05OS41NCwzNy4wMS0xMjcuOTQsMTQuMDYtMTEuNDcsNDMuMDMtMTYuNjQsNjkuOTktMTYuNjQsMTcuNzksMCwzNC43MSwyLjI5LDQ2LjE4LDYuMDIsMjQuNjcsOC4wMywxNS4yLDQ5LjkxLDE0LjkyLDc2LjMxLTEwLjA0LTIuNTgtMzEuODQtNS43NC00OS45MS01Ljc0LTEwLjA0LDAtMTkuMjIuODYtMjQuMzgsMy43My0zMi4xMywxNy41LTIwLjY1LDY0LjI2LDE1LjQ5LDY5LjEzLDE2LjY0LDIuMywzOS44Ny0xMC42MSw1My4zNi0xMC42MSw1Ljc0LDAsOS43NSwyLjI5LDEwLjMzLDkuNzUsMS43MiwyMC45NCw1Ljc0LDU1LjY1LTE0LjYzLDYxLjY4LTE2LjkyLDUuMTYtMzQuNDIsNy43NS01MS42NCw3Ljc1WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTY2Ni40Miw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTkxMy42OSw3NzYuMjZsLTE4LjA3LS44Ni0xNC4wNi0uMjktOC4zMi0xLjQzLTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDguNTctMjIuOTUuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuMTQuMjktNTEuMzUuMjktMTIuMzQuODYtMjQuNjcuODYtMzcuMDEuMjktMTAuMDQuNTctMjAuMzcsMS40My0zMC42OS4yOS0uNTcuMjktMi41OC41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uMjkuODYtLjU3LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjQzLDE3Ljc5LTEuNDNoMjAuOTRjNy4xNy0uMjksMTQuMDYtLjU3LDIwLjk0LS4yOSwyLjI5LDAsNC41OSwwLDYuNi44NiwxLjcyLjg2LDIuODcsMi4yOSwzLjczLDQuMDIuODYsMi41OCwxLjQzLDUuNDUsMS43Miw4LjMyLjI5LDMuNDQuMjksNy4xNy41NywxMC42MS4yOSwxMC45LS4yOSwyMi4wOS0uNTcsMzIuOTktLjU3LDIwLjM3LS41Nyw0MS4wMi0uNTcsNjEuMzkuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksNy43NS0uMjksMjMuNTItLjI5LDIzLjUybC0uODYsMS40My0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0LDEuMTVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTA5NS4wNCw3NzYuODNjLTUwLjQ5LDAtOTcuMjUtMjIuNjYtMTA2LjcxLTczLjQ0LTguMDMtNDMuNiwyLjg3LTk5LjU0LDM3LjAxLTEyNy45NCwxNC4wNi0xMS40Nyw0My4wMy0xNi42NCw2OS45OS0xNi42NCwxNy43OSwwLDM0LjcxLDIuMjksNDYuMTgsNi4wMiwyNC42Nyw4LjAzLDE1LjIsNDkuOTEsMTQuOTIsNzYuMzEtMTAuMDQtMi41OC0zMS44NC01Ljc0LTQ5LjkxLTUuNzQtMTAuMDQsMC0xOS4yMi44Ni0yNC4zOCwzLjczLTMyLjEzLDE3LjUtMjAuNjUsNjQuMjYsMTUuNDksNjkuMTMsMTYuNjQsMi4zLDM5Ljg3LTEwLjYxLDUzLjM2LTEwLjYxLDUuNzQsMCw5Ljc1LDIuMjksMTAuMzMsOS43NSwxLjcyLDIwLjk0LDUuNzQsNTUuNjUtMTQuNjMsNjEuNjgtMTYuOTIsNS4xNi0zNC40Miw3Ljc1LTUxLjY0LDcuNzVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTI0My4zMSw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE0NzEuOSw3NzAuMjNjLTExLjE5LDAtMjEuMjMtLjg2LTI0Ljk2LTQuMy04LjYxLTcuNzUtLjg2LTQzLjYsMC01Ni41MSwzLjczLTUwLjc4LTQuMy0xMjkuOTUsNTQuNS0xNDEuNzEsMTIuMzQtMi4zLDI2LjY4LTQuNTksNDAuNDUtNC41OSwyNC45NiwwLDQ4Ljc3LDYuNiw1OS4wOSwyOS44MywyMy41Miw1My4wNywxOC42NSwxMTYuNDcsMjMuNTIsMTc1LjI3LTEwLjYxLDAtMzUuNTcsMS43Mi01My4wNywxLjcyLTcuNDYsMC0xMy40OC0uMjktMTYuNjQtMS4xNS0uODYtMTIuMDUsMC0yNC4xLDAtMzYuNDMtMTMuNDgtLjU3LTI3LjI1LS41Ny00MC43My41Ny00Ljg4LjI5LDIuMjksMzUuODYtNS43NCwzNS44Ni02LjYsMC0yMi4zOCwxLjQzLTM2LjQzLDEuNDNaTTE1NTAuNSw2NzYuNDNjLTEuNDMtMjIuMzgtOC44OS0zMy44NS0xNi4zNS0zMy44NXMtMTQuOTIsMTAuOS0xNi4wNiwzMy4yOGMxMC42MS4yOSwyMS41MS4yOSwzMi40Mi41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xODI2LjYyLDc2Ny44N2MtMy41OSwwLTguODQtMS4xLTEyLjk4LTEuMzgtMTkuNi0uODMtMzkuMjEsMC01OC41NC0uODMtNC4xNC0xNy45NS02LjM1LTM2LjQ1LTE0LjkxLTUyLjQ2LTEuOTMtMy41OS01LjI1LTUuMjUtOC4yOC01LjI1LTMuNTksMC02LjYzLDIuNDktNi42Myw3LjE4LDAsMTYuNTctLjU1LDMzLjQxLjU1LDQ5Ljk4LTguMDEtLjU1LTQ0LjE4LTEuMS02Mi4xMi0xLjFoLTguODRjLTYuMDcsMC0yLjQ4LTEyLjE1LTEuOTMtMTguMjIsMy41OS01Ny4xNi00Ljk3LTExNC41OS0xLjM4LTE3MS43NCwxMi40Mi02LjYzLDU4LjU0LTguMDEsNzguMTQtOC4wMSwyMi45MiwwLDQ3Ljc3LjI4LDY4Ljc1LDEwLjc3LDIxLjI2LDEwLjQ5LDM3LDM5LjIxLDMzLjY5LDYyLjk1LTMuMDQsMjEuNTQtMTkuODgsMzkuNzYtMzUuODksNTQuOTUsMTguMjIsMTguMjIsMzAuMSw0My4wNywzNS44OSw2Ny45MiwxLjEsNC4xNC0xLjY2LDUuMjUtNS41Miw1LjI1Wk0xNzMyLjE5LDY2MS44NGM0MC4zMSwwLDQ4Ljg3LTQ1LjI4LDMuNTktNDYuNjYtMS45MywwLTMuODctLjI4LTYuMDctLjI4LTMuODcsMC03LjQ1LjgzLTcuMTgsNC40MiwxLjM4LDEzLjgxLDEuMSwyOC4xNi44Myw0MS45NywzLjA0LjU1LDYuMDcuNTUsOC44NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xOTQwLjQ4LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0xOTM5LjEsNzAwLjIyYzIwLjE2LjI4LDM1LjYyLTE4LjIyLDMxLjQ4LTM4LjEtMi43Ni0xNC4wOC0xNS40Ni0yNC44NS0yOS44Mi0yNS40LTQuNDIsMC04Ljg0LjgzLTEyLjk4LDIuMjEtOC4yOCwzLjMxLTE0LjkxLDEwLjIyLTE3Ljk1LDE4LjUtMi4yMSw1LjUyLTIuNzYsMTEuODctMS4zOCwxNy40LDIuNDksMTQuNjMsMTYuMDEsMjUuNCwzMC42NSwyNS40WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTIxMjMuNzUsNzY2LjIxYy0xMS42LDAtNTYuMzMuNTUtNjYuODItMy44Nyw0LjY5LTU1LjIyLS4yOC0xMTAuNzIuMjgtMTY2LjIyLDAtMjYuNzgsMS4zOC0yOC40NCwyNi41MS0yOC45OSw0LjE0LDAsMTEuMDUtLjU1LDE4LjIyLS41NSwxMC4yMiwwLDIwLjk4LjgzLDI1LjEzLDQuOTcsOS4xMSw5LjM5LDI5LjU0LDYxLjAyLDM1LjA3LDcyLjYyLTEuMzgtMjMuNzUsMS4xLTQ4LjA0LTMuMDQtNzEuNzksMjQuMy0uMjgsNDguMzItMy41OSw3Mi42Mi0yLjIxLTUuMjUsNjQuMzMtOC41NiwxMjguOTQtMy44NywxOTMtMjIuMzcsMi4yMS00NS4wMSwxLjY2LTY3LjM3LDEuNjYtMTQuMzYtMjMuMTktMjIuOTItNDkuNDItMzUuODktNzMuMTcuMjgsMjQuODUtMS45Myw0OS43LS44Myw3NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMjg5LjcyLDc2OS44bC0xNy4zOS0uODMtMTMuNTMtLjI4LTguMDEtMS4zOC0xLjEtLjgzcy0uODMtMzAuNjUtLjgzLTQ1LjgzYzAtMTEuMDUuNTUtMjIuMDkuODMtMzMuNDEuMjgtMTYuNTcuMjgtMzIuODYuMjgtNDkuNDIuMjgtMTEuODcuODMtMjMuNzUuODMtMzUuNjIuMjgtOS42Ni41NS0xOS42LDEuMzgtMjkuNTQuMjgtLjU1LjI4LTIuNDkuNTUtMy4wNC41NS0uNTUsMS4xLS44MywxLjY2LS41NS4yOC0uMjguODMtLjU1LDEuMzgtLjU1LDUuNTItMS4zOCwxMS4zMi0xLjM4LDE3LjEyLTEuMzhoMjAuMTZjNi45LS4yOCwxMy41My0uNTUsMjAuMTYtLjI4LDIuMjEsMCw0LjQyLDAsNi4zNS44MywxLjY2LjgzLDIuNzYsMi4yMSwzLjU5LDMuODcuODMsMi40OSwxLjM4LDUuMjUsMS42Niw4LjAxLjI4LDMuMzEuMjgsNi45LjU1LDEwLjIyLjI4LDEwLjQ5LS4yOCwyMS4yNi0uNTUsMzEuNzUtLjU1LDE5LjYtLjU1LDM5LjQ4LS41NSw1OS4wOS41NSwyMC40My44Myw0MC41OS44Myw2MS4wMi0uMjgsNy40Ni0uMjgsMjIuNjQtLjI4LDIyLjY0bC0uODMsMS4zOC0xLjkzLDEuOTMtNS44LDEuMS0yNi41MSwxLjFaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjM0OC42Myw3NjIuNjNjLTEuNjYtNjQuMzMtNS44LTEyOC45NC0xLjEtMTkzLDExLjYtNC4xNCwyNC41Ny02LjA3LDM3LTYuMDcsOC4yOCwwLDE2LjAxLjgzLDIzLjc1LDIuNDgsMTIuNDIsMi43NiwxMi4xNSwyMS4yNiwxMS44NywzMy45Ni0uMjgsMzIuMzEtMi4yMSw2NC42MS0xLjkzLDk2LjkyLDIyLjA5LjU1LDQ0LjQ1LDEuNjYsNjYuNTQsMS42Ni0uODMsMjIuMDktMy4wNCw0NC43My0xLjM4LDY2LjgyLTE4LjUsMC0xMTYuMjQtLjI4LTEzNC43NC0yLjc2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTI0OTQuMDgsNzYyLjYzYy0xLjY2LTY0LjMzLTUuOC0xMjguOTQtMS4xLTE5MywxMS42LTQuMTQsMjQuNTctNi4wNywzNy02LjA3LDguMjgsMCwxNi4wMS44MywyMy43NSwyLjQ4LDEyLjQyLDIuNzYsMTIuMTUsMjEuMjYsMTEuODcsMzMuOTYtLjI4LDMyLjMxLTIuMjEsNjQuNjEtMS45Myw5Ni45MiwyMi4wOS41NSw0NC40NSwxLjY2LDY2LjU0LDEuNjYtLjgzLDIyLjA5LTMuMDQsNDQuNzMtMS4zOCw2Ni44Mi0xOC41LDAtMTE2LjI0LS4yOC0xMzQuNzQtMi43NloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNzM1Ljk1LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0yNzM0LjU3LDcwMC4yMmMyMC4xNi4yOCwzNS42Mi0xOC4yMiwzMS40OC0zOC4xLTIuNzYtMTQuMDgtMTUuNDYtMjQuODUtMjkuODItMjUuNC00LjQyLDAtOC44NC44My0xMi45OCwyLjIxLTguMjgsMy4zMS0xNC45MSwxMC4yMi0xNy45NSwxOC41LTIuMjEsNS41Mi0yLjc2LDExLjg3LTEuMzgsMTcuNCwyLjQ4LDE0LjYzLDE2LjAxLDI1LjQsMzAuNjUsMjUuNFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMjUuOTgsNTI3LjQ4bDEyLjQtMTUuODZjMy4yLTQuMSw5LjI5LTQuNDIsMTIuOTEtLjY4bDU4LjM5LDUzLjk3YzIuOTcsMy4wNywzLjIyLDcuODcuNTksMTEuMjNsLTQuMyw1LjVjLTIuNzMsMy40OS03LjY4LDQuMzItMTEuNCwxLjkybC02Ni40OS00My42MmMtNC4yMy0yLjczLTUuMTktOC41MS0yLjA5LTEyLjQ3WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTM4Ny4xNSw0OTAuNzJsMTcuNzMtOS41M2M0LjU4LTIuNDYsMTAuMjgtLjMxLDEyLjA5LDQuNTdsMjEuNDMsNTMuN2MxLjQ5LDQuMDEtLjIxLDguNS0zLjk4LDEwLjUybC02LjE1LDMuM2MtMy45MSwyLjEtOC43Ny44Ny0xMS4yMS0yLjgzbC0zMy4wMS00Ny40N2MtMi43Ny00LjItMS4zNC05Ljg4LDMuMS0xMi4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMTcuNDUsNTc5Ljg1bC00Ljk4LDE5LjVjLTEuMjksNS4wNCwyLjE4LDEwLjA1LDcuMzUsMTAuNjNsNTcuMjgsNy44NWM0LjI1LjQ4LDguMi0yLjI1LDkuMjUtNi40bDEuNzMtNi43NmMxLjEtNC4zLTEuMjctOC43Mi01LjQ1LTEwLjJsLTU0LjAzLTIwLjZjLTQuNzUtMS42Ny05LjkxLDEuMDgtMTEuMTUsNS45NloiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTYyLjc5LDY1NC40djIwLjEzYzAsNS4yLTQuNiw5LjItOS43NSw4LjQ5bC03OS4yNC02LjU1Yy00LjIzLS41OS03LjM4LTQuMjEtNy4zOC04LjQ5di02Ljk4YzAtNC40NCwzLjM5LTguMTQsNy44LTguNTNsNzkuMjQtNi42YzUuMDEtLjQ1LDkuMzMsMy41LDkuMzMsOC41M1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDcyMS4wNGwtOC4wOSwxOC40M2MtMi4wOSw0Ljc2LTcuOTEsNi41OC0xMi4zNCwzLjg1bC00OS45Ni0yOS4xYy0zLjY0LTIuMjQtNS4wNy02LjgyLTMuMzUtMTAuNzRsMi44MS02LjM5YzEuNzgtNC4wNiw2LjM3LTYuMDksMTAuNTgtNC42N2w1NS4yNSwxNy4wNmM0Ljc3LDEuNiw3LjE0LDYuOTYsNS4xMSwxMS41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDYwNy45bC04LjA5LTE4LjQzYy0yLjA5LTQuNzYtNy45MS02LjU4LTEyLjM0LTMuODVsLTQ5Ljk2LDI5LjFjLTMuNjQsMi4yNC01LjA3LDYuODItMy4zNSwxMC43NGwyLjgxLDYuMzljMS43OCw0LjA2LDYuMzcsNi4wOSwxMC41OCw0LjY3bDU1LjI1LTE3LjA2YzQuNzctMS42LDcuMTQtNi45Niw1LjExLTExLjU3WiIvPjwvc3ZnPgo=" alt="OT Chicharonillo" style="display:block;max-width:220px;height:auto;margin:0 auto;">
+  <div class="header-sub">Pickup Order</div>
+</div>
+
+<!-- Progress indicator -->
+<div class="progress-wrap">
+  <div class="progress-steps">
+    <div class="step-dot active" id="dot1">1</div>
+    <div class="step-line" id="line1"></div>
+    <div class="step-dot" id="dot2">2</div>
+    <div class="step-line" id="line2"></div>
+    <div class="step-dot" id="dot3">3</div>
+    <div class="step-line" id="line3"></div>
+    <div class="step-dot" id="dot4">4</div>
+  </div>
+  <div class="step-labels">
+    <div class="step-label active" id="lbl1">You</div>
+    <div class="step-label" id="lbl2">When</div>
+    <div class="step-label" id="lbl3">Order</div>
+    <div class="step-label" id="lbl4">Review</div>
+  </div>
+</div>
+
+<div class="scroll-body" id="mainForm">
+
+  <!-- STEP 1: Who -->
+  <div class="step-panel active" id="step1">
+    <div class="step-intro">
+      <div class="step-intro-title">Who's ordering?</div>
+      <div class="step-intro-sub">Your contact details</div>
+    </div>
+    <div class="field"><label class="field-label">Last Name <span class="req">✦</span></label><input class="field-input" id="fLastName" type="text" placeholder="dela Cruz" autocomplete="family-name"></div>
+    <div class="field"><label class="field-label">First Name <span class="req">✦</span></label><input class="field-input" id="fFirstName" type="text" placeholder="Juan" autocomplete="given-name"></div>
+    <div class="field"><label class="field-label">Phone <span class="req">✦</span></label><input class="field-input" id="fPhone" type="tel" placeholder="+63 917 000 0000" autocomplete="tel"></div>
+    <div class="field"><label class="field-label">Email</label><input class="field-input" id="fEmail" type="email" placeholder="juan@email.com" autocomplete="email"></div>
+  </div>
+
+  <!-- STEP 2: When -->
+  <div class="step-panel" id="step2">
+    <div class="step-intro">
+      <div class="step-intro-title">When to pick up?</div>
+      <div class="step-intro-sub">Choose your date and time</div>
+    </div>
+
+    <!-- Date -->
+    <div class="field">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+        <label class="field-label" style="margin-bottom:0">Pickup Date <span class="req">✦</span></label>
+        <button class="pin-btn" onclick="promptDatePin()" id="editDatesBtn">🚫 Block Dates</button>
+      </div>
+      <input class="field-input" id="fDate" type="date" onchange="checkBlockedDate(this.value)">
+      <div class="blocked-notice" id="blockedNotice">
+        <div class="blocked-notice-text">This date is unavailable for pickup. Please select another date.</div>
+      </div>
+      <!-- Blocked Dates Editor -->
+      <div class="editor-panel" id="dateEditorPanel">
+        <div class="editor-title">Blocked Pickup Dates</div>
+        <div id="blockedDatesList"></div>
+        <div class="editor-add-row">
+          <input type="date" id="newBlockedDate" class="editor-input">
+          <button class="editor-add-btn" onclick="addBlockedDate()">Block</button>
+        </div>
+        <div class="editor-hint">Blocked dates are unavailable to customers. Tap ✕ to unblock.</div>
+      </div>
+    </div>
+
+    <!-- Time -->
+    <div class="field">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+        <label class="field-label" style="margin-bottom:0">Pickup Time <span class="req">✦</span></label>
+        <button class="pin-btn" onclick="promptTimePin()" id="editTimesBtn">✏ Edit Times</button>
+      </div>
+      <div class="time-grid" id="timeGrid"></div>
+      <!-- Time Slot Editor -->
+      <div class="editor-panel" id="timeEditorPanel" style="margin-top:12px">
+        <div class="editor-title">Manage Pickup Time Slots</div>
+        <div id="timeSlotList"></div>
+        <div class="editor-add-row">
+          <input type="time" id="newTimeSlot" class="editor-input">
+          <button class="editor-add-btn" onclick="addTimeSlot()">Add</button>
+        </div>
+        <div class="editor-hint">Only enabled times are shown to customers.</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="field-label">Special Instructions</label>
+      <textarea class="field-input" id="fNotes" placeholder="Any special requests for your order…" rows="3"></textarea>
+    </div>
+  </div>
+
+  <!-- STEP 3: Order -->
+  <div class="step-panel" id="step3">
+    <div class="step-intro">
+      <div class="step-intro-title">Your order</div>
+      <div class="step-intro-sub">Select quantity</div>
+    </div>
+    <div id="orderGrid"></div>
+    <div id="orderSummaryWrap" style="display:none">
+      <div class="order-summary">
+        <div class="order-summary-title">Order Summary</div>
+        <div id="orderSummaryRows"></div>
+        <div class="order-total">
+          <div class="order-total-label">Total</div>
+          <div class="order-total-val" id="orderTotalVal">PHP 0</div>
+        </div>
+        <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--muted);margin-top:10px;letter-spacing:0.06em;font-style:italic">50% down payment required to confirm order</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Review -->
+  <div class="step-panel" id="step4">
+    <div class="step-intro">
+      <div class="step-intro-title">Review your order</div>
+      <div class="step-intro-sub">Confirm before submitting</div>
+    </div>
+    <div id="reviewContent"></div>
+    <div class="policy-strip">
+      <div class="policy-title">Pickup & Payment Policy</div>
+      <div class="policy-text" style="margin-bottom:10px">A <strong style="color:var(--gold);font-style:normal">50% down payment</strong> is required to confirm your order. The remaining 50% is due upon pickup.</div>
+      <div class="policy-text" style="margin-bottom:6px">✦ <strong style="color:var(--gold);font-style:normal">48 hours or more before</strong> pickup — full refund of down payment.</div>
+      <div class="policy-text">✦ <strong style="color:#9a2a1a;font-style:normal">Less than 48 hours</strong> before pickup — down payment is non-refundable.</div>
+    </div>
+  </div>
+
+</div><!-- /mainForm -->
+
+<!-- Success -->
+<div class="success-screen" id="successScreen">
+  <div class="success-mark">🐷</div>
+  <div class="success-title">Order Received</div>
+  <p class="success-sub">Thank you. Our team will be in touch to confirm your pickup and payment details.</p>
+  <div class="success-code-wrap">
+    <div class="success-code-label">Your Order Reference</div>
+    <div class="success-code-val" id="successCode">—</div>
+    <p class="success-note">Keep this code. Quote it when you arrive for pickup.</p>
+  </div>
+  <div style="background:rgba(184,74,8,0.07);border:1.5px solid rgba(184,74,8,0.22);border-radius:14px;padding:14px 16px;margin-top:14px;text-align:left">
+    <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px">📸 Important</div>
+    <div style="font-size:15px;color:var(--muted);line-height:1.7;font-style:italic">Please take a screenshot of this screen and save your order code. You will need it to confirm, amend or cancel your order.</div>
+  </div>
+  <div style="background:rgba(154,42,26,0.06);border:1.5px solid rgba(154,42,26,0.2);border-radius:14px;padding:14px 16px;margin-top:12px;text-align:left">
+    <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#9a2a1a;font-weight:700;margin-bottom:6px">⚠ Order Confirmation</div>
+    <div style="font-size:15px;color:var(--muted);line-height:1.7;font-style:italic">Your order will only be confirmed once the <strong style="color:#9a2a1a;font-style:normal">50% down payment has been settled</strong>. Our team will send payment details shortly.</div>
+  </div>
+  <br>
+  <button class="btn-copy-success" onclick="copySuccess()">Copy Order Code</button><br><br>
+  <button class="btn-new" onclick="resetForm()">Place Another Order</button>
+</div>
+
+<!-- Footer nav -->
+<div class="footer-nav" id="footerNav">
+  <button class="btn-back" id="backBtn" onclick="goBack()" style="display:none">← Back</button>
+  <button class="btn-next" id="nextBtn" onclick="goNext()">Continue →</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── EmailJS ───────────────────────────────────────────────
+  const EJS_SERVICE  = 'service_xo8aoro';
+  const EJS_TEMPLATE = 'template_yfe626s';
+  const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
+  (function(){
+    if(window.emailjs) emailjs.init({ publicKey: EJS_KEY });
+    else window.addEventListener('load', () => emailjs.init({ publicKey: EJS_KEY }));
+  })();
+
+  // ── State ─────────────────────────────────────────────────
+  const STAFF_PIN = '1234';
+  let currentStep = 1, selectedTime = '', generatedCode = '', dateBlocked = false;
+  let orderQty = {};
+  const TOTAL_STEPS = 4;
+
+  const CHICHARONILLO_ITEMS = [
+    { id:'whole', icon:'🐷', name:'Whole Chicharonillo', desc:'A whole Chicharonillo with Accoutrements. Feeds approximately 8–10.', price:14950, priceLabel:'PHP 14,950' },
+  ];
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('fDate').min = todayStr;
+
+  function fmtDate(d) { if(!d)return'—'; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); }
+  function fmtTime(t) { if(!t)return'—'; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; }
+  function toast(msg) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800); }
+  function generateCode(last,date) { const L=last.replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X'); const dd=date.replace(/-/g,'').slice(4); const r=Math.random().toString(36).substring(2,5).toUpperCase(); return`OTC-${L}${dd}-${r}`; }
+
+  // ── PIN Protection ────────────────────────────────────────
+  let datePinUnlocked=false, timePinUnlocked=false;
+
+  function promptDatePin() {
+    if(datePinUnlocked) { toggleDateEditor(); return; }
+    const pin=prompt('Enter staff PIN to manage blocked dates:');
+    if(pin===STAFF_PIN) { datePinUnlocked=true; toggleDateEditor(); }
+    else if(pin!==null) toast('Incorrect PIN');
+  }
+  function promptTimePin() {
+    if(timePinUnlocked) { toggleTimeEditor(); return; }
+    const pin=prompt('Enter staff PIN to edit time slots:');
+    if(pin===STAFF_PIN) { timePinUnlocked=true; toggleTimeEditor(); }
+    else if(pin!==null) toast('Incorrect PIN');
+  }
+
+  // ── Blocked Dates ─────────────────────────────────────────
+  function loadBlockedDates() { try { return JSON.parse(localStorage.getItem('otc_blocked_dates')||'[]'); } catch(e) { return []; } }
+  function saveBlockedDates(d) { try { localStorage.setItem('otc_blocked_dates',JSON.stringify(d)); } catch(e) {} }
+
+  function toggleDateEditor() {
+    const panel=document.getElementById('dateEditorPanel');
+    const btn=document.getElementById('editDatesBtn');
+    const open=panel.style.display==='none'||!panel.style.display;
+    panel.style.display=open?'block':'none';
+    btn.textContent=open?'✕ Close':'🚫 Block Dates';
+    if(open) renderBlockedDates();
+  }
+
+  function renderBlockedDates() {
+    const dates=loadBlockedDates();
+    const c=document.getElementById('blockedDatesList');
+    if(!dates.length) { c.innerHTML=`<div style="font-style:italic;color:var(--muted);font-size:15px;padding:4px 0 10px">No dates blocked.</div>`; return; }
+    c.innerHTML=[...dates].sort().map(d=>{
+      const fmt=new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
+      return `<div class="editor-item"><div><div class="editor-item-label">${fmt}</div><div class="editor-item-tag">BLOCKED</div></div><button class="editor-remove" onclick="removeBlockedDate('${d}')">✕ Unblock</button></div>`;
+    }).join('');
+  }
+
+  function addBlockedDate() {
+    const val=document.getElementById('newBlockedDate').value;
+    if(!val) { toast('Please select a date'); return; }
+    const dates=loadBlockedDates();
+    if(dates.includes(val)) { toast('Already blocked'); return; }
+    dates.push(val); saveBlockedDates(dates);
+    document.getElementById('newBlockedDate').value='';
+    renderBlockedDates();
+    toast(new Date(val+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})+' blocked ✓');
+  }
+  function removeBlockedDate(val) {
+    saveBlockedDates(loadBlockedDates().filter(d=>d!==val));
+    renderBlockedDates();
+    toast('Unblocked ✓');
+  }
+  function checkBlockedDate(val) {
+    const blocked=loadBlockedDates();
+    const notice=document.getElementById('blockedNotice');
+    if(blocked.includes(val)) {
+      dateBlocked=true; notice.style.display='block';
+      document.querySelectorAll('.time-chip').forEach(c=>c.classList.add('blocked'));
+      selectedTime='';
+    } else {
+      dateBlocked=false; notice.style.display='none';
+      document.querySelectorAll('.time-chip').forEach(c=>c.classList.remove('blocked'));
+    }
+  }
+
+  // ── Time Slots ────────────────────────────────────────────
+  function loadTimeSlots() {
+    try { const s=localStorage.getItem('otc_time_slots'); if(s) return JSON.parse(s); } catch(e) {}
+    return ['10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
+  }
+  function saveTimeSlots(s) { try { localStorage.setItem('otc_time_slots',JSON.stringify(s)); } catch(e) {} }
+
+  function toggleTimeEditor() {
+    const panel=document.getElementById('timeEditorPanel');
+    const btn=document.getElementById('editTimesBtn');
+    const open=panel.style.display==='none'||!panel.style.display;
+    panel.style.display=open?'block':'none';
+    btn.textContent=open?'✕ Close':'✏ Edit Times';
+    if(open) renderTimeSlotEditor();
+  }
+
+  function renderTimeSlotEditor() {
+    const slots=loadTimeSlots();
+    const c=document.getElementById('timeSlotList');
+    if(!slots.length) { c.innerHTML=`<div style="font-style:italic;color:var(--muted);font-size:15px;padding:4px 0 10px">No time slots.</div>`; return; }
+    c.innerHTML=[...slots].sort().map(t=>`<div class="editor-item"><div class="editor-item-label">${fmtTime(t)}</div><button class="editor-remove" onclick="removeTimeSlot('${t}')">✕ Remove</button></div>`).join('');
+  }
+
+  function addTimeSlot() {
+    const val=document.getElementById('newTimeSlot').value;
+    if(!val) { toast('Please select a time'); return; }
+    const slots=loadTimeSlots();
+    if(slots.includes(val)) { toast('Already added'); return; }
+    slots.push(val); saveTimeSlots(slots);
+    document.getElementById('newTimeSlot').value='';
+    renderTimeSlotEditor(); buildTimeGrid();
+    toast(fmtTime(val)+' added ✓');
+  }
+  function removeTimeSlot(val) {
+    saveTimeSlots(loadTimeSlots().filter(s=>s!==val));
+    if(selectedTime===val) selectedTime='';
+    renderTimeSlotEditor(); buildTimeGrid();
+    toast('Removed');
+  }
+
+  // ── Time Grid ─────────────────────────────────────────────
+  function buildTimeGrid() {
+    const grid=document.getElementById('timeGrid');
+    grid.innerHTML='';
+    const slots=loadTimeSlots();
+    if(!slots.length) { grid.innerHTML=`<div style="font-style:italic;color:var(--muted);font-size:15px">No pickup times available.</div>`; return; }
+    [...slots].sort().forEach(t=>{
+      const[h,m]=t.split(':').map(Number);
+      const hr=h>12?h-12:h||12;
+      const ampm=h>=12?'PM':'AM';
+      const chip=document.createElement('div');
+      chip.className='time-chip'+(selectedTime===t?' selected':'');
+      chip.innerHTML=`<div class="time-chip-hr">${hr}:${String(m).padStart(2,'0')}</div><div class="time-chip-ampm">${ampm}</div>`;
+      chip.onclick=()=>{
+        if(dateBlocked) return;
+        document.querySelectorAll('.time-chip').forEach(c=>c.classList.remove('selected'));
+        chip.classList.add('selected');
+        selectedTime=t;
+      };
+      grid.appendChild(chip);
+    });
+  }
+  buildTimeGrid();
+
+  // ── Order Grid ────────────────────────────────────────────
+  function buildOrderGrid() {
+    const grid=document.getElementById('orderGrid');
+    grid.innerHTML='';
+    CHICHARONILLO_ITEMS.forEach(item=>{
+      const qty=orderQty[item.id]||0;
+      const card=document.createElement('div');
+      card.className='order-card'+(qty>0?' selected':'');
+      card.innerHTML=`
+        <div style="display:flex;align-items:flex-start;gap:14px;margin-bottom:16px">
+          <div class="order-card-icon">${item.icon}</div>
+          <div style="flex:1">
+            <div class="order-card-name">${item.name}</div>
+            <div class="order-card-desc">${item.desc}</div>
+            <div class="order-card-price">${item.priceLabel}</div>
+          </div>
+        </div>
+        <div class="stepper">
+          <button class="stepper-btn" onclick="changeQty('${item.id}',-1)">−</button>
+          <div class="stepper-display">
+            <div class="stepper-num">${qty}</div>
+            <div class="stepper-word">units</div>
+          </div>
+          <button class="stepper-btn" onclick="changeQty('${item.id}',1)">+</button>
+        </div>`;
+      grid.appendChild(card);
+    });
+    updateOrderSummary();
+  }
+
+  function changeQty(id,delta) {
+    const current=orderQty[id]||0;
+    const next=Math.max(0,current+delta);
+    if(next===0) delete orderQty[id]; else orderQty[id]=next;
+    buildOrderGrid();
+  }
+
+  function getOrderTotal() { return CHICHARONILLO_ITEMS.reduce((s,m)=>s+(orderQty[m.id]||0)*m.price,0); }
+
+  function updateOrderSummary() {
+    const wrap=document.getElementById('orderSummaryWrap');
+    const rows=document.getElementById('orderSummaryRows');
+    const total=document.getElementById('orderTotalVal');
+    const selected=CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0);
+    if(!selected.length) { wrap.style.display='none'; return; }
+    wrap.style.display='block';
+    rows.innerHTML=selected.map(m=>`<div class="order-summary-row"><span style="font-size:15px;color:var(--ink)">${m.icon} ${m.name}</span><span style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--gold);font-weight:700">×${orderQty[m.id]}</span></div>`).join('');
+    total.textContent='PHP '+getOrderTotal().toLocaleString('en-PH');
+  }
+
+  buildOrderGrid();
+
+  // ── Navigation ────────────────────────────────────────────
+  function updateProgress() {
+    for(let i=1;i<=TOTAL_STEPS;i++) {
+      const dot=document.getElementById(`dot${i}`);
+      const lbl=document.getElementById(`lbl${i}`);
+      dot.className='step-dot'+(i<currentStep?' done':i===currentStep?' active':'');
+      lbl.className='step-label'+(i===currentStep?' active':'');
+      if(i<TOTAL_STEPS) document.getElementById(`line${i}`).className='step-line'+(i<currentStep?' done':'');
+    }
+    document.getElementById('backBtn').style.display=currentStep>1?'block':'none';
+    document.getElementById('nextBtn').textContent=currentStep===TOTAL_STEPS?'Submit Order →':'Continue →';
+  }
+
+  function showStep(n) {
+    document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
+    document.getElementById(`step${n}`).classList.add('active');
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+
+  function validate() {
+    const v=id=>(document.getElementById(id)||{}).value?.trim();
+    if(currentStep===1) {
+      if(!v('fLastName')) { toast('Please enter your last name'); return false; }
+      if(!v('fFirstName')) { toast('Please enter your first name'); return false; }
+      if(!v('fPhone')) { toast('Please enter your phone number'); return false; }
+    }
+    if(currentStep===2) {
+      if(!v('fDate')) { toast('Please select a pickup date'); return false; }
+      if(dateBlocked) { toast('This date is unavailable — please choose another'); return false; }
+      if(!selectedTime) { toast('Please select a pickup time'); return false; }
+    }
+    if(currentStep===3) {
+      if(!CHICHARONILLO_ITEMS.some(m=>orderQty[m.id]>0)) { toast('Please add at least one item'); return false; }
+    }
+    return true;
+  }
+
+  function buildReview() {
+    const v=id=>document.getElementById(id).value.trim();
+    const total=getOrderTotal();
+    const down=Math.ceil(total/2);
+    document.getElementById('reviewContent').innerHTML=`
+      <div class="review-block"><div class="review-block-title">Contact</div>
+        <div class="review-row"><span class="review-key">Name</span><span class="review-val">${v('fLastName')}, ${v('fFirstName')}</span></div>
+        <div class="review-row"><span class="review-key">Phone</span><span class="review-val">${v('fPhone')}</span></div>
+        ${v('fEmail')?`<div class="review-row"><span class="review-key">Email</span><span class="review-val">${v('fEmail')}</span></div>`:''}
+      </div>
+      <div class="review-block"><div class="review-block-title">Pickup</div>
+        <div class="review-row"><span class="review-key">Date</span><span class="review-val">${fmtDate(v('fDate'))}</span></div>
+        <div class="review-row"><span class="review-key">Time</span><span class="review-val">${fmtTime(selectedTime)}</span></div>
+      </div>
+      <div class="review-block"><div class="review-block-title">Order</div>
+        ${CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0).map(m=>`<div class="review-row"><span class="review-key">${m.icon} ${m.name}</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:15px;color:var(--gold)">×${orderQty[m.id]} — PHP ${(m.price*orderQty[m.id]).toLocaleString()}</span></div>`).join('')}
+        <div class="review-row"><span class="review-key">Total</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:17px;color:var(--gold);font-weight:700">PHP ${total.toLocaleString()}</span></div>
+      </div>
+      <div class="review-block"><div class="review-block-title">Payment</div>
+        <div class="review-row"><span class="review-key">Down Payment Due</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:15px;color:var(--gold);font-weight:700">PHP ${down.toLocaleString()}</span></div>
+        <div class="review-row"><span class="review-key">Balance on Pickup</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:15px">PHP ${(total-down).toLocaleString()}</span></div>
+      </div>
+      ${v('fNotes')?`<div class="review-block"><div class="review-block-title">Special Instructions</div><div class="review-row"><span class="review-val" style="font-style:italic;color:var(--muted);max-width:100%">${v('fNotes')}</span></div></div>`:''}`;
+  }
+
+  function goNext() {
+    if(!validate()) return;
+    if(currentStep===TOTAL_STEPS) { submitOrder(); return; }
+    if(currentStep===3) buildReview();
+    currentStep++;
+    showStep(currentStep);
+    updateProgress();
+  }
+
+  function goBack() {
+    if(currentStep<=1) return;
+    currentStep--;
+    showStep(currentStep);
+    updateProgress();
+  }
+
+  function resetForm() {
+    currentStep=1; selectedTime=''; orderQty={}; generatedCode=''; dateBlocked=false;
+    ['fLastName','fFirstName','fPhone','fEmail','fDate','fNotes'].forEach(id=>document.getElementById(id).value='');
+    buildTimeGrid(); buildOrderGrid();
+    document.getElementById('successScreen').classList.remove('show');
+    document.getElementById('mainForm').style.display='block';
+    document.getElementById('footerNav').style.display='flex';
+    showStep(1); updateProgress();
+  }
+
+  function copySuccess() { navigator.clipboard.writeText(generatedCode).catch(()=>{}); toast('Code copied ✓'); }
+
+  // ── Submit ────────────────────────────────────────────────
+  async function submitOrder() {
+    const lastName=document.getElementById('fLastName').value.trim();
+    const firstName=document.getElementById('fFirstName').value.trim();
+    const phone=document.getElementById('fPhone').value.trim();
+    const email=document.getElementById('fEmail').value.trim();
+    const date=document.getElementById('fDate').value;
+    const notes=document.getElementById('fNotes').value.trim();
+    const total=getOrderTotal();
+    const downPmt=Math.ceil(total/2);
+
+    generatedCode=generateCode(lastName,date);
+    const btn=document.getElementById('nextBtn');
+    btn.textContent='Sending…'; btn.disabled=true;
+
+    const orderLines=CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0)
+      .map(m=>`  ${m.icon} ${m.name} x${orderQty[m.id]} — PHP ${(m.price*orderQty[m.id]).toLocaleString()}`)
+      .join('\n');
+
+    const message=`OBSCURE TABLE — CHICHARONILLO PICKUP ORDER
+==========================================
+ORDER CODE: ${generatedCode}
+
+CONTACT
+Name:   ${lastName}, ${firstName}
+Phone:  ${phone}
+Email:  ${email||'—'}
+
+PICKUP
+Date:   ${fmtDate(date)}
+Time:   ${fmtTime(selectedTime)}
+
+ORDER
+${orderLines}
+
+Total:         PHP ${total.toLocaleString()}
+Down Payment:  PHP ${downPmt.toLocaleString()}
+Balance:       PHP ${(total-downPmt).toLocaleString()}
+
+NOTES: ${notes||'—'}
+==========================================`.trim();
+
+    try {
+      await emailjs.send(EJS_SERVICE,EJS_TEMPLATE,{
+        to_email:'obscuretableph@gmail.com',
+        subject:`🐷 Chicharonillo Order — ${generatedCode} — ${lastName}, ${firstName}`,
+        message, reply_to:email||phone,
+      });
+    } catch(err) { console.error('EmailJS:',err); }
+
+    const fbId=Date.now();
+    const fbData={
+      id:fbId, code:generatedCode, type:'chicharonillo',
+      name:lastName, first:firstName, phone, email, date,
+      time:selectedTime,
+      order:Object.fromEntries(CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0).map(m=>[m.id,orderQty[m.id]])),
+      orderText:CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0).map(m=>`${m.name} x${orderQty[m.id]}`).join(', '),
+      total, downPayment:downPmt, notes, status:'pending', payment:'unpaid', created:fbId,
+    };
+    if(window._fbReady&&window._fbWriteOrder) {
+      window._fbWriteOrder(fbId,fbData).catch(e=>console.warn(e));
+    } else {
+      window._fbQueue=window._fbQueue||[];
+      window._fbQueue.push([fbId,fbData]);
+    }
+
+    document.getElementById('successCode').textContent=generatedCode;
+    document.getElementById('mainForm').style.display='none';
+    document.getElementById('footerNav').style.display='none';
+    document.getElementById('successScreen').classList.add('show');
+    window.scrollTo({top:0});
+    btn.textContent='Submit Order →'; btn.disabled=false;
+  }
+
+  updateProgress();
+</script>
+</body>
+</html>

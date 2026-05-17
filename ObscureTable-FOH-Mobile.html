@@ -42,25 +42,40 @@
     return nr.key;
   };
 
-  // ── Live listener — updates reservations array in real time ─
+  const CHICHA_REF = ref(db, 'chicharonillo_orders');
+
+  // ── Live listener for reservations ─────────────────────────
   onValue(RES, (snapshot) => {
     const val = snapshot.val();
     window.reservations = val ? Object.values(val) : [];
-    // renderList may not be defined yet — retry until it is
     if (window.renderList) {
       window.renderList();
     } else {
       const retry = setInterval(() => {
-        if (window.renderList) {
-          window.renderList();
-          clearInterval(retry);
-        }
+        if (window.renderList) { window.renderList(); clearInterval(retry); }
       }, 100);
     }
   });
 
-  // ── Signal that Firebase is ready ─────────────────────────
+  // ── Live listener for Chicharonillo orders ─────────────────
+  onValue(CHICHA_REF, (snapshot) => {
+    const val = snapshot.val();
+    window.chicharonilloOrders = val ? Object.values(val) : [];
+    if (window.renderChicharonilloOrders) window.renderChicharonilloOrders();
+  });
+
   window._fbReady = true;
+  window._fbUpdate = async (id, data) => { await update(ref(db, `reservations/${id}`), data); };
+  window._fbSave   = async (id, data) => { await set(ref(db, `reservations/${id}`), data); };
+  window._fbDelete = async (id)       => { await remove(ref(db, `reservations/${id}`)); };
+  window._fbPush   = async (data)     => { const nr=push(RES); await set(nr,{...data,id:nr.key}); return nr.key; };
+  window._fbUpdateChicha = async (id, data) => { await update(ref(db, `chicharonillo_orders/${id}`), data); };
+  window._fbDeleteChicha = async (id)       => { await remove(ref(db, `chicharonillo_orders/${id}`)); };
+
+  if (window._fbQueue) {
+    window._fbQueue.forEach(([id, data]) => window._fbWriteReservation?.(id, data).catch(console.warn));
+    window._fbQueue = [];
+  }
   document.dispatchEvent(new Event('fbReady'));
 </script>
 <style>
@@ -145,7 +160,7 @@
   .res-chevron { color: rgba(139,100,40,0.3); font-size: 18px; margin-top: 2px; }
 
   /* Bottom Nav */
-  .bottom-nav { display: grid; grid-template-columns: 1fr 1fr 44px 1fr 1fr; border-top: 1.5px solid var(--border); background: var(--bg); flex-shrink: 0; padding-bottom: max(8px, var(--safe)); box-shadow: 0 -2px 10px rgba(120,85,30,0.08); }
+  .bottom-nav { display: grid; grid-template-columns: 1fr 1fr 44px 1fr 1fr 1fr; border-top: 1.5px solid var(--border); background: var(--bg); flex-shrink: 0; padding-bottom: max(8px, var(--safe)); box-shadow: 0 -2px 10px rgba(120,85,30,0.08); }
   .nav-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 12px 0 8px; cursor: pointer; background: none; border: none; transition: opacity 0.15s; }
   .nav-btn:active { opacity: 0.6; }
   .nav-icon { font-size: 22px; line-height: 1; }
@@ -261,6 +276,7 @@
     <button class="nav-btn active" id="navToday" onclick="setView('today',this)"><div class="nav-icon">📋</div><div class="nav-label">Today</div></button>
     <button class="nav-add" onclick="openAddSheet()"><div class="nav-add-circle">+</div></button>
     <button class="nav-btn" id="navAll" onclick="setView('all',this)"><div class="nav-icon">📅</div><div class="nav-label">All Dates</div></button>
+    <button class="nav-btn" id="navChicha" onclick="setView('chicharonillo',this)"><div class="nav-icon">🐷</div><div class="nav-label">Orders</div></button>
     <button class="nav-btn" id="navGuests" onclick="setView('guests',this)"><div class="nav-icon">👥</div><div class="nav-label">Guests</div></button>
     <button class="nav-btn" id="navReports" onclick="setView('reports',this)"><div class="nav-icon">📊</div><div class="nav-label">Reports</div></button>
   </div>
@@ -326,6 +342,45 @@
     <button class="sheet-close" onclick="closeGuestProfile()">×</button>
   </div>
   <div class="sheet-body" id="guestProfileBody"></div>
+</div>
+
+<!-- Chicharonillo Orders Panel -->
+<div id="chicharonilloPanel" style="display:none;position:fixed;inset:0;background:#2a1a08;z-index:300;overflow-y:auto;padding-bottom:80px">
+  <!-- Header -->
+  <div style="background:#2a1a08;border-bottom:1.5px solid rgba(180,74,8,0.18);padding:max(14px,env(safe-area-inset-top,14px)) 20px 14px;position:sticky;top:0;z-index:10;box-shadow:0 2px 12px rgba(180,74,8,0.08)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div>
+        <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjc1IDEyNTciPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojZDg2NjNmO30uY2xzLTJ7ZmlsbDojMDU0YTUxO308L3N0eWxlPjwvZGVmcz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik01MTguMTUsNzc2LjgzYy01MC40OSwwLTk3LjI1LTIyLjY2LTEwNi43MS03My40NC04LjAzLTQzLjYsMi44Ny05OS41NCwzNy4wMS0xMjcuOTQsMTQuMDYtMTEuNDcsNDMuMDMtMTYuNjQsNjkuOTktMTYuNjQsMTcuNzksMCwzNC43MSwyLjI5LDQ2LjE4LDYuMDIsMjQuNjcsOC4wMywxNS4yLDQ5LjkxLDE0LjkyLDc2LjMxLTEwLjA0LTIuNTgtMzEuODQtNS43NC00OS45MS01Ljc0LTEwLjA0LDAtMTkuMjIuODYtMjQuMzgsMy43My0zMi4xMywxNy41LTIwLjY1LDY0LjI2LDE1LjQ5LDY5LjEzLDE2LjY0LDIuMywzOS44Ny0xMC42MSw1My4zNi0xMC42MSw1Ljc0LDAsOS43NSwyLjI5LDEwLjMzLDkuNzUsMS43MiwyMC45NCw1Ljc0LDU1LjY1LTE0LjYzLDYxLjY4LTE2LjkyLDUuMTYtMzQuNDIsNy43NS01MS42NCw3Ljc1WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTY2Ni40Miw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTkxMy42OSw3NzYuMjZsLTE4LjA3LS44Ni0xNC4wNi0uMjktOC4zMi0xLjQzLTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDguNTctMjIuOTUuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuMTQuMjktNTEuMzUuMjktMTIuMzQuODYtMjQuNjcuODYtMzcuMDEuMjktMTAuMDQuNTctMjAuMzcsMS40My0zMC42OS4yOS0uNTcuMjktMi41OC41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uMjkuODYtLjU3LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjQzLDE3Ljc5LTEuNDNoMjAuOTRjNy4xNy0uMjksMTQuMDYtLjU3LDIwLjk0LS4yOSwyLjI5LDAsNC41OSwwLDYuNi44NiwxLjcyLjg2LDIuODcsMi4yOSwzLjczLDQuMDIuODYsMi41OCwxLjQzLDUuNDUsMS43Miw4LjMyLjI5LDMuNDQuMjksNy4xNy41NywxMC42MS4yOSwxMC45LS4yOSwyMi4wOS0uNTcsMzIuOTktLjU3LDIwLjM3LS41Nyw0MS4wMi0uNTcsNjEuMzkuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksNy43NS0uMjksMjMuNTItLjI5LDIzLjUybC0uODYsMS40My0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0LDEuMTVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTA5NS4wNCw3NzYuODNjLTUwLjQ5LDAtOTcuMjUtMjIuNjYtMTA2LjcxLTczLjQ0LTguMDMtNDMuNiwyLjg3LTk5LjU0LDM3LjAxLTEyNy45NCwxNC4wNi0xMS40Nyw0My4wMy0xNi42NCw2OS45OS0xNi42NCwxNy43OSwwLDM0LjcxLDIuMjksNDYuMTgsNi4wMiwyNC42Nyw4LjAzLDE1LjIsNDkuOTEsMTQuOTIsNzYuMzEtMTAuMDQtMi41OC0zMS44NC01Ljc0LTQ5LjkxLTUuNzQtMTAuMDQsMC0xOS4yMi44Ni0yNC4zOCwzLjczLTMyLjEzLDE3LjUtMjAuNjUsNjQuMjYsMTUuNDksNjkuMTMsMTYuNjQsMi4zLDM5Ljg3LTEwLjYxLDUzLjM2LTEwLjYxLDUuNzQsMCw5Ljc1LDIuMjksMTAuMzMsOS43NSwxLjcyLDIwLjk0LDUuNzQsNTUuNjUtMTQuNjMsNjEuNjgtMTYuOTIsNS4xNi0zNC40Miw3Ljc1LTUxLjY0LDcuNzVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTI0My4zMSw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE0NzEuOSw3NzAuMjNjLTExLjE5LDAtMjEuMjMtLjg2LTI0Ljk2LTQuMy04LjYxLTcuNzUtLjg2LTQzLjYsMC01Ni41MSwzLjczLTUwLjc4LTQuMy0xMjkuOTUsNTQuNS0xNDEuNzEsMTIuMzQtMi4zLDI2LjY4LTQuNTksNDAuNDUtNC41OSwyNC45NiwwLDQ4Ljc3LDYuNiw1OS4wOSwyOS44MywyMy41Miw1My4wNywxOC42NSwxMTYuNDcsMjMuNTIsMTc1LjI3LTEwLjYxLDAtMzUuNTcsMS43Mi01My4wNywxLjcyLTcuNDYsMC0xMy40OC0uMjktMTYuNjQtMS4xNS0uODYtMTIuMDUsMC0yNC4xLDAtMzYuNDMtMTMuNDgtLjU3LTI3LjI1LS41Ny00MC43My41Ny00Ljg4LjI5LDIuMjksMzUuODYtNS43NCwzNS44Ni02LjYsMC0yMi4zOCwxLjQzLTM2LjQzLDEuNDNaTTE1NTAuNSw2NzYuNDNjLTEuNDMtMjIuMzgtOC44OS0zMy44NS0xNi4zNS0zMy44NXMtMTQuOTIsMTAuOS0xNi4wNiwzMy4yOGMxMC42MS4yOSwyMS41MS4yOSwzMi40Mi41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xODI2LjYyLDc2Ny44N2MtMy41OSwwLTguODQtMS4xLTEyLjk4LTEuMzgtMTkuNi0uODMtMzkuMjEsMC01OC41NC0uODMtNC4xNC0xNy45NS02LjM1LTM2LjQ1LTE0LjkxLTUyLjQ2LTEuOTMtMy41OS01LjI1LTUuMjUtOC4yOC01LjI1LTMuNTksMC02LjYzLDIuNDktNi42Myw3LjE4LDAsMTYuNTctLjU1LDMzLjQxLjU1LDQ5Ljk4LTguMDEtLjU1LTQ0LjE4LTEuMS02Mi4xMi0xLjFoLTguODRjLTYuMDcsMC0yLjQ4LTEyLjE1LTEuOTMtMTguMjIsMy41OS01Ny4xNi00Ljk3LTExNC41OS0xLjM4LTE3MS43NCwxMi40Mi02LjYzLDU4LjU0LTguMDEsNzguMTQtOC4wMSwyMi45MiwwLDQ3Ljc3LjI4LDY4Ljc1LDEwLjc3LDIxLjI2LDEwLjQ5LDM3LDM5LjIxLDMzLjY5LDYyLjk1LTMuMDQsMjEuNTQtMTkuODgsMzkuNzYtMzUuODksNTQuOTUsMTguMjIsMTguMjIsMzAuMSw0My4wNywzNS44OSw2Ny45MiwxLjEsNC4xNC0xLjY2LDUuMjUtNS41Miw1LjI1Wk0xNzMyLjE5LDY2MS44NGM0MC4zMSwwLDQ4Ljg3LTQ1LjI4LDMuNTktNDYuNjYtMS45MywwLTMuODctLjI4LTYuMDctLjI4LTMuODcsMC03LjQ1LjgzLTcuMTgsNC40MiwxLjM4LDEzLjgxLDEuMSwyOC4xNi44Myw0MS45NywzLjA0LjU1LDYuMDcuNTUsOC44NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xOTQwLjQ4LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0xOTM5LjEsNzAwLjIyYzIwLjE2LjI4LDM1LjYyLTE4LjIyLDMxLjQ4LTM4LjEtMi43Ni0xNC4wOC0xNS40Ni0yNC44NS0yOS44Mi0yNS40LTQuNDIsMC04Ljg0LjgzLTEyLjk4LDIuMjEtOC4yOCwzLjMxLTE0LjkxLDEwLjIyLTE3Ljk1LDE4LjUtMi4yMSw1LjUyLTIuNzYsMTEuODctMS4zOCwxNy40LDIuNDksMTQuNjMsMTYuMDEsMjUuNCwzMC42NSwyNS40WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTIxMjMuNzUsNzY2LjIxYy0xMS42LDAtNTYuMzMuNTUtNjYuODItMy44Nyw0LjY5LTU1LjIyLS4yOC0xMTAuNzIuMjgtMTY2LjIyLDAtMjYuNzgsMS4zOC0yOC40NCwyNi41MS0yOC45OSw0LjE0LDAsMTEuMDUtLjU1LDE4LjIyLS41NSwxMC4yMiwwLDIwLjk4LjgzLDI1LjEzLDQuOTcsOS4xMSw5LjM5LDI5LjU0LDYxLjAyLDM1LjA3LDcyLjYyLTEuMzgtMjMuNzUsMS4xLTQ4LjA0LTMuMDQtNzEuNzksMjQuMy0uMjgsNDguMzItMy41OSw3Mi42Mi0yLjIxLTUuMjUsNjQuMzMtOC41NiwxMjguOTQtMy44NywxOTMtMjIuMzcsMi4yMS00NS4wMSwxLjY2LTY3LjM3LDEuNjYtMTQuMzYtMjMuMTktMjIuOTItNDkuNDItMzUuODktNzMuMTcuMjgsMjQuODUtMS45Myw0OS43LS44Myw3NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMjg5LjcyLDc2OS44bC0xNy4zOS0uODMtMTMuNTMtLjI4LTguMDEtMS4zOC0xLjEtLjgzcy0uODMtMzAuNjUtLjgzLTQ1LjgzYzAtMTEuMDUuNTUtMjIuMDkuODMtMzMuNDEuMjgtMTYuNTcuMjgtMzIuODYuMjgtNDkuNDIuMjgtMTEuODcuODMtMjMuNzUuODMtMzUuNjIuMjgtOS42Ni41NS0xOS42LDEuMzgtMjkuNTQuMjgtLjU1LjI4LTIuNDkuNTUtMy4wNC41NS0uNTUsMS4xLS44MywxLjY2LS41NS4yOC0uMjguODMtLjU1LDEuMzgtLjU1LDUuNTItMS4zOCwxMS4zMi0xLjM4LDE3LjEyLTEuMzhoMjAuMTZjNi45LS4yOCwxMy41My0uNTUsMjAuMTYtLjI4LDIuMjEsMCw0LjQyLDAsNi4zNS44MywxLjY2LjgzLDIuNzYsMi4yMSwzLjU5LDMuODcuODMsMi40OSwxLjM4LDUuMjUsMS42Niw4LjAxLjI4LDMuMzEuMjgsNi45LjU1LDEwLjIyLjI4LDEwLjQ5LS4yOCwyMS4yNi0uNTUsMzEuNzUtLjU1LDE5LjYtLjU1LDM5LjQ4LS41NSw1OS4wOS41NSwyMC40My44Myw0MC41OS44Myw2MS4wMi0uMjgsNy40Ni0uMjgsMjIuNjQtLjI4LDIyLjY0bC0uODMsMS4zOC0xLjkzLDEuOTMtNS44LDEuMS0yNi41MSwxLjFaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjM0OC42Myw3NjIuNjNjLTEuNjYtNjQuMzMtNS44LTEyOC45NC0xLjEtMTkzLDExLjYtNC4xNCwyNC41Ny02LjA3LDM3LTYuMDcsOC4yOCwwLDE2LjAxLjgzLDIzLjc1LDIuNDgsMTIuNDIsMi43NiwxMi4xNSwyMS4yNiwxMS44NywzMy45Ni0uMjgsMzIuMzEtMi4yMSw2NC42MS0xLjkzLDk2LjkyLDIyLjA5LjU1LDQ0LjQ1LDEuNjYsNjYuNTQsMS42Ni0uODMsMjIuMDktMy4wNCw0NC43My0xLjM4LDY2LjgyLTE4LjUsMC0xMTYuMjQtLjI4LTEzNC43NC0yLjc2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTI0OTQuMDgsNzYyLjYzYy0xLjY2LTY0LjMzLTUuOC0xMjguOTQtMS4xLTE5MywxMS42LTQuMTQsMjQuNTctNi4wNywzNy02LjA3LDguMjgsMCwxNi4wMS44MywyMy43NSwyLjQ4LDEyLjQyLDIuNzYsMTIuMTUsMjEuMjYsMTEuODcsMzMuOTYtLjI4LDMyLjMxLTIuMjEsNjQuNjEtMS45Myw5Ni45MiwyMi4wOS41NSw0NC40NSwxLjY2LDY2LjU0LDEuNjYtLjgzLDIyLjA5LTMuMDQsNDQuNzMtMS4zOCw2Ni44Mi0xOC41LDAtMTE2LjI0LS4yOC0xMzQuNzQtMi43NloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNzM1Ljk1LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0yNzM0LjU3LDcwMC4yMmMyMC4xNi4yOCwzNS42Mi0xOC4yMiwzMS40OC0zOC4xLTIuNzYtMTQuMDgtMTUuNDYtMjQuODUtMjkuODItMjUuNC00LjQyLDAtOC44NC44My0xMi45OCwyLjIxLTguMjgsMy4zMS0xNC45MSwxMC4yMi0xNy45NSwxOC41LTIuMjEsNS41Mi0yLjc2LDExLjg3LTEuMzgsMTcuNCwyLjQ4LDE0LjYzLDE2LjAxLDI1LjQsMzAuNjUsMjUuNFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMjUuOTgsNTI3LjQ4bDEyLjQtMTUuODZjMy4yLTQuMSw5LjI5LTQuNDIsMTIuOTEtLjY4bDU4LjM5LDUzLjk3YzIuOTcsMy4wNywzLjIyLDcuODcuNTksMTEuMjNsLTQuMyw1LjVjLTIuNzMsMy40OS03LjY4LDQuMzItMTEuNCwxLjkybC02Ni40OS00My42MmMtNC4yMy0yLjczLTUuMTktOC41MS0yLjA5LTEyLjQ3WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTM4Ny4xNSw0OTAuNzJsMTcuNzMtOS41M2M0LjU4LTIuNDYsMTAuMjgtLjMxLDEyLjA5LDQuNTdsMjEuNDMsNTMuN2MxLjQ5LDQuMDEtLjIxLDguNS0zLjk4LDEwLjUybC02LjE1LDMuM2MtMy45MSwyLjEtOC43Ny44Ny0xMS4yMS0yLjgzbC0zMy4wMS00Ny40N2MtMi43Ny00LjItMS4zNC05Ljg4LDMuMS0xMi4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMTcuNDUsNTc5Ljg1bC00Ljk4LDE5LjVjLTEuMjksNS4wNCwyLjE4LDEwLjA1LDcuMzUsMTAuNjNsNTcuMjgsNy44NWM0LjI1LjQ4LDguMi0yLjI1LDkuMjUtNi40bDEuNzMtNi43NmMxLjEtNC4zLTEuMjctOC43Mi01LjQ1LTEwLjJsLTU0LjAzLTIwLjZjLTQuNzUtMS42Ny05LjkxLDEuMDgtMTEuMTUsNS45NloiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTYyLjc5LDY1NC40djIwLjEzYzAsNS4yLTQuNiw5LjItOS43NSw4LjQ5bC03OS4yNC02LjU1Yy00LjIzLS41OS03LjM4LTQuMjEtNy4zOC04LjQ5di02Ljk4YzAtNC40NCwzLjM5LTguMTQsNy44LTguNTNsNzkuMjQtNi42YzUuMDEtLjQ1LDkuMzMsMy41LDkuMzMsOC41M1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDcyMS4wNGwtOC4wOSwxOC40M2MtMi4wOSw0Ljc2LTcuOTEsNi41OC0xMi4zNCwzLjg1bC00OS45Ni0yOS4xYy0zLjY0LTIuMjQtNS4wNy02LjgyLTMuMzUtMTAuNzRsMi44MS02LjM5YzEuNzgtNC4wNiw2LjM3LTYuMDksMTAuNTgtNC42N2w1NS4yNSwxNy4wNmM0Ljc3LDEuNiw3LjE0LDYuOTYsNS4xMSwxMS41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDYwNy45bC04LjA5LTE4LjQzYy0yLjA5LTQuNzYtNy45MS02LjU4LTEyLjM0LTMuODVsLTQ5Ljk2LDI5LjFjLTMuNjQsMi4yNC01LjA3LDYuODItMy4zNSwxMC43NGwyLjgxLDYuMzljMS43OCw0LjA2LDYuMzcsNi4wOSwxMC41OCw0LjY3bDU1LjI1LTE3LjA2YzQuNzctMS42LDcuMTQtNi45Niw1LjExLTExLjU3WiIvPjwvc3ZnPgo=" alt="OT Chicharonillo" style="display:block;height:32px;width:auto;margin-bottom:4px;">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.2em;color:#b84a08;text-transform:uppercase;margin-top:2px">Pickup Orders</div>
+      </div>
+      <div style="font-family:'Courier Prime',monospace;font-size:11px;color:#7a4820" id="chicharonilloCount">0 orders</div>
+    </div>
+    <input id="chicharonilloSearch" type="search" placeholder="Search by name, code…" oninput="renderChicharonilloOrders()" style="width:100%;background:#fff;border:1.5px solid rgba(180,74,8,0.22);border-radius:10px;color:#1a0e04;padding:10px 14px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none;box-sizing:border-box">
+  </div>
+  <!-- Filter pills -->
+  <div style="display:flex;gap:8px;padding:10px 16px;background:#f0e8d8;border-bottom:1.5px solid rgba(180,74,8,0.12);overflow-x:auto;scrollbar-width:none">
+    <div id="cpill_all" onclick="setChicharonilloFilter('all',this)" style="background:rgba(200,90,16,0.2);border:1.5px solid #c85a10;border-radius:20px;padding:6px 14px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#f0a040;cursor:pointer;white-space:nowrap;font-weight:700">All</div>
+    <div id="cpill_pending" onclick="setChicharonilloFilter('pending',this)" style="background:transparent;border:1.5px solid rgba(200,90,16,0.3);border-radius:20px;padding:6px 14px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#b08050;cursor:pointer;white-space:nowrap">Pending</div>
+    <div id="cpill_confirmed" onclick="setChicharonilloFilter('confirmed',this)" style="background:transparent;border:1.5px solid rgba(200,90,16,0.3);border-radius:20px;padding:6px 14px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#b08050;cursor:pointer;white-space:nowrap">Confirmed</div>
+    <div id="cpill_ready" onclick="setChicharonilloFilter('ready',this)" style="background:transparent;border:1.5px solid rgba(200,90,16,0.3);border-radius:20px;padding:6px 14px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#b08050;cursor:pointer;white-space:nowrap">Ready</div>
+    <div id="cpill_completed" onclick="setChicharonilloFilter('completed',this)" style="background:transparent;border:1.5px solid rgba(200,90,16,0.3);border-radius:20px;padding:6px 14px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#b08050;cursor:pointer;white-space:nowrap">Collected</div>
+    <div id="cpill_unpaid" onclick="setChicharonilloFilter('unpaid_payment',this)" style="background:transparent;border:1.5px solid rgba(154,42,26,0.4);border-radius:20px;padding:6px 14px;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#c84030;cursor:pointer;white-space:nowrap">⚠ Unpaid</div>
+  </div>
+  <div id="chicharonilloList" style="padding:12px 14px;display:flex;flex-direction:column;gap:10px"></div>
+</div>
+
+<!-- Chicharonillo Order Detail Sheet -->
+<div class="sheet-overlay" id="chicharonilloDetailOverlay" onclick="closeChicharonilloDetail()"></div>
+<div class="sheet" id="chicharonilloDetailSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head" style="background:#faf4ec;border-bottom:1.5px solid rgba(180,74,8,0.15)">
+    <div style="display:flex;flex-direction:column;gap:4px">
+      <div class="sheet-title" id="chicharonilloDetailName" style="color:#1a0e04">—</div>
+      <div id="chicharonilloDetailCode" style="font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:0.1em;color:#c85a10;font-weight:700">—</div>
+    </div>
+    <button class="sheet-close" onclick="closeChicharonilloDetail()" style="color:#b84a08">×</button>
+  </div>
+  <div class="sheet-body" id="chicharonilloDetailBody" style="background:#faf4ec"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -430,15 +485,173 @@
     if(el) el.classList.add('active');
     document.getElementById('reportsPanel').style.display='none';
     document.getElementById('guestsPanel').style.display='none';
+    document.getElementById('chicharonilloPanel').style.display='none';
     if(v==='reports'){
       document.getElementById('reportsPanel').style.display='block';
       renderReports();
     } else if(v==='guests'){
       document.getElementById('guestsPanel').style.display='block';
       renderGuestDirectory();
+    } else if(v==='chicharonillo'){
+      document.getElementById('chicharonilloPanel').style.display='block';
+      renderChicharonilloOrders();
     } else {
       renderList();
     }
+  }
+
+  // ── Chicharonillo Orders ──────────────────────────────────
+  window.chicharonilloOrders = [];
+  let chicharonilloFilter = 'all';
+
+  const CHICHA_STATUS = {
+    pending:   {label:'Pending',   color:'#c85a10', bg:'rgba(200,90,16,0.1)'},
+    confirmed: {label:'Confirmed', color:'#1a6a4a', bg:'rgba(26,106,74,0.1)'},
+    ready:     {label:'Ready',     color:'#f0a040', bg:'rgba(240,160,64,0.12)'},
+    completed: {label:'Collected', color:'#5a4828', bg:'rgba(90,72,40,0.12)'},
+    cancelled: {label:'Cancelled', color:'#8a2010', bg:'rgba(138,32,16,0.1)'},
+  };
+  const CHICHA_PAYMENT = {
+    unpaid:       {label:'Awaiting Deposit', color:'#c84030'},
+    deposit_paid: {label:'Deposit Paid',     color:'#1a4a7a'},
+    fully_paid:   {label:'Fully Paid',       color:'#1a6a4a'},
+  };
+  const CHICHA_ITEMS = {
+    whole: {icon:'🐷', name:'Whole Chicharonillo', price:14950},
+  };
+
+  function setChicharonilloFilter(f, el) {
+    chicharonilloFilter = f;
+    document.querySelectorAll('[id^="cpill_"]').forEach(p=>{
+      p.style.background='transparent'; p.style.color='#b08050';
+      p.style.borderColor='rgba(200,90,16,0.3)';
+    });
+    el.style.background='rgba(200,90,16,0.2)';
+    el.style.color='#f0a040';
+    el.style.borderColor='#c85a10';
+    renderChicharonilloOrders();
+  }
+
+  window.renderChicharonilloOrders = function() {
+    const q = (document.getElementById('chicharonilloSearch')?.value||'').toLowerCase();
+    let data = [...window.chicharonilloOrders].filter(o => {
+      if (chicharonilloFilter === 'unpaid_payment') return (o.payment||'unpaid') === 'unpaid';
+      if (chicharonilloFilter !== 'all' && o.status !== chicharonilloFilter) return false;
+      if (q && !`${o.name||''} ${o.first||''} ${o.code||''} ${o.phone||''}`.toLowerCase().includes(q)) return false;
+      return true;
+    }).sort((a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
+
+    document.getElementById('chicharonilloCount').textContent = `${window.chicharonilloOrders.length} order${window.chicharonilloOrders.length!==1?'s':''}`;
+    const list = document.getElementById('chicharonilloList');
+
+    if (!data.length) {
+      list.innerHTML = `<div style="text-align:center;padding:48px 0;font-style:italic;color:#b08050;font-size:16px">No orders found</div>`;
+      return;
+    }
+
+    list.innerHTML = data.map(o => {
+      const sm = CHICHA_STATUS[o.status||'pending']||CHICHA_STATUS.pending;
+      const pm = CHICHA_PAYMENT[o.payment||'unpaid']||CHICHA_PAYMENT.unpaid;
+      const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}) : '—';
+      const fmtTime = t => { if(!t)return'—'; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; };
+      const orderItems = o.order ? Object.entries(o.order).map(([id,qty])=>{const i=CHICHA_ITEMS[id];return i?`${i.icon}×${qty}`:''}).filter(Boolean).join(' ') : o.orderText||'';
+      return `<div onclick="openChicharonilloDetail('${o.id}')" style="background:#fff;border:1.5px solid rgba(180,74,8,0.2);border-radius:14px;padding:16px;cursor:pointer;box-shadow:0 1px 6px rgba(180,74,8,0.06)">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+          <div>
+            <div style="font-size:18px;color:#1a0e04;font-weight:400">${o.name||''}, ${o.first||''}</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#c85a10;margin-top:2px;letter-spacing:0.06em;font-weight:700">${o.code||'—'}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;color:${sm.color};font-weight:700;text-transform:uppercase">${sm.label}</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;color:${pm.color};margin-top:3px">${pm.label}</div>
+          </div>
+        </div>
+        <div style="font-size:14px;color:#7a4820;margin-bottom:6px">${orderItems}</div>
+        <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid rgba(180,74,8,0.1)">
+          <span style="font-family:'Courier Prime',monospace;font-size:10px;color:#7a4820">${fmtDate(o.date)} · ${fmtTime(o.time)}</span>
+          <span style="font-family:'Courier Prime',monospace;font-size:11px;color:#f0a040;font-weight:700">PHP ${(o.total||0).toLocaleString()}</span>
+        </div>
+      </div>`;
+    }).join('');
+  };
+
+  function openChicharonilloDetail(id) {
+    const o = window.chicharonilloOrders.find(x=>String(x.id)===String(id));
+    if (!o) return;
+    const sm = CHICHA_STATUS[o.status||'pending']||CHICHA_STATUS.pending;
+    const pm = CHICHA_PAYMENT[o.payment||'unpaid']||CHICHA_PAYMENT.unpaid;
+    const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}) : '—';
+    const fmtTime = t => { if(!t)return'—'; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; };
+
+    document.getElementById('chicharonilloDetailName').textContent = `${o.name||''}, ${o.first||''}`;
+    document.getElementById('chicharonilloDetailCode').textContent = o.code||'—';
+
+    const orderLines = o.order ? Object.entries(o.order).map(([itemId,qty])=>{
+      const item = CHICHA_ITEMS[itemId];
+      if (!item) return '';
+      return `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(180,74,8,0.1)">
+        <span style="font-size:16px;color:#1a0e04">${item.icon} ${item.name}</span>
+        <span style="font-family:'Courier Prime',monospace;font-size:13px;color:#b84a08;font-weight:700">×${qty} — PHP ${(item.price*qty).toLocaleString()}</span>
+      </div>`;
+    }).join('') : `<div style="padding:10px 0;color:#b08050;font-style:italic">${o.orderText||'—'}</div>`;
+
+    document.getElementById('chicharonilloDetailBody').innerHTML = `
+      <!-- Status actions -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        ${[['pending','Pending'],['confirmed','Confirm'],['ready','Mark Ready'],['completed','Collected'],['cancelled','Cancel']].map(([s,l])=>`
+          <div onclick="updateChicharonilloStatus('${id}','${s}')" style="background:${s===o.status?CHICHA_STATUS[s].bg:'rgba(255,255,255,0.04)'};border:1.5px solid ${s===o.status?CHICHA_STATUS[s].color:'rgba(200,90,16,0.2)'};border-radius:10px;padding:12px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:${s===o.status?CHICHA_STATUS[s].color:'#b08050'};font-weight:700">${l}</div>`).join('')}
+      </div>
+      <!-- Payment actions -->
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
+        ${(o.payment||'unpaid')==='unpaid'?`<div onclick="updateChicharonilloPayment('${id}','deposit_paid')" style="background:rgba(26,74,122,0.12);border:1.5px solid #1a4a7a;border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4a8aba;font-weight:700">✓ Deposit Received</div>`:''}
+        ${(o.payment||'unpaid')==='deposit_paid'?`<div onclick="updateChicharonilloPayment('${id}','fully_paid')" style="background:rgba(26,106,74,0.12);border:1.5px solid #1a6a4a;border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#2a9a6a;font-weight:700">✓ Full Payment Received</div>`:''}
+        ${(o.payment||'unpaid')!=='unpaid'?`<div onclick="updateChicharonilloPayment('${id}','unpaid')" style="background:rgba(138,32,16,0.07);border:1.5px solid rgba(138,32,16,0.3);border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#c84030;font-weight:700">↩ Reset Payment</div>`:''}
+      </div>
+      <!-- Delete -->
+      <div onclick="deleteChicharonilloOrder('${id}')" style="background:rgba(138,32,16,0.07);border:1.5px solid rgba(138,32,16,0.3);border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#c84030;font-weight:700;margin-bottom:14px">🗑 Delete Order</div>
+      <!-- Details -->
+      <div style="background:#f0e8d8;border:1.5px solid rgba(180,74,8,0.18);border-radius:12px;overflow:hidden;margin-bottom:12px">
+        <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#b84a08;padding:10px 16px;border-bottom:1px solid rgba(180,74,8,0.12);background:rgba(180,74,8,0.06);font-weight:700">Order Details</div>
+        ${orderLines}
+        <div style="display:flex;justify-content:space-between;padding:12px 16px;margin-top:4px">
+          <span style="font-family:'Courier Prime',monospace;font-size:11px;color:#7a4820;text-transform:uppercase;letter-spacing:0.1em">Total</span>
+          <span style="font-family:'Courier Prime',monospace;font-size:16px;color:#b84a08;font-weight:700">PHP ${(o.total||0).toLocaleString()}</span>
+        </div>
+      </div>
+      <div style="background:#f0e8d8;border:1.5px solid rgba(180,74,8,0.18);border-radius:12px;overflow:hidden;margin-bottom:12px">
+        <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#b84a08;padding:10px 16px;border-bottom:1px solid rgba(180,74,8,0.12);background:rgba(180,74,8,0.06);font-weight:700">Contact & Pickup</div>
+        ${[['Status',`<span style="color:${sm.color};font-weight:700">${sm.label}</span>`],['Payment',`<span style="color:${pm.color};font-weight:700">${pm.label}</span>`],['Pickup Date',fmtDate(o.date)],['Pickup Time',fmtTime(o.time)],['Phone',`<a href="tel:${o.phone}" style="color:#c85a10;text-decoration:none;font-weight:700">${o.phone||'—'}</a>`],['Email',o.email||'—'],['Down Payment',`PHP ${(o.downPayment||0).toLocaleString()}`],['Balance',`PHP ${((o.total||0)-(o.downPayment||0)).toLocaleString()}`],['Notes',o.notes||'—']].map(([k,v])=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid rgba(200,90,16,0.07)">
+            <span style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#b08050">${k}</span>
+            <span style="font-size:15px;color:#1a0e04;text-align:right;max-width:60%">${v}</span>
+          </div>`).join('')}
+      </div>`;
+
+    document.getElementById('chicharonilloDetailOverlay').classList.add('open');
+    document.getElementById('chicharonilloDetailSheet').classList.add('open');
+  }
+
+  function closeChicharonilloDetail() {
+    document.getElementById('chicharonilloDetailOverlay').classList.remove('open');
+    document.getElementById('chicharonilloDetailSheet').classList.remove('open');
+    renderChicharonilloOrders();
+  }
+
+  async function updateChicharonilloStatus(id, status) {
+    try { await window._fbUpdateChicha(id,{status}); toast(`${CHICHA_STATUS[status].label} ✓`); closeChicharonilloDetail(); }
+    catch(e) { toast('Update failed'); }
+  }
+
+  async function updateChicharonilloPayment(id, payment) {
+    try { await window._fbUpdateChicha(id,{payment}); toast(`${CHICHA_PAYMENT[payment].label} ✓`); closeChicharonilloDetail(); }
+    catch(e) { toast('Update failed'); }
+  }
+
+  async function deleteChicharonilloOrder(id) {
+    const o = window.chicharonilloOrders.find(x=>String(x.id)===String(id));
+    if (!o || !window.confirm(`Delete order for ${o.name}, ${o.first}?\nThis cannot be undone.`)) return;
+    try { await window._fbDeleteChicha(id); closeChicharonilloDetail(); toast('Order deleted'); }
+    catch(e) { toast('Delete failed'); }
   }
 
   // ── Guest Directory ───────────────────────────────────────
