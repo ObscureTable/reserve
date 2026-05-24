@@ -136,6 +136,14 @@
   .time-chip-hr { font-size: 22px; font-weight: 400; color: var(--ink); line-height: 1; }
   .time-chip-ampm { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; color: var(--muted); margin-top: 3px; }
 
+
+  /* Date availability feedback */
+  .field-input.date-available { border-color: #2a7a4a; background: rgba(42,122,74,0.05); }
+  .field-input.date-blocked   { border-color: #9a2a1a; background: rgba(154,42,26,0.05); }
+  .date-status { font-family: 'Courier Prime', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 6px; display: none; }
+  .date-status.available { color: #2a7a4a; display: block; }
+  .date-status.blocked   { color: #9a2a1a; display: block; }
+
   /* Blocked date notice */
   .blocked-notice { background: rgba(154,42,26,0.06); border: 1.5px solid rgba(154,42,26,0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: none; }
   .blocked-notice-text { font-size: 16px; color: #9a2a1a; font-style: italic; line-height: 1.5; }
@@ -287,6 +295,7 @@
           <button onclick="promptDatePin()" id="editDatesBtn" style="background:rgba(139,100,40,0.1);border:1.5px solid rgba(139,100,40,0.3);border-radius:8px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:5px 12px;cursor:pointer;font-weight:700">🚫 Block Dates</button>
         </div>
         <input class="field-input" id="fDate" type="date" onchange="checkBlockedDate(this.value)">
+        <div class="date-status" id="fDateStatus"></div>
         <div class="blocked-notice" id="blockedNotice">
           <div class="blocked-notice-text" id="blockedMsg"></div>
         </div>
@@ -301,6 +310,7 @@
       </div>
 
       <div class="field"><label class="field-label">Alternate Date</label><input class="field-input" id="fAltDate" type="date" onchange="checkAltDate(this.value)">
+        <div class="date-status" id="fAltDateStatus"></div>
         <div id="altBlockedNotice" style="display:none;background:rgba(154,42,26,0.06);border:1.5px solid rgba(154,42,26,0.2);border-radius:10px;padding:11px 14px;margin-top:8px;font-size:15px;color:#9a2a1a;font-style:italic;line-height:1.5">This alternate date is also unavailable. Please choose a different date.</div>
       </div>
 
@@ -1098,6 +1108,22 @@
     return false;
   }
 
+  function setDateStatus(inputId, statusId, blocked) {
+    const input = document.getElementById(inputId);
+    const status = document.getElementById(statusId);
+    if (!input || !status) return;
+    if (blocked === null) {
+      input.classList.remove('date-available','date-blocked');
+      status.className = 'date-status'; status.textContent = '';
+    } else if (blocked) {
+      input.classList.remove('date-available'); input.classList.add('date-blocked');
+      status.className = 'date-status blocked'; status.textContent = '✕ Not Available';
+    } else {
+      input.classList.remove('date-blocked'); input.classList.add('date-available');
+      status.className = 'date-status available'; status.textContent = '✓ Available';
+    }
+  }
+
   function checkBlockedDate(val) {
     const notice = document.getElementById('blockedNotice');
     const msg = document.getElementById('blockedMsg');
@@ -1107,10 +1133,12 @@
       notice.style.display = 'block';
       document.querySelectorAll('.time-chip').forEach(c => c.classList.add('blocked'));
       selectedTime = '';
+      setDateStatus('fDate','fDateStatus', true);
     } else {
       dateBlocked = false;
       notice.style.display = 'none';
       document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('blocked'));
+      setDateStatus('fDate','fDateStatus', val ? false : null);
     }
     const altVal = document.getElementById('fAltDate')?.value;
     if (altVal) checkAltDate(altVal);
