@@ -266,17 +266,54 @@
 
         <!-- Blocked Dates Editor (PIN protected) -->
         <div id="dateEditorPanel" style="display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-top:10px">
-          <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px">Blocked Dates</div>
-          <div id="blockedDatesList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
-          <div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--border);padding-top:12px">
-            <input type="date" id="newBlockedDate" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none">
-            <button onclick="addBlockedDate()" style="background:#9a2a1a;border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;padding:10px 16px;cursor:pointer;font-weight:700;white-space:nowrap">Block</button>
+          <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px">Blocked Dates &amp; Months</div>
+
+          <!-- Currently blocked list -->
+          <div id="blockedDatesList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px"></div>
+
+          <!-- Block individual date -->
+          <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:10px">
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">Block a Single Date</div>
+            <div style="display:flex;gap:8px">
+              <input type="date" id="newBlockedDate" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none">
+              <button onclick="addBlockedDate()" style="background:#9a2a1a;border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:10px 14px;cursor:pointer;font-weight:700;white-space:nowrap">Block</button>
+            </div>
           </div>
-          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--muted);margin-top:8px;letter-spacing:0.08em">Blocked dates will be unavailable to guests. Tap ✕ to unblock.</div>
+
+          <!-- Block date range -->
+          <div style="border-top:1px solid var(--border);padding-top:12px;margin-bottom:10px">
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">Block a Date Range</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:6px">
+              <input type="date" id="rangeStart" style="flex:1;min-width:120px;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 10px;font-family:'Cormorant Garamond',serif;font-size:15px;outline:none">
+              <span style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--muted)">to</span>
+              <input type="date" id="rangeEnd" style="flex:1;min-width:120px;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 10px;font-family:'Cormorant Garamond',serif;font-size:15px;outline:none">
+            </div>
+            <button onclick="addDateRange()" style="width:100%;background:#9a2a1a;border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:11px;cursor:pointer;font-weight:700">Block This Range</button>
+          </div>
+
+          <!-- Block entire month -->
+          <div style="border-top:1px solid var(--border);padding-top:12px">
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">Block an Entire Month</div>
+            <div style="display:flex;gap:8px;margin-bottom:6px">
+              <select id="blockMonth" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none;appearance:none">
+                <option value="">Month…</option>
+                <option value="0">January</option><option value="1">February</option><option value="2">March</option>
+                <option value="3">April</option><option value="4">May</option><option value="5">June</option>
+                <option value="6">July</option><option value="7">August</option><option value="8">September</option>
+                <option value="9">October</option><option value="10">November</option><option value="11">December</option>
+              </select>
+              <select id="blockYear" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 10px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none;appearance:none"></select>
+            </div>
+            <button onclick="addBlockedMonth()" style="width:100%;background:#9a2a1a;border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:11px;cursor:pointer;font-weight:700">Block This Month</button>
+          </div>
+
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--muted);margin-top:10px;letter-spacing:0.08em">Blocked dates show as unavailable to guests. Tap ✕ to unblock individual dates.</div>
         </div>
       </div>
 
-      <div class="field"><label class="field-label">Alternate Date</label><input class="field-input" id="fAltDate" type="date"></div>
+      <div class="field"><label class="field-label">Alternate Date</label><input class="field-input" id="fAltDate" type="date" onchange="checkAltDate(this.value)">
+        <div id="altBlockedNotice" style="display:none;background:rgba(154,42,26,0.06);border:1.5px solid rgba(154,42,26,0.2);border-radius:10px;padding:11px 14px;margin-top:8px;font-size:15px;color:#9a2a1a;font-style:italic;line-height:1.5">This alternate date is also unavailable. Please choose a different date.</div>
+      </div>
 
       <div class="field">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
@@ -287,12 +324,15 @@
         <!-- Time Editor Panel (staff only) -->
         <div id="timeEditorPanel" style="display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px">
           <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px">Manage Time Slots</div>
+          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--muted);margin-bottom:10px;letter-spacing:0.06em">Tap a slot to block/enable it. Green = available to guests. Red = blocked.</div>
           <div id="timeEditorSlots" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
-          <div style="display:flex;gap:8px;align-items:center;border-top:1px solid var(--border);padding-top:12px">
-            <input type="time" id="newTimeInput" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none">
-            <button onclick="addTimeSlot()" style="background:var(--gold-btn);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;padding:10px 16px;cursor:pointer;font-weight:700;white-space:nowrap">+ Add</button>
+          <div style="border-top:1px solid var(--border);padding-top:12px">
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">Add New Time Slot</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="time" id="newTimeInput" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none">
+              <button onclick="addTimeSlot()" style="background:var(--gold-btn);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;padding:10px 16px;cursor:pointer;font-weight:700;white-space:nowrap">+ Add</button>
+            </div>
           </div>
-          <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--muted);margin-top:8px;letter-spacing:0.08em">Tap a slot to enable/disable it. Changes save automatically.</div>
         </div>
 
         <div class="time-grid" id="timeGrid"></div>
@@ -527,8 +567,66 @@
     const dates = loadBlockedDates().filter(d => d !== val);
     saveBlockedDates(dates);
     renderBlockedDates();
-    const fmt = new Date(val+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    toast(`${fmt} unblocked ✓`);
+    toast('Unblocked ✓');
+  }
+
+  // Populate year dropdown
+  (function initYearDropdown() {
+    const sel = document.getElementById('blockYear');
+    if (!sel) return;
+    const yr = new Date().getFullYear();
+    for (let y = yr; y <= yr + 3; y++) {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y;
+      if (y === yr) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  })();
+
+  function addDateRange() {
+    const start = document.getElementById('rangeStart').value;
+    const end   = document.getElementById('rangeEnd').value;
+    if (!start || !end) { toast('Please select start and end dates'); return; }
+    if (start > end) { toast('Start must be before end date'); return; }
+    const dates = loadBlockedDates();
+    let cur = new Date(start+'T12:00:00');
+    const endD = new Date(end+'T12:00:00');
+    let added = 0;
+    while (cur <= endD) {
+      const str = cur.toISOString().split('T')[0];
+      if (!dates.includes(str)) { dates.push(str); added++; }
+      cur.setDate(cur.getDate() + 1);
+    }
+    saveBlockedDates(dates);
+    document.getElementById('rangeStart').value = '';
+    document.getElementById('rangeEnd').value = '';
+    renderBlockedDates();
+    toast(`${added} date${added!==1?'s':''} blocked ✓`);
+  }
+
+  function addBlockedMonth() {
+    const month = document.getElementById('blockMonth').value;
+    const year  = document.getElementById('blockYear').value;
+    if (month === '' || !year) { toast('Please select a month and year'); return; }
+    const dates = loadBlockedDates();
+    const days = new Date(parseInt(year), parseInt(month)+1, 0).getDate();
+    let added = 0;
+    for (let d = 1; d <= days; d++) {
+      const str = `${year}-${String(parseInt(month)+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      if (!dates.includes(str)) { dates.push(str); added++; }
+    }
+    saveBlockedDates(dates);
+    document.getElementById('blockMonth').value = '';
+    renderBlockedDates();
+    const mName = new Date(parseInt(year), parseInt(month), 1).toLocaleDateString('en-US',{month:'long'});
+    toast(`${mName} ${year} blocked ✓`);
+  }
+
+  function checkAltDate(val) {
+    const BLOCKED = loadBlockedDates();
+    const notice = document.getElementById('altBlockedNotice');
+    if (!notice) return;
+    notice.style.display = BLOCKED.includes(val) ? 'block' : 'none';
   }
 
   // ── Menu Manager ──────────────────────────────────────────
@@ -559,15 +657,9 @@
       grid.innerHTML = `<div style="text-align:center;font-style:italic;color:var(--muted);padding:24px;font-size:16px">No menu options. Tap Edit Menu to add.</div>`;
       updateOrderSummary(); return;
     }
-    const { hasGrand, hasPlain, hasIndiv } = getConflict();
     items.forEach(m => {
       const qty = menuOrder[m.id] || 0;
-      const isGrand = m.name === GRAND_MENU_NAME;
-      const isPlain = m.name === PLAIN_MENU_NAME;
-      const isIndiv = INDIVIDUAL_NAMES.includes(m.name);
-      const locked = (hasGrand && !isGrand && qty === 0) ||
-                     (hasPlain && isIndiv && qty === 0) ||
-                     (hasIndiv && isPlain && qty === 0);
+      const locked = isLocked(m);
       const borderColor = locked ? 'rgba(120,85,30,0.12)' : qty > 0 ? 'var(--gold)' : 'var(--border)';
       const card = document.createElement('div');
       card.style.cssText = `background:${locked?'var(--surface2)':'#fff'};border:1.5px solid ${borderColor};border-radius:14px;padding:16px;transition:all 0.2s;opacity:${locked?'0.5':'1'}`;
@@ -594,11 +686,12 @@
   }
 
   // ── Menu Exclusivity Rules ────────────────────────────────
-  // Grand Menu (PHP 8,500) — when selected, ALL other items are locked
-  // Menu without Chicharonillo (PHP 4,850) — locks individual Chicharonillo sizes only
+  // Grand Menu (PHP 8,500): locks everything EXCEPT Whole Chicharonillo
+  // Plain Menu (PHP 4,850): locks Grand Menu only — allows all Chicharonillo sizes
   const GRAND_MENU_NAME = 'Obscure Table Grand Menu with Chicharonillo';
   const PLAIN_MENU_NAME = 'Obscure Table Menu without the Chicharonillo';
   const INDIVIDUAL_NAMES = ['Whole Chicharonillo with Accoutrements', 'Half Chicharonillo with Accoutrements', 'Quarter Chicharonillo with Accoutrements'];
+  const WHOLE_NAME = 'Whole Chicharonillo with Accoutrements';
 
   function getConflict() {
     const items = loadMenuItems();
@@ -611,40 +704,34 @@
     return { hasGrand, hasPlain, hasIndiv, grandItem, plainItem, indivItems };
   }
 
+  function isLocked(item) {
+    const { hasGrand, hasPlain } = getConflict();
+    const qty = menuOrder[item.id] || 0;
+    if (qty > 0) return false; // never lock something already selected
+    const isGrand = item.name === GRAND_MENU_NAME;
+    const isPlain = item.name === PLAIN_MENU_NAME;
+    const isWhole = item.name === WHOLE_NAME;
+    const isHalfOrQuarter = INDIVIDUAL_NAMES.includes(item.name) && !isWhole;
+    // Grand Menu selected: only Whole Chicharonillo allowed, block everything else
+    if (hasGrand && !isGrand && !isWhole) return true;
+    // Plain Menu selected: block Grand Menu only
+    if (hasPlain && isGrand) return true;
+    return false;
+  }
+
   function changeQty(id, delta) {
     const items = loadMenuItems();
     const item = items.find(m=>String(m.id)===String(id));
     if (!item) return;
+    if (delta > 0 && isLocked(item)) {
+      const { hasGrand, hasPlain } = getConflict();
+      if (hasGrand) toast('The Grand Menu is selected. Only Whole Chicharonillo can be added.');
+      else if (hasPlain) toast('Remove the Grand Menu first before adding this item.');
+      else toast('This item is not available with your current selection.');
+      return;
+    }
     const current = menuOrder[id] || 0;
     const next = Math.max(0, current + delta);
-
-    if (delta > 0) {
-      const { hasGrand, hasPlain, hasIndiv, grandItem } = getConflict();
-      const isGrand = item.name === GRAND_MENU_NAME;
-      const isPlain = item.name === PLAIN_MENU_NAME;
-      const isIndiv = INDIVIDUAL_NAMES.includes(item.name);
-
-      // Grand Menu (8500) locks everything else
-      if (isGrand && (hasPlain || hasIndiv)) {
-        toast('Remove other selections first before choosing the Grand Menu');
-        return;
-      }
-      // Nothing can be added when Grand Menu is selected
-      if (hasGrand && !isGrand) {
-        toast('Remove the Grand Menu first before adding other items');
-        return;
-      }
-      // Plain menu (4850) locks individual Chicharonillo sizes
-      if (isPlain && hasIndiv) {
-        toast('Remove individual Chicharonillo items first');
-        return;
-      }
-      if (isIndiv && hasPlain) {
-        toast('Remove the set menu first before adding individual Chicharonillo items');
-        return;
-      }
-    }
-
     if (next === 0) delete menuOrder[id]; else menuOrder[id] = next;
     renderMenuGrid();
   }
@@ -914,6 +1001,32 @@
     panel.style.display = open ? 'block' : 'none';
     btn.textContent = open ? '✕ Close' : '✏ Edit Times';
     if (open) renderTimeEditor();
+  }
+
+  function renderTimeEditor() {
+    const slots = loadSlots();
+    const container = document.getElementById('timeEditorSlots');
+    if (!slots.length) {
+      container.innerHTML = `<div style="font-style:italic;color:var(--muted);font-size:15px;padding:4px 0">No time slots yet. Add one below.</div>`;
+      return;
+    }
+    container.innerHTML = slots.map(s => {
+      const {hr, ampm} = fmt12(s.val);
+      const active = s.active !== false;
+      return `<div style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1.5px solid ${active?'rgba(42,106,74,0.3)':'rgba(154,42,26,0.25)'};border-radius:10px;padding:10px 14px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:8px;height:8px;border-radius:50%;background:${active?'#2a6a4a':'#9a2a1a'};flex-shrink:0"></div>
+          <div>
+            <div style="font-size:17px;color:var(--ink)">${hr} ${ampm}</div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;font-weight:700;letter-spacing:0.08em;color:${active?'#2a6a4a':'#9a2a1a'};margin-top:2px">${active?'AVAILABLE TO GUESTS':'BLOCKED'}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button onclick="toggleSlot('${s.val}')" style="background:${active?'rgba(154,42,26,0.07)':'rgba(42,106,74,0.08)'};border:1.5px solid ${active?'rgba(154,42,26,0.25)':'rgba(42,106,74,0.3)'};border-radius:6px;color:${active?'#9a2a1a':'#2a6a4a'};font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:5px 10px;cursor:pointer;font-weight:700">${active?'Block':'Enable'}</button>
+          <button onclick="removeSlot('${s.val}')" style="background:rgba(154,42,26,0.06);border:1.5px solid rgba(154,42,26,0.2);border-radius:6px;color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:10px;padding:5px 10px;cursor:pointer;font-weight:700">✕</button>
+        </div>
+      </div>`;
+    }).join('');
   }
 
   function toggleSlot(val) {
