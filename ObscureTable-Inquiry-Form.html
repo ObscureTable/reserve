@@ -23,7 +23,7 @@
   window._fbWriteReservation = async (id, data) => {
     await set(ref(db, `reservations/${id}`), data);
   };
-  // ── Blocked dates sync ─────────────────────────────────
+  // -- Blocked dates sync ---------------------------------
   window._fbSaveBlockedDates = async (dates) => {
     await set(ref(db, 'config/blocked_dates'), dates.length ? dates : null);
   };
@@ -127,7 +127,7 @@
   .check-item { display: flex; align-items: center; gap: 10px; cursor: pointer; }
   .check-item input[type="checkbox"] { width: 18px; height: 18px; border: 1.5px solid var(--border); border-radius: 3px; appearance: none; -webkit-appearance: none; background: transparent; cursor: pointer; flex-shrink: 0; position: relative; transition: all 0.15s; }
   .check-item input[type="checkbox"]:checked { background: var(--gold); border-color: var(--gold); }
-  .check-item input[type="checkbox"]:checked::after { content: '✓'; position: absolute; top: -2px; left: 2px; font-size: 13px; color: #fff; font-family: 'Courier Prime', monospace; font-weight: 700; }
+  .check-item input[type="checkbox"]:checked::after { content: 'v'; position: absolute; top: -2px; left: 2px; font-size: 13px; color: #fff; font-family: 'Courier Prime', monospace; font-weight: 700; }
   .check-item span { font-size: 16px; color: var(--stone); }
 
   /* Others reveal */
@@ -179,7 +179,7 @@
   @media print { body { background: white; padding: 0; } .page { box-shadow: none; max-width: 100%; } .inner { padding: 40px 48px; } .btn-submit, .btn-print, .submit-row { display: none !important; } .confirm-bar { margin: 0 -48px; padding: 18px 48px; } .menu-card { break-inside: avoid; } }
   @media (max-width: 600px) { .inner { padding: 36px 28px; } .form-grid.cols-2, .form-grid.cols-3, .menu-grid { grid-template-columns: 1fr; } .check-grid { grid-template-columns: 1fr 1fr; } .policy { grid-template-columns: 1fr; } .confirm-bar { flex-direction: column; align-items: flex-start; margin: 0 -28px; padding: 18px 28px; } .wordmark { font-size: 40px; } }
 
-  /* ── Custom Date Picker ─────────────────────────────────── */
+  /* -- Custom Date Picker ----------------------------------- */
   .cdp-wrap { position: relative; }
   .cdp-field { width: 100%; background: #fff; border: 2px solid var(--border); border-radius: 14px; color: var(--ink); padding: 16px 18px; font-family: 'Cormorant Garamond', serif; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; user-select: none; }
   .cdp-field.available { border-color: #2a7a4a !important; background: rgba(42,122,74,0.07) !important; box-shadow: 0 0 0 3px rgba(42,122,74,0.12); }
@@ -214,11 +214,11 @@
 <body>
 
 <!--
-  ╔══════════════════════════════════════════════════════╗
+  ╔======================================================╗
   ║  OBSCURE TABLE — BLOCKED DATES CONFIGURATION         ║
   ║  Add dates in "YYYY-MM-DD" format                    ║
   ║  Example: "2025-12-25" blocks Christmas Day          ║
-  ╚══════════════════════════════════════════════════════╝
+  ╚======================================================╝
 -->
 <script>
   const BLOCKED_DATES = [
@@ -230,13 +230,13 @@
 
   const BLOCKED_MESSAGE = "We're sorry, this date is unavailable. Please select another date or provide an alternate.";
 
-  // ── MENU OPTIONS — edit names, descriptions and prices here ──
+  // -- MENU OPTIONS   edit names, descriptions and prices here --
   const MENU_OPTIONS = [
-    { icon: "🍽️", name: "Obscure Table Menu without the Chicharonillo", desc: "Our signature tasting menu, served without the Chicharonillo.", price: "PHP 4,850 per person" },
-    { icon: "🍽️", name: "Obscure Table Grand Menu with Chicharonillo", desc: "The full Obscure Table experience featuring the celebrated Chicharonillo.", price: "PHP 8,500 per person" },
-    { icon: "🍽️", name: "Whole Chicharonillo with Accoutrements", desc: "A whole Chicharonillo served with its full accompaniments.", price: "PHP 14,950" },
-    { icon: "🍽️", name: "Half Chicharonillo with Accoutrements", desc: "Half a Chicharonillo served with its full accompaniments.", price: "PHP 7,475" },
-    { icon: "🍽️", name: "Quarter Chicharonillo with Accoutrements", desc: "A quarter Chicharonillo served with its full accompaniments.", price: "PHP 3,750" },
+    { icon: "  ", name: "Obscure Table Menu without the Chicharonillo", desc: "Our signature tasting menu, served without the Chicharonillo.", price: "PHP 4,850 per person" },
+    { icon: "  ", name: "Obscure Table Grand Menu with Chicharonillo", desc: "The full Obscure Table experience featuring the celebrated Chicharonillo.", price: "PHP 8,500 per person" },
+    { icon: "  ", name: "Whole Chicharonillo with Accoutrements", desc: "A whole Chicharonillo served with its full accompaniments.", price: "PHP 14,950" },
+    { icon: "  ", name: "Half Chicharonillo with Accoutrements", desc: "Half a Chicharonillo served with its full accompaniments.", price: "PHP 7,475" },
+    { icon: "  ", name: "Quarter Chicharonillo with Accoutrements", desc: "A quarter Chicharonillo served with its full accompaniments.", price: "PHP 3,750" },
   ];
 </script>
 
@@ -278,9 +278,9 @@
     <!-- Guest Details -->
     <div class="section-label">Guest Details</div>
     <div class="form-grid cols-2">
-      <div class="field"><label>Last Name <span class="req">✦</span></label><input type="text" id="lastName" placeholder="Surname" required></div>
-      <div class="field"><label>First Name <span class="req">✦</span></label><input type="text" id="firstName" placeholder="Given name" required></div>
-      <div class="field"><label>Phone Number <span class="req">✦</span></label><input type="tel" id="phone" placeholder="+1 555 000 0000" required></div>
+      <div class="field"><label>Last Name <span class="req">*</span></label><input type="text" id="lastName" placeholder="Surname" required></div>
+      <div class="field"><label>First Name <span class="req">*</span></label><input type="text" id="firstName" placeholder="Given name" required></div>
+      <div class="field"><label>Phone Number <span class="req">*</span></label><input type="tel" id="phone" placeholder="+1 555 000 0000" required></div>
       <div class="field"><label>Email Address</label><input type="email" id="email" placeholder="For confirmation"></div>
     </div>
 
@@ -289,8 +289,8 @@
     <div class="form-grid cols-3">
       <div class="field">
         <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px">
-          <label style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:700">Preferred Date <span style="color:#9a2a1a">✦</span></label>
-          <button onclick="promptDatePin()" id="editDatesBtn" style="background:rgba(138,96,32,0.08);border:1.5px solid rgba(138,96,32,0.25);color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 12px;cursor:pointer;font-weight:700">🚫 Block Dates</button>
+          <label style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:700">Preferred Date <span style="color:#9a2a1a">*</span></label>
+          <button onclick="promptDatePin()" id="editDatesBtn" style="background:rgba(138,96,32,0.08);border:1.5px solid rgba(138,96,32,0.25);color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 12px;cursor:pointer;font-weight:700"> Block Dates</button>
         </div>
                 <div id="cdp_date"></div>
         <div class="blocked-notice" id="blockedNotice"><p id="blockedMsg"></p></div>
@@ -305,8 +305,8 @@
       </div>
       <div class="field">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <label style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0">Preferred Time <span style="color:#9a2a1a">✦</span></label>
-          <button onclick="promptTimePin()" id="editTimesBtn" style="background:rgba(138,96,32,0.08);border:1.5px solid rgba(138,96,32,0.25);border-radius:3px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 12px;cursor:pointer;font-weight:700">✏ Edit Times</button>
+          <label style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:0">Preferred Time <span style="color:#9a2a1a">*</span></label>
+          <button onclick="promptTimePin()" id="editTimesBtn" style="background:rgba(138,96,32,0.08);border:1.5px solid rgba(138,96,32,0.25);border-radius:3px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:4px 12px;cursor:pointer;font-weight:700"> Edit Times</button>
         </div>
 
         <!-- Time Editor Panel -->
@@ -324,7 +324,7 @@
           <option value="">Select—</option>
         </select>
       </div>
-      <div class="field"><label>Party Size <span class="req">✦</span></label>
+      <div class="field"><label>Party Size <span class="req">*</span></label>
         <select id="party">
           <option value="">Select—</option>
           <option>1 Guest</option><option>2 Guests</option><option>3 Guests</option>
@@ -336,16 +336,12 @@
       </div>
     </div>
     <div class="form-grid cols-2">
-      <div class="field"><label>Alternate Date</label><input type="date" id="altDate" onchange="checkAltDate(this.value)">
-                <div id="cdp_altdate"></div>
-        <div id="altBlockedNotice" style="display:none;background:rgba(154,42,26,0.05);border:1px solid rgba(154,42,26,0.2);padding:10px 14px;margin-top:8px;font-size:15px;color:#9a2a1a;font-style:italic;line-height:1.5">This alternate date is also unavailable. Please choose a different date.</div>
-      </div>
     </div>
 
     <!-- Menu Choice -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
       <div class="section-label" style="margin-bottom:0;flex:1">Menu Preference</div>
-      <button onclick="promptMenuPin()" id="editMenuBtn" style="background:rgba(138,96,32,0.08);border:1.5px solid rgba(138,96,32,0.25);color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:5px 14px;cursor:pointer;font-weight:700;margin-left:12px">✏ Edit Menu</button>
+      <button onclick="promptMenuPin()" id="editMenuBtn" style="background:rgba(138,96,32,0.08);border:1.5px solid rgba(138,96,32,0.25);color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:5px 14px;cursor:pointer;font-weight:700;margin-left:12px"> Edit Menu</button>
     </div>
 
     <!-- Menu Editor Panel -->
@@ -445,13 +441,22 @@
 </div>
 
 <script>
-  // ── PIN Protection — change to your preferred PIN ─────────
+  // -- PIN Protection   change to your preferred PIN ---------
   const STAFF_PIN = '1234';
   let menuPinUnlocked = false;
   let timePinUnlocked = false;
 
 
-  // ══ VISUAL CALENDAR DATE BLOCKER ══════════════════════════
+  function loadBlockedDates() {
+    try { return JSON.parse(localStorage.getItem('ot_blocked_dates') || '[]'); } catch(e) { return []; }
+  }
+
+  function saveBlockedDates(dates) {
+    try { localStorage.setItem('ot_blocked_dates', JSON.stringify(dates)); } catch(e) {}
+    if (window._fbSaveBlockedDates) window._fbSaveBlockedDates(dates).catch(e=>console.warn('FB sync:',e));
+  }
+
+  // == VISUAL CALENDAR DATE BLOCKER ==========================
   let calView = 'month';
   let calYear = new Date().getFullYear();
   let calMonth = new Date().getMonth();
@@ -459,11 +464,9 @@
   const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   function getBlockFrom() { try { return localStorage.getItem('ot_block_from')||null; } catch(e){return null;} }
-  function setBlockFrom(v) { try { if(v) localStorage.setItem('ot_block_from',v); else localStorage.removeItem('ot_block_from'); } catch(e){}
-    if (window._fbSaveBlockFrom) window._fbSaveBlockFrom(v||null).catch(e=>console.warn('FB sync:',e)); }
-  function isDateBlocked(val) {
-    if (loadBlockedDates().includes(val)) return true;
-    const bf = getBlockFrom(); if (bf && val >= bf) return true; return false;
+  function setBlockFrom(v) {
+    try { if(v) localStorage.setItem('ot_block_from',v); else localStorage.removeItem('ot_block_from'); } catch(e) {}
+    if (window._fbSaveBlockFrom) window._fbSaveBlockFrom(v||null).catch(function(e){console.warn('FB sync:',e);});
   }
   function isCalDateBlocked(s) { return isDateBlocked(s); }
   function isFullMonthBlocked(y,m) {
@@ -521,7 +524,7 @@
   function blockFromDate(dateStr) {
     setBlockFrom(dateStr); renderCalendar();
     const fmt=new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-    if(typeof toast==='function')toast('Blocked from '+fmt+' onwards ✓');else alert('Blocked from '+fmt+' onwards.');
+    if(typeof toast==='function')toast('Blocked from '+fmt+' onwards v');else alert('Blocked from '+fmt+' onwards.');
   }
 
   const CBTN = "background:rgba(120,85,30,0.08);border:1.5px solid rgba(120,85,30,0.2);border-radius:6px;color:#9b7238;font-family:'Courier Prime',monospace;font-size:14px;padding:5px 12px;cursor:pointer;font-weight:700";
@@ -534,15 +537,15 @@
     const container=document.getElementById('calendarContainer');
     if(!container)return;
     const bf=getBlockFrom(); const today=new Date(); today.setHours(0,0,0,0);
-    let lbl=calView==='month'?`${MONTH_NAMES[calMonth]} ${calYear}`:calView==='year'?String(calYear):`${calYear} – ${calYear+11}`;
+    let lbl=calView==='month'?`${MONTH_NAMES[calMonth]} ${calYear}`:calView==='year'?String(calYear):`${calYear}   ${calYear+11}`;
     let h=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <button onclick="calNav(-1)" style="${CBTN}">◀</button>
+      <button onclick="calNav(-1)" style="${CBTN}"><</button>
       <div style="display:flex;gap:5px">
         <button onclick="calView='month';renderCalendar()" style="${CACT(calView==='month')}">Days</button>
         <button onclick="calView='year';renderCalendar()" style="${CACT(calView==='year')}">Months</button>
         <button onclick="calView='years';renderCalendar()" style="${CACT(calView==='years')}">Years</button>
       </div>
-      <button onclick="calNav(1)" style="${CBTN}">▶</button>
+      <button onclick="calNav(1)" style="${CBTN}">></button>
     </div>
     <div style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9b7238;text-align:center;margin-bottom:10px;font-weight:700">${lbl}</div>`;
 
@@ -559,13 +562,13 @@
         const bg=blocked?(isFwd?'#7a1a08':'#9a2a1a'):'#fff';
         const col=blocked?'#fff':'#1a1208';
         const bdr=isToday?'2px solid #9b7238':`1px solid ${blocked?'transparent':'rgba(120,85,30,0.12)'}`;
-        h+=`<button onclick="toggleCalDate('${ds}')" title="${blocked?'Blocked — tap to unblock':'Tap to block'}" style="background:${bg};border:${bdr};border-radius:5px;color:${col};font-family:'Courier Prime',monospace;font-size:11px;padding:6px 1px;cursor:pointer;text-align:center;font-weight:${blocked?700:400};width:100%;transition:all 0.1s">${d}</button>`;
+        h+=`<button onclick="toggleCalDate('${ds}')" title="${blocked?'Blocked   tap to unblock':'Tap to block'}" style="background:${bg};border:${bdr};border-radius:5px;color:${col};font-family:'Courier Prime',monospace;font-size:11px;padding:6px 1px;cursor:pointer;text-align:center;font-weight:${blocked?700:400};width:100%;transition:all 0.1s">${d}</button>`;
       }
       h+=`</div>`;
       const fm=`${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
       h+=`<div style="display:flex;gap:6px;margin-top:10px">
         <button onclick="toggleCalMonth(${calYear},${calMonth})" style="${CBLOCK(isFullMonthBlocked(calYear,calMonth))}">${isFullMonthBlocked(calYear,calMonth)?'Unblock Month':'Block Month'}</button>
-        <button onclick="blockFromDate('${fm}')" style="${CFWD}">Block From Here ▶</button>
+        <button onclick="blockFromDate('${fm}')" style="${CFWD}">Block From Here ></button>
       </div>`;
 
     } else if(calView==='year'){
@@ -576,14 +579,14 @@
       }
       h+=`</div><div style="display:flex;gap:6px;margin-top:10px">
         <button onclick="toggleCalYear(${calYear})" style="${CBLOCK(isFullYearBlocked(calYear))}">${isFullYearBlocked(calYear)?'Unblock Year':'Block Year'}</button>
-        <button onclick="blockFromDate('${calYear}-01-01')" style="${CFWD}">Block From This Year ▶</button>
+        <button onclick="blockFromDate('${calYear}-01-01')" style="${CFWD}">Block From This Year ></button>
       </div>`;
 
     } else {
       h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">`;
       for(let y=calYear;y<calYear+12;y++){
         const blocked=isFullYearBlocked(y);
-        h+=`<button onclick="calYear=${y};calView='year';renderCalendar()" style="background:${blocked?'#9a2a1a':'#fff'};border:1.5px solid ${blocked?'transparent':'rgba(120,85,30,0.18)'};border-radius:8px;color:${blocked?'#fff':'#1a1208'};font-family:'Courier Prime',monospace;font-size:12px;padding:11px 2px;cursor:pointer;text-align:center;font-weight:700;transition:all 0.1s">${y}${blocked?' ✕':''}</button>`;
+        h+=`<button onclick="calYear=${y};calView='year';renderCalendar()" style="background:${blocked?'#9a2a1a':'#fff'};border:1.5px solid ${blocked?'transparent':'rgba(120,85,30,0.18)'};border-radius:8px;color:${blocked?'#fff':'#1a1208'};font-family:'Courier Prime',monospace;font-size:12px;padding:11px 2px;cursor:pointer;text-align:center;font-weight:700;transition:all 0.1s">${y}${blocked?' x':''}</button>`;
       }
       h+=`</div><div style="margin-top:10px"><button onclick="toggleCalYear(${calYear})" style="${CBLOCK(isFullYearBlocked(calYear))};width:100%">${isFullYearBlocked(calYear)?'Unblock '+calYear:'Block '+calYear}</button></div>`;
     }
@@ -592,7 +595,7 @@
       const fmtBf=new Date(bf+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
       h+=`<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(154,42,26,0.07);border:1.5px solid rgba(154,42,26,0.22);border-radius:8px;padding:8px 12px;margin-top:10px">
         <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#9a2a1a;font-weight:700">FORWARD BLOCK FROM ${fmtBf.toUpperCase()}</div>
-        <button onclick="setBlockFrom(null);renderCalendar();if(typeof toast!=='undefined')toast('Forward block cleared ✓');" style="background:rgba(42,106,74,0.1);border:1.5px solid rgba(42,106,74,0.3);border-radius:5px;color:#2a6a4a;font-family:'Courier Prime',monospace;font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700">✕ Clear</button>
+        <button onclick="setBlockFrom(null);renderCalendar();if(typeof toast!=='undefined')toast('Forward block cleared v');" style="background:rgba(42,106,74,0.1);border:1.5px solid rgba(42,106,74,0.3);border-radius:5px;color:#2a6a4a;font-family:'Courier Prime',monospace;font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700">x Clear</button>
       </div>`;
     }
 
@@ -622,12 +625,12 @@
     if(p1!==p2){if(typeof toast!=='undefined')toast('PINs do not match');else alert('PINs do not match');return;}
     try{localStorage.setItem('ot_staff_pin',p1);}catch(e){}
     document.getElementById('newPin1').value='';document.getElementById('newPin2').value='';
-    if(typeof toast!=='undefined')toast('PIN updated ✓');else alert('PIN updated.');
+    if(typeof toast!=='undefined')toast('PIN updated v');else alert('PIN updated.');
   }
-  // ══ END CALENDAR BLOCKER ═══════════════════════════════════
+  // == END CALENDAR BLOCKER ===================================
 
 
-  // ── Custom Date Picker ────────────────────────────────────
+  // -- Custom Date Picker ------------------------------------
   const _cdpState = {}; // { pickerId: { year, month, value, open } }
 
   function cdpInit(pickerId, placeholder, onSelectFn) {
@@ -691,7 +694,7 @@
     const blocked = isDateBlocked(st.value);
     field.classList.remove('available','blocked');
     field.classList.add(blocked ? 'blocked' : 'available');
-    if (badge) { badge.textContent = blocked ? '✕ Not Available' : '✓ Available'; }
+    if (badge) { badge.textContent = blocked ? 'x Not Available' : 'v Available'; }
   }
 
   function cdpGetValue(pickerId) {
@@ -738,14 +741,14 @@
         <span class="cdp-field-text" id="${pickerId}_text" style="color:var(--muted);font-style:italic">${st.placeholder}</span>
         <div class="cdp-field-right">
           <span class="cdp-badge" id="${pickerId}_badge"></span>
-          <span style="font-size:18px;opacity:0.4">📅</span>
+          <span style="font-size:18px;opacity:0.4"></span>
         </div>
       </div>
       <div class="cdp-cal" id="${pickerId}_cal">
         <div class="cdp-nav">
-          <button class="cdp-nav-btn" onclick="event.stopPropagation();cdpNav('${pickerId}',-1)">◀</button>
+          <button class="cdp-nav-btn" onclick="event.stopPropagation();cdpNav('${pickerId}',-1)"><</button>
           <div class="cdp-nav-label" id="${pickerId}_navlabel"></div>
-          <button class="cdp-nav-btn" onclick="event.stopPropagation();cdpNav('${pickerId}',1)">▶</button>
+          <button class="cdp-nav-btn" onclick="event.stopPropagation();cdpNav('${pickerId}',1)">></button>
         </div>
         <div class="cdp-grid">
           <div class="cdp-dow">Su</div><div class="cdp-dow">Mo</div><div class="cdp-dow">Tu</div>
@@ -785,7 +788,7 @@
     else if (pin !== null) alert('Incorrect PIN');
   }
 
-  // ── Blocked Dates Manager ─────────────────────────────────
+  // -- Blocked Dates Manager ---------------------------------
   let datePinUnlocked = false;
 
   function promptDatePin() {
@@ -795,21 +798,13 @@
     else if (pin !== null) alert('Incorrect PIN');
   }
 
-  function loadBlockedDates() {
-    try { return JSON.parse(localStorage.getItem('ot_blocked_dates') || '[]'); } catch(e) { return []; }
-  }
-
-  function saveBlockedDates(dates) {
-    try { localStorage.setItem('ot_blocked_dates', JSON.stringify(dates)); } catch(e) {}
-    if (window._fbSaveBlockedDates) window._fbSaveBlockedDates(dates).catch(e=>console.warn('FB sync:',e));
-  }
 
   function toggleDateEditor() {
     const panel = document.getElementById('dateEditorPanel');
     const btn = document.getElementById('editDatesBtn');
     const open = panel.style.display === 'none';
     panel.style.display = open ? 'block' : 'none';
-    btn.textContent = open ? '✕ Close' : '🚫 Block Dates';
+    btn.textContent = open ? 'x Close' : ' Block Dates';
     if (open) {
       renderCalendar();
       setTimeout(() => panel.scrollIntoView({behavior:'smooth', block:'start'}), 100);
@@ -830,7 +825,7 @@
           <div style="font-size:16px;color:var(--ink);font-family:'EB Garamond',serif">${fmt}</div>
           <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#9a2a1a;margin-top:2px;letter-spacing:0.06em;font-weight:700">BLOCKED</div>
         </div>
-        <button onclick="removeBlockedDate('${d}')" style="background:rgba(154,42,26,0.06);border:1px solid rgba(154,42,26,0.25);color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:11px;padding:6px 14px;cursor:pointer;font-weight:700">✕ Unblock</button>
+        <button onclick="removeBlockedDate('${d}')" style="background:rgba(154,42,26,0.06);border:1px solid rgba(154,42,26,0.25);color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:11px;padding:6px 14px;cursor:pointer;font-weight:700">x Unblock</button>
       </div>`;
     }).join('');
   }
@@ -861,7 +856,6 @@
       sel.appendChild(opt);
     }
   }
-  initYearDropdown();
 
   function addDateRange() {
     const start = document.getElementById('rangeStart').value;
@@ -902,7 +896,7 @@
     alert(mName+' '+year+' blocked ('+added+' days).');
   }
 
-  // ── Block From Date Onwards ───────────────────────────────
+  // -- Block From Date Onwards -------------------------------
   function loadBlockFrom() {
     try { return localStorage.getItem('ot_block_from') || null; } catch(e) { return null; }
   }
@@ -940,7 +934,7 @@
   }
   updateBlockFromStatus();
 
-  // ── Change PIN ────────────────────────────────────────────
+  // -- Change PIN --------------------------------------------
   function getStaffPin() {
     try { return localStorage.getItem('ot_staff_pin') || STAFF_PIN; } catch(e) { return STAFF_PIN; }
   }
@@ -963,16 +957,7 @@
     return false;
   }
 
-  function checkAltDate(val) {
-    if (!val) val = cdpGetValue('cdp_altdate');
-    const notice = document.getElementById('altBlockedNotice');
-    if (!val) { if (notice) notice.style.display = 'none'; return; }
-    const blocked = isDateBlocked(val);
-    if (notice) notice.style.display = blocked ? 'block' : 'none';
-    cdpUpdateField('cdp_altdate');
-  }
-
-  // ── Menu Manager ──────────────────────────────────────────
+  // -- Menu Manager ------------------------------------------
   let menuOrder = {}; // { itemId: quantity }
 
   function loadMenuItems() {
@@ -981,11 +966,11 @@
       if (stored) return JSON.parse(stored);
     } catch(e) {}
     return [
-      { id:1, icon:"🍽️", name:"Obscure Table Menu without the Chicharonillo", desc:"Our signature tasting menu, served without the Chicharonillo.", price:"PHP 4,850 per person" },
-      { id:2, icon:"🍽️", name:"Obscure Table Grand Menu with Chicharonillo", desc:"The full Obscure Table experience featuring the celebrated Chicharonillo.", price:"PHP 8,500 per person" },
-      { id:3, icon:"🍽️", name:"Whole Chicharonillo with Accoutrements", desc:"A whole Chicharonillo served with its full accompaniments.", price:"PHP 14,950" },
-      { id:4, icon:"🍽️", name:"Half Chicharonillo with Accoutrements", desc:"Half a Chicharonillo served with its full accompaniments.", price:"PHP 7,475" },
-      { id:5, icon:"🍽️", name:"Quarter Chicharonillo with Accoutrements", desc:"A quarter Chicharonillo served with its full accompaniments.", price:"PHP 3,750" },
+      { id:1, icon:"  ", name:"Obscure Table Menu without the Chicharonillo", desc:"Our signature tasting menu, served without the Chicharonillo.", price:"PHP 4,850 per person" },
+      { id:2, icon:"  ", name:"Obscure Table Grand Menu with Chicharonillo", desc:"The full Obscure Table experience featuring the celebrated Chicharonillo.", price:"PHP 8,500 per person" },
+      { id:3, icon:"  ", name:"Whole Chicharonillo with Accoutrements", desc:"A whole Chicharonillo served with its full accompaniments.", price:"PHP 14,950" },
+      { id:4, icon:"  ", name:"Half Chicharonillo with Accoutrements", desc:"Half a Chicharonillo served with its full accompaniments.", price:"PHP 7,475" },
+      { id:5, icon:"  ", name:"Quarter Chicharonillo with Accoutrements", desc:"A quarter Chicharonillo served with its full accompaniments.", price:"PHP 3,750" },
     ];
   }
 
@@ -993,9 +978,9 @@
     try { localStorage.setItem('ot_menu_items_desktop', JSON.stringify(items)); } catch(e) {}
   }
 
-  // ── Menu Exclusivity Rules ────────────────────────────────
+  // -- Menu Exclusivity Rules --------------------------------
   // Grand Menu (PHP 8,500): locks everything EXCEPT Whole Chicharonillo
-  // Plain Menu (PHP 4,850): locks Grand Menu only — allows all Chicharonillo sizes
+  // Plain Menu (PHP 4,850): locks Grand Menu only   allows all Chicharonillo sizes
   const GRAND_MENU_NAME = 'Obscure Table Grand Menu with Chicharonillo';
   const PLAIN_MENU_NAME = 'Obscure Table Menu without the Chicharonillo';
   const INDIVIDUAL_NAMES = ['Whole Chicharonillo with Accoutrements', 'Half Chicharonillo with Accoutrements', 'Quarter Chicharonillo with Accoutrements'];
@@ -1025,7 +1010,7 @@
     return false;
   }
 
-  // ── Multi-select menu with quantity ───────────────────────
+  // -- Multi-select menu with quantity -----------------------
   function renderMenuGrid() {
     const items = loadMenuItems();
     const grid = document.getElementById('menuGrid');
@@ -1045,10 +1030,10 @@
           <div style="font-family:'Cormorant Garamond',serif;font-size:18px;color:${locked?'var(--muted)':'var(--ink)'};font-weight:400">${m.name}</div>
           <div style="font-size:14px;color:var(--muted);font-style:italic;margin-top:3px;line-height:1.4">${m.desc}</div>
           <div style="font-family:'Courier Prime',monospace;font-size:12px;color:${locked?'var(--muted)':'var(--gold)'};margin-top:5px;font-weight:700">${m.price}</div>
-          ${locked?`<div style="font-family:'Courier Prime',monospace;font-size:9px;color:#9a2a1a;margin-top:4px;letter-spacing:0.06em;font-weight:700">NOT AVAILABLE WITH CURRENT SELECTION</div>`:''}
+          ${locked?"<div style=\"font-family:Courier Prime,monospace;font-size:9px;color:#9a2a1a;margin-top:4px;letter-spacing:0.06em;font-weight:700\">NOT AVAILABLE WITH CURRENT SELECTION</div>":""}
         </div>
         <div style="display:flex;align-items:center;gap:0;background:var(--surface);border:1.5px solid var(--border);flex-shrink:0;${locked?'pointer-events:none;opacity:0.4':''}">
-          <button onclick="changeQty(${m.id},-1)" style="background:none;border:none;color:var(--gold);font-size:22px;padding:8px 16px;cursor:${locked?'not-allowed':'pointer'};font-weight:300;line-height:1">−</button>
+          <button onclick="changeQty(${m.id},-1)" style="background:none;border:none;color:var(--gold);font-size:22px;padding:8px 16px;cursor:${locked?'not-allowed':'pointer'};font-weight:300;line-height:1"> </button>
           <div style="min-width:40px;text-align:center;font-family:'EB Garamond',serif;font-size:18px;color:var(--ink);padding:0 4px">
             ${qty>0?qty:'<span style="color:var(--muted);font-size:14px;font-style:italic">0</span>'}
           </div>
@@ -1104,7 +1089,7 @@
       if (!item) return '';
       return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid rgba(110,78,22,0.1)">
         <span style="font-size:16px;color:var(--ink)">${item.icon} ${item.name}</span>
-        <span style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--gold);font-weight:700;margin-left:16px">×${qty}</span>
+        <span style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--gold);font-weight:700;margin-left:16px"> ${qty}</span>
       </div>`;
     }).join('');
   }
@@ -1117,7 +1102,7 @@
       .filter(Boolean).join(', ');
   }
 
-  // ── Menu Editor (PIN protected) ───────────────────────────
+  // -- Menu Editor (PIN protected) ---------------------------
   function renderMenuEditor() {
     const items = loadMenuItems();
     const container = document.getElementById('menuEditorItems');
@@ -1154,7 +1139,7 @@
         <div style="display:flex;gap:10px;align-items:flex-end">
           <input id="ePrice_${m.id}" value="${m.price}" style="flex:1;background:#fff;border:none;border-bottom:2px solid rgba(110,78,22,0.3);color:var(--ink);padding:6px 2px;font-family:'EB Garamond',serif;font-size:15px;outline:none">
           <button onclick="saveMenuEdit(${m.id})" style="background:var(--gold);border:none;color:#fff;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:8px 18px;cursor:pointer;font-weight:700">Save</button>
-          <button onclick="cancelMenuEdit(${m.id})" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Courier Prime',monospace;font-size:10px;padding:8px 12px;cursor:pointer">✕</button>
+          <button onclick="cancelMenuEdit(${m.id})" style="background:transparent;border:1px solid var(--border);color:var(--muted);font-family:'Courier Prime',monospace;font-size:10px;padding:8px 12px;cursor:pointer">x</button>
         </div>`;
       wrap.appendChild(viewRow);
       wrap.appendChild(editRow);
@@ -1167,7 +1152,7 @@
     const btn = document.getElementById('editMenuBtn');
     const open = panel.style.display === 'none';
     panel.style.display = open ? 'block' : 'none';
-    btn.textContent = open ? '✕ Close' : '✏ Edit Menu';
+    btn.textContent = open ? 'x Close' : ' Edit Menu';
     if (open) renderMenuEditor();
   }
 
@@ -1180,7 +1165,7 @@
     if (!item) return;
     const name = document.getElementById(`eName_${id}`).value.trim();
     if (!name) { alert('Name cannot be empty'); return; }
-    item.icon  = document.getElementById(`eIcon_${id}`).value.trim() || '🍽️';
+    item.icon  = document.getElementById(`eIcon_${id}`).value.trim() || '  ';
     item.name  = name;
     item.desc  = document.getElementById(`eDesc_${id}`).value.trim();
     item.price = document.getElementById(`ePrice_${id}`).value.trim();
@@ -1200,7 +1185,7 @@
   }
 
   function addMenuItem() {
-    const icon  = document.getElementById('newMenuIcon').value.trim() || '🍽️';
+    const icon  = document.getElementById('newMenuIcon').value.trim() || '  ';
     const name  = document.getElementById('newMenuName').value.trim();
     const desc  = document.getElementById('newMenuDesc').value.trim();
     const price = document.getElementById('newMenuPrice').value.trim();
@@ -1218,12 +1203,12 @@
 
   renderMenuGrid();
 
-  // ── Date setup ────────────────────────────────────────────
+  // -- Date setup --------------------------------------------
   const today = new Date().toISOString().split('T')[0];
-  document.getElementById('date').min = today;
-  document.getElementById('altDate').min = today;
-
   let dateBlocked = false;
+
+  // Init custom date pickers
+  cdpInit('cdp_date', 'Click to choose a date', 'checkBlockedDate');
 
 
 
@@ -1246,11 +1231,9 @@
       if (notice) notice.style.display = 'none';
       document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('blocked'));
     }
-    const altVal = cdpGetValue('cdp_altdate');
-    if (altVal) checkAltDate(altVal);
   }
 
-  // ── Others reveal ─────────────────────────────────────────
+  // -- Others reveal -----------------------------------------
   function toggleOtherReveal(checkId, revealId) {
     const checked = document.getElementById(checkId).checked;
     const reveal = document.getElementById(revealId);
@@ -1261,7 +1244,7 @@
     }
   }
 
-  // ── Collect values ────────────────────────────────────────
+  // -- Collect values ----------------------------------------
   function getCheckedVals(name) {
     const checked = [...document.querySelectorAll(`input[name="${name}"]:checked`)];
     const vals = checked.filter(el=>el.value!=='Other').map(el=>el.value);
@@ -1275,7 +1258,7 @@
     return vals.join(', ');
   }
 
-  // ── Time Slot Manager ─────────────────────────────────────
+  // -- Time Slot Manager -------------------------------------
   const DEFAULT_SLOTS = [
     {val:'17:00',active:true},{val:'17:30',active:true},
     {val:'18:00',active:true},{val:'18:30',active:true},
@@ -1302,7 +1285,7 @@
     const slots = loadSlots();
     const sel = document.getElementById('time');
     const current = sel.value;
-    sel.innerHTML = '<option value="">Select—</option>';
+    sel.innerHTML = '<option value="">Select </option>';
     slots.filter(s=>s.active).forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.val;
@@ -1334,7 +1317,7 @@
         </div>
         <div style="display:flex;gap:8px">
           <button onclick="toggleSlot('${s.val}')" style="background:${active?'rgba(154,42,26,0.07)':'rgba(42,106,74,0.08)'};border:1.5px solid ${active?'rgba(154,42,26,0.25)':'rgba(42,106,74,0.3)'};color:${active?'#9a2a1a':'#2a6a4a'};font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;padding:6px 12px;cursor:pointer;font-weight:700">${active?'Block':'Enable'}</button>
-          <button onclick="removeSlot('${s.val}')" style="background:rgba(154,42,26,0.06);border:1.5px solid rgba(154,42,26,0.2);color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:10px;padding:6px 10px;cursor:pointer;font-weight:700">✕</button>
+          <button onclick="removeSlot('${s.val}')" style="background:rgba(154,42,26,0.06);border:1.5px solid rgba(154,42,26,0.2);color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:10px;padding:6px 10px;cursor:pointer;font-weight:700">x</button>
         </div>`;
       container.appendChild(row);
     });
@@ -1345,7 +1328,7 @@
     const btn = document.getElementById('editTimesBtn');
     const open = panel.style.display === 'none';
     panel.style.display = open ? 'block' : 'none';
-    btn.textContent = open ? '✕ Close' : '✏ Edit Times';
+    btn.textContent = open ? 'x Close' : ' Edit Times';
     if (open) renderTimeEditor();
   }
 
@@ -1390,7 +1373,7 @@
     return `OT-${L}${d}-${hr}${rand}`;
   }
 
-  // ── EmailJS Configuration ─────────────────────────────────
+  // -- EmailJS Configuration ---------------------------------
   const EJS_SERVICE  = 'service_xo8aoro';
   const EJS_TEMPLATE = 'template_yfe626s';
   const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
@@ -1400,10 +1383,10 @@
     if(window.emailjs) emailjs.init({ publicKey: EJS_KEY });
     else window.addEventListener('load', () => emailjs.init({ publicKey: EJS_KEY }));
   })();
-  // ─────────────────────────────────────────────────────────
+  // ---------------------------------------------------------
 
-  function fmtDateDesk(d) { if(!d)return'—'; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}); }
-  function fmtTimeDesk(t) { if(!t)return'—'; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; }
+  function fmtDateDesk(d) { if(!d)return' '; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'}); }
+  function fmtTimeDesk(t) { if(!t)return' '; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; }
 
   async function submitInquiry() {
     const lastName  = document.getElementById('lastName').value.trim();
@@ -1412,50 +1395,48 @@
     const date      = cdpGetValue('cdp_date');
     const time      = document.getElementById('time').value;
     const party     = document.getElementById('party').value;
-    const altDate   = cdpGetValue('cdp_altdate');
     const email     = document.getElementById('email').value.trim();
     const notes     = document.getElementById('notes').value.trim();
     const source    = document.getElementById('source').value;
     const occasions = getCheckedVals('occasion');
     const dietary   = getCheckedVals('dietary');
 
-    if (!lastName||!firstName||!phone||!date||!time||!party) { alert('Please complete all required fields (marked ✦) before submitting.'); return; }
+    if (!lastName||!firstName||!phone||!date||!time||!party) { alert('Please complete all required fields (marked *) before submitting.'); return; }
     if (dateBlocked) { alert('The selected date is unavailable. Please choose another date.'); return; }
 
     const code = generateCode(lastName, date, time);
 
     const btn = document.querySelector('.btn-submit');
-    btn.textContent = 'Sending…';
+    btn.textContent = 'Sending ';
     btn.disabled = true;
 
     const message = `
-OBSCURE TABLE — NEW RESERVATION INQUIRY
-════════════════════════════════════════
+OBSCURE TABLE   NEW RESERVATION INQUIRY
+========================================
 
 BOOKING CODE: ${code}
 
 GUEST DETAILS
-─────────────
+-------------
 Name:    ${lastName}, ${firstName}
 Phone:   ${phone}
-Email:   ${email || '—'}
+Email:   ${email || ' '}
 
 RESERVATION
-───────────
+-----------
 Date:       ${fmtDateDesk(date)}
-Alt Date:   ${altDate ? fmtDateDesk(altDate) : '—'}
 Time:       ${fmtTimeDesk(time)}
 Party Size: ${party}
-Menu:       ${(getMenuOrder()||'—')}
+Menu:       ${(getMenuOrder()||' ')}
 
 DETAILS
-───────
-Occasion:    ${occasions || '—'}
-Food Allergy:     ${dietary || '—'}
-Requests:    ${notes || '—'}
-Heard via:   ${source || '—'}
+-------
+Occasion:    ${occasions || ' '}
+Food Allergy:     ${dietary || ' '}
+Requests:    ${notes || ' '}
+Heard via:   ${source || ' '}
 
-════════════════════════════════════════
+========================================
 Please enter this booking into the FOH
 dashboard using the code above.
     `.trim();
@@ -1463,7 +1444,7 @@ dashboard using the code above.
     try {
       await emailjs.send(EJS_SERVICE, EJS_TEMPLATE, {
         to_email: 'obscuretableph@gmail.com',
-        subject:  `New Inquiry — ${code} — ${lastName}, ${firstName}`,
+        subject:  `New Inquiry   ${code}   ${lastName}, ${firstName}`,
         message,
         reply_to: email || phone,
       });
@@ -1485,13 +1466,13 @@ dashboard using the code above.
       btn.disabled = false;
     }
 
-    // ── Write to Firebase — syncs to FOH dashboard instantly ──
+    // -- Write to Firebase   syncs to FOH dashboard instantly --
     const fbId = Date.now();
     const fbData = {
       id: fbId, code,
       name: lastName, first: firstName, phone, email,
       date, time, party: party.replace(/[^0-9]/g,'') * 1 || 1,
-      menu: (getMenuOrder()||'—'),
+      menu: (getMenuOrder()||' '),
       section: '', occasion: occasions || '',
       dietary: dietary || '', notes, source,
       status: 'confirmed',
