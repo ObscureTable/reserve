@@ -265,7 +265,7 @@
         </div>
 
         <!-- Blocked Dates Editor (PIN protected) -->
-        <div id="dateEditorPanel" style="display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-top:10px">
+        <div id="dateEditorPanel" style="display:none;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-top:10px;max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch">
           <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:12px">Blocked Dates &amp; Months</div>
 
           <!-- Currently blocked list -->
@@ -527,7 +527,10 @@
     const open = panel.style.display === 'none';
     panel.style.display = open ? 'block' : 'none';
     btn.textContent = open ? '✕ Close' : '🚫 Block Dates';
-    if (open) renderBlockedDates();
+    if (open) {
+      renderBlockedDates();
+      setTimeout(() => panel.scrollIntoView({behavior:'smooth', block:'start'}), 100);
+    }
   }
 
   function renderBlockedDates() {
