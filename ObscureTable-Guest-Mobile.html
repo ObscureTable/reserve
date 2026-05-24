@@ -45,6 +45,7 @@
     const dates = Array.isArray(val) ? val : [];
     try { localStorage.setItem('ot_blocked_dates', JSON.stringify(dates)); } catch(e) {}
     if (window.renderCalendar) window.renderCalendar();
+    if (window._cdpState) { Object.keys(_cdpState).forEach(id=>cdpRenderGrid(id)); Object.keys(_cdpState).forEach(id=>cdpUpdateField(id)); }
   });
 
   // Live listener — block_from
@@ -55,6 +56,7 @@
       else localStorage.removeItem('ot_block_from');
     } catch(e) {}
     if (window.renderCalendar) window.renderCalendar();
+    if (window._cdpState) { Object.keys(_cdpState).forEach(id=>cdpRenderGrid(id)); Object.keys(_cdpState).forEach(id=>cdpUpdateField(id)); }
   });
 
   // Signal ready
@@ -139,17 +141,7 @@
 
   /* Date availability feedback */
 
-  /* Custom date picker display */
-  .date-pick-wrap { position: relative; }
-  .date-pick-display { width: 100%; background: #fff; border: 2px solid var(--border); border-radius: 14px; color: var(--ink); padding: 16px 18px; font-family: 'Cormorant Garamond', serif; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s; }
-  .date-pick-display.available { border-color: #2a7a4a !important; background: rgba(42,122,74,0.06) !important; box-shadow: 0 0 0 3px rgba(42,122,74,0.12) !important; }
-  .date-pick-display.blocked   { border-color: #9a2a1a !important; background: rgba(154,42,26,0.06) !important; box-shadow: 0 0 0 3px rgba(154,42,26,0.12) !important; }
-  .date-pick-display .date-pick-text { flex: 1; }
-  .date-pick-display .date-pick-icon { font-size: 18px; opacity: 0.5; }
-  .date-pick-display .date-pick-badge { font-family: 'Courier Prime', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 6px; }
-  .date-pick-display.available .date-pick-badge { color: #2a7a4a; background: rgba(42,122,74,0.12); }
-  .date-pick-display.blocked   .date-pick-badge { color: #9a2a1a; background: rgba(154,42,26,0.1); }
-  .date-pick-hidden { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 20px; }
+
 
 
   /* Blocked date notice */
@@ -223,6 +215,37 @@
 
   .toast { position: fixed; top: max(90px, calc(var(--safe-top) + 90px)); left: 50%; transform: translateX(-50%) translateY(-60px); background: var(--ink); border-radius: 10px; padding: 13px 24px; font-family: 'Courier Prime', monospace; font-size: 14px; letter-spacing: 0.1em; color: #f5f0e8; z-index: 999; white-space: nowrap; transition: transform 0.28s cubic-bezier(0.32,0.72,0,1); box-shadow: 0 8px 24px rgba(0,0,0,0.18); pointer-events: none; }
   .toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── Custom Date Picker ─────────────────────────────────── */
+  .cdp-wrap { position: relative; }
+  .cdp-field { width: 100%; background: #fff; border: 2px solid var(--border); border-radius: 14px; color: var(--ink); padding: 16px 18px; font-family: 'Cormorant Garamond', serif; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; transition: all 0.2s; user-select: none; }
+  .cdp-field.available { border-color: #2a7a4a !important; background: rgba(42,122,74,0.07) !important; box-shadow: 0 0 0 3px rgba(42,122,74,0.12); }
+  .cdp-field.blocked   { border-color: #9a2a1a !important; background: rgba(154,42,26,0.07) !important; box-shadow: 0 0 0 3px rgba(154,42,26,0.12); }
+  .cdp-field-text { flex: 1; }
+  .cdp-field-right { display: flex; align-items: center; gap: 8px; }
+  .cdp-badge { font-family: 'Courier Prime', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; padding: 3px 8px; border-radius: 6px; display: none; }
+  .cdp-field.available .cdp-badge { display: inline; color: #2a7a4a; background: rgba(42,122,74,0.12); }
+  .cdp-field.blocked   .cdp-badge { display: inline; color: #9a2a1a; background: rgba(154,42,26,0.1); }
+  .cdp-cal { display: none; background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 14px; margin-top: 6px; box-shadow: 0 8px 30px rgba(120,85,30,0.12); z-index: 50; }
+  .cdp-cal.open { display: block; }
+  .cdp-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cdp-nav-btn { background: rgba(139,100,40,0.08); border: 1.5px solid rgba(139,100,40,0.2); border-radius: 8px; color: var(--gold); font-size: 16px; padding: 5px 14px; cursor: pointer; font-weight: 700; }
+  .cdp-nav-label { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink); font-weight: 700; cursor: pointer; }
+  .cdp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cdp-dow { font-family: 'Courier Prime', monospace; font-size: 9px; color: var(--muted); text-align: center; padding: 4px 0; font-weight: 700; letter-spacing: 0.06em; }
+  .cdp-day { border: none; border-radius: 8px; padding: 8px 2px; font-family: 'Cormorant Garamond', serif; font-size: 16px; cursor: pointer; text-align: center; transition: all 0.12s; background: transparent; width: 100%; }
+  .cdp-day:hover:not(.cdp-blocked):not(.cdp-empty):not(.cdp-past) { background: rgba(139,100,40,0.1); }
+  .cdp-day.cdp-available { color: var(--ink); }
+  .cdp-day.cdp-blocked { background: rgba(154,42,26,0.1); color: #9a2a1a; font-weight: 700; cursor: not-allowed; text-decoration: line-through; opacity: 0.8; }
+  .cdp-day.cdp-selected { background: var(--gold-btn); color: #fff; font-weight: 700; }
+  .cdp-day.cdp-selected.cdp-blocked { background: #9a2a1a; }
+  .cdp-day.cdp-today { border: 2px solid var(--gold); }
+  .cdp-day.cdp-past { color: var(--muted); opacity: 0.4; cursor: not-allowed; }
+  .cdp-day.cdp-empty { cursor: default; }
+  .cdp-legend { display: flex; gap: 12px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+  .cdp-legend-item { display: flex; align-items: center; gap: 5px; font-family: 'Courier Prime', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.06em; }
+  .cdp-legend-dot { width: 10px; height: 10px; border-radius: 3px; flex-shrink: 0; }
+
 </style>
 </head>
 <body>
@@ -302,15 +325,7 @@
           <label class="field-label" style="margin-bottom:0">Date <span class="req">✦</span></label>
           <button onclick="promptDatePin()" id="editDatesBtn" style="background:rgba(139,100,40,0.1);border:1.5px solid rgba(139,100,40,0.3);border-radius:8px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.12em;text-transform:uppercase;padding:5px 12px;cursor:pointer;font-weight:700">🚫 Block Dates</button>
         </div>
-<div class="date-pick-wrap">
-          <div class="date-pick-display" id="fDateDisplay" onclick="document.getElementById('fDate').showPicker?document.getElementById('fDate').showPicker():document.getElementById('fDate').click()">
-            <span class="date-pick-text" id="fDateText" style="color:var(--muted);font-style:italic">Tap to choose a date</span>
-            <span class="date-pick-badge" id="fDateBadge" style="display:none"></span>
-            <span class="date-pick-icon">📅</span>
-          </div>
-          <input type="date" id="fDate" class="date-pick-hidden" onchange="checkBlockedDate(this.value);updateDateDisplay('fDate')">
-        </div>
-        <div class="date-status" id="fDateStatus"></div>
+<div id="cdp_date"></div>
         <div class="blocked-notice" id="blockedNotice">
           <div class="blocked-notice-text" id="blockedMsg"></div>
         </div>
@@ -324,15 +339,7 @@
         </div>
       </div>
 
-      <div class="field"><label class="field-label">Alternate Date</label><div class="date-pick-wrap">
-          <div class="date-pick-display" id="fAltDateDisplay" onclick="document.getElementById('fAltDate').showPicker?document.getElementById('fAltDate').showPicker():document.getElementById('fAltDate').click()">
-            <span class="date-pick-text" id="fAltDateText" style="color:var(--muted);font-style:italic">Tap to choose an alternate date</span>
-            <span class="date-pick-badge" id="fAltDateBadge" style="display:none"></span>
-            <span class="date-pick-icon">📅</span>
-          </div>
-          <input type="date" id="fAltDate" class="date-pick-hidden" onchange="checkAltDate(this.value);updateDateDisplay('fAltDate')">
-        </div>
-        <div class="date-status" id="fAltDateStatus"></div>
+      <div class="field"><label class="field-label">Alternate Date</label><div id="cdp_altdate"></div>
         <div id="altBlockedNotice" style="display:none;background:rgba(154,42,26,0.06);border:1.5px solid rgba(154,42,26,0.2);border-radius:10px;padding:11px 14px;margin-top:8px;font-size:15px;color:#9a2a1a;font-style:italic;line-height:1.5">This alternate date is also unavailable. Please choose a different date.</div>
       </div>
 
@@ -502,8 +509,9 @@
 
   // ── Date setup ────────────────────────────────────────────
   const todayStr = new Date().toISOString().split('T')[0];
-  document.getElementById('fDate').min = todayStr;
-  document.getElementById('fAltDate').min = todayStr;
+  // Init custom date pickers
+  cdpInit('cdp_date', 'Tap to choose a date', 'checkBlockedDate');
+  cdpInit('cdp_altdate', 'Tap to choose an alternate date', 'checkAltDate');
 
   // ── PIN Protection — change to your preferred PIN ─────────
   const STAFF_PIN = '1234';
@@ -685,6 +693,151 @@
     if(typeof toast!=='undefined')toast('PIN updated ✓');else alert('PIN updated.');
   }
   // ══ END CALENDAR BLOCKER ═══════════════════════════════════
+
+
+  // ── Custom Date Picker ────────────────────────────────────
+  const _cdpState = {}; // { pickerId: { year, month, value, open } }
+
+  function cdpInit(pickerId, placeholder, onSelectFn) {
+    _cdpState[pickerId] = {
+      year: new Date().getFullYear(),
+      month: new Date().getMonth(),
+      value: null,
+      placeholder,
+      onSelectFn
+    };
+    cdpRender(pickerId);
+  }
+
+  function cdpToggle(pickerId) {
+    const st = _cdpState[pickerId];
+    st.open = !st.open;
+    const cal = document.getElementById(pickerId+'_cal');
+    if (cal) cal.classList.toggle('open', st.open);
+    if (st.open) cdpRenderGrid(pickerId);
+  }
+
+  function cdpClose(pickerId) {
+    _cdpState[pickerId].open = false;
+    const cal = document.getElementById(pickerId+'_cal');
+    if (cal) cal.classList.remove('open');
+  }
+
+  function cdpNav(pickerId, dir) {
+    const st = _cdpState[pickerId];
+    st.month += dir;
+    if (st.month > 11) { st.month = 0; st.year++; }
+    if (st.month < 0)  { st.month = 11; st.year--; }
+    cdpRenderGrid(pickerId);
+  }
+
+  function cdpSelect(pickerId, dateStr) {
+    const st = _cdpState[pickerId];
+    st.value = dateStr;
+    cdpClose(pickerId);
+    cdpUpdateField(pickerId);
+    if (st.onSelectFn) window[st.onSelectFn](dateStr);
+  }
+
+  function cdpUpdateField(pickerId) {
+    const st = _cdpState[pickerId];
+    const field = document.getElementById(pickerId+'_field');
+    const text = document.getElementById(pickerId+'_text');
+    const badge = document.getElementById(pickerId+'_badge');
+    if (!field || !text) return;
+    if (!st.value) {
+      text.textContent = st.placeholder;
+      text.style.color = 'var(--muted)';
+      text.style.fontStyle = 'italic';
+      field.classList.remove('available','blocked');
+      return;
+    }
+    const fmt = new Date(st.value+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+    text.textContent = fmt;
+    text.style.color = 'var(--ink)';
+    text.style.fontStyle = 'normal';
+    const blocked = isDateBlocked(st.value);
+    field.classList.remove('available','blocked');
+    field.classList.add(blocked ? 'blocked' : 'available');
+    if (badge) { badge.textContent = blocked ? '✕ Not Available' : '✓ Available'; }
+  }
+
+  function cdpGetValue(pickerId) {
+    return _cdpState[pickerId]?.value || '';
+  }
+
+  function cdpRenderGrid(pickerId) {
+    const st = _cdpState[pickerId];
+    const grid = document.getElementById(pickerId+'_grid');
+    const navLabel = document.getElementById(pickerId+'_navlabel');
+    if (!grid) return;
+    const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    if (navLabel) navLabel.textContent = MONTHS[st.month] + ' ' + st.year;
+    const today = new Date(); today.setHours(0,0,0,0);
+    const firstDay = new Date(st.year, st.month, 1).getDay();
+    const daysInMonth = new Date(st.year, st.month+1, 0).getDate();
+    let html = '';
+    for (let i=0; i<firstDay; i++) html += `<button class="cdp-day cdp-empty" disabled></button>`;
+    for (let d=1; d<=daysInMonth; d++) {
+      const ds = `${st.year}-${String(st.month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const date = new Date(st.year, st.month, d);
+      const isPast = date < today;
+      const isToday = date.getTime() === today.getTime();
+      const isBlocked = isDateBlocked(ds);
+      const isSelected = ds === st.value;
+      let cls = 'cdp-day';
+      if (isPast) cls += ' cdp-past';
+      else if (isBlocked) cls += ' cdp-blocked';
+      else cls += ' cdp-available';
+      if (isToday) cls += ' cdp-today';
+      if (isSelected) cls += ' cdp-selected';
+      const onclick = isPast ? '' : `onclick="cdpSelect('${pickerId}','${ds}')"`;
+      html += `<button class="${cls}" ${onclick} ${isPast||isBlocked?'title="'+(isPast?'Past date':'Not available')+'"':''}>${d}</button>`;
+    }
+    grid.innerHTML = html;
+  }
+
+  function cdpRender(pickerId) {
+    const st = _cdpState[pickerId];
+    const container = document.getElementById(pickerId);
+    if (!container) return;
+    container.innerHTML = `
+      <div class="cdp-field" id="${pickerId}_field" onclick="cdpToggle('${pickerId}')">
+        <span class="cdp-field-text" id="${pickerId}_text" style="color:var(--muted);font-style:italic">${st.placeholder}</span>
+        <div class="cdp-field-right">
+          <span class="cdp-badge" id="${pickerId}_badge"></span>
+          <span style="font-size:18px;opacity:0.4">📅</span>
+        </div>
+      </div>
+      <div class="cdp-cal" id="${pickerId}_cal">
+        <div class="cdp-nav">
+          <button class="cdp-nav-btn" onclick="event.stopPropagation();cdpNav('${pickerId}',-1)">◀</button>
+          <div class="cdp-nav-label" id="${pickerId}_navlabel"></div>
+          <button class="cdp-nav-btn" onclick="event.stopPropagation();cdpNav('${pickerId}',1)">▶</button>
+        </div>
+        <div class="cdp-grid">
+          <div class="cdp-dow">Su</div><div class="cdp-dow">Mo</div><div class="cdp-dow">Tu</div>
+          <div class="cdp-dow">We</div><div class="cdp-dow">Th</div><div class="cdp-dow">Fr</div><div class="cdp-dow">Sa</div>
+          <div id="${pickerId}_grid" style="display:contents"></div>
+        </div>
+        <div class="cdp-legend">
+          <div class="cdp-legend-item"><div class="cdp-legend-dot" style="background:rgba(42,122,74,0.4)"></div>Available</div>
+          <div class="cdp-legend-item"><div class="cdp-legend-dot" style="background:rgba(154,42,26,0.4)"></div>Not Available</div>
+          <div class="cdp-legend-item"><div class="cdp-legend-dot" style="border:2px solid var(--gold)"></div>Today</div>
+        </div>
+      </div>`;
+    cdpRenderGrid(pickerId);
+  }
+
+  // Close calendar when clicking outside
+  document.addEventListener('click', function(e) {
+    Object.keys(_cdpState).forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.contains(e.target)) cdpClose(id);
+    });
+  });
+  // END CUSTOM DATE PICKER
+
 
   function promptMenuPin() {
     if (menuPinUnlocked) { toggleMenuEditor(); return; }
@@ -1131,49 +1284,12 @@
   }
 
 
-  function updateDateDisplay(inputId) {
-    const input = document.getElementById(inputId);
-    const display = document.getElementById(inputId+'Display');
-    const text = document.getElementById(inputId+'Text');
-    const badge = document.getElementById(inputId+'Badge');
-    if (!input || !display || !text) return;
-    const val = input.value;
-    if (!val) {
-      text.textContent = 'Tap to choose a date';
-      text.style.fontStyle = 'italic';
-      text.style.color = 'var(--muted)';
-      display.classList.remove('available','blocked');
-      badge.style.display = 'none';
-      return;
-    }
-    const fmt = new Date(val+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
-    text.textContent = fmt;
-    text.style.fontStyle = 'normal';
-    text.style.color = 'var(--ink)';
-    const blocked = isDateBlocked(val);
-    display.classList.remove('available','blocked');
-    display.classList.add(blocked ? 'blocked' : 'available');
-    badge.style.display = 'inline';
-    badge.textContent = blocked ? '✕ Not Available' : '✓ Available';
-  }
+  
 
-  function setDateStatus(inputId, statusId, blocked) {
-    const input = document.getElementById(inputId);
-    const status = document.getElementById(statusId);
-    if (!input || !status) return;
-    if (blocked === null) {
-      input.classList.remove('date-available','date-blocked');
-      status.className = 'date-status'; status.textContent = '';
-    } else if (blocked) {
-      input.classList.remove('date-available'); input.classList.add('date-blocked');
-      status.className = 'date-status blocked'; status.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9a2a1a;flex-shrink:0"></span> NOT AVAILABLE';
-    } else {
-      input.classList.remove('date-blocked'); input.classList.add('date-available');
-      status.className = 'date-status available'; status.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2a7a4a;flex-shrink:0"></span> AVAILABLE';
-    }
-  }
+  
 
   function checkBlockedDate(val) {
+    if (!val) val = cdpGetValue('cdp_date');
     const notice = document.getElementById('blockedNotice');
     const msg = document.getElementById('blockedMsg');
     if (isDateBlocked(val)) {
@@ -1224,7 +1340,7 @@
       }
     }
     if (n===2) {
-      if (!document.getElementById('fDate').value) { toast('Please select a date'); return false; }
+      if (!cdpGetValue('cdp_date')) { toast('Please select a date'); return false; }
       if (dateBlocked) { toast('This date is unavailable — please choose another'); return false; }
       if (!selectedTime) { toast('Please select a time'); return false; }
     }
@@ -1426,7 +1542,7 @@
     const notes = document.getElementById('fNotes').value.trim();
     document.getElementById('reviewContent').innerHTML=`
       <div class="review-block"><div class="review-block-title">Guest</div>${rows([['Name',`${document.getElementById('fLastName').value.trim()}, ${document.getElementById('fFirstName').value.trim()}`],['Phone',document.getElementById('fPhone').value.trim()],['Email',document.getElementById('fEmail').value.trim()]])}</div>
-      <div class="review-block"><div class="review-block-title">Reservation</div>${rows([['Date',fmtDate(document.getElementById('fDate').value)],['Alt Date',document.getElementById('fAltDate').value?fmtDate(document.getElementById('fAltDate').value):''],['Time',fmtTime(selectedTime)],['Party',`${partySize} Guest${partySize>1?'s':''}`],['Menu',getMenuOrder()]])}</div>
+      <div class="review-block"><div class="review-block-title">Reservation</div>${rows([['Date',fmtDate(cdpGetValue('cdp_date'))],['Alt Date',cdpGetValue('cdp_altdate')?fmtDate(cdpGetValue('cdp_altdate')):''],['Time',fmtTime(selectedTime)],['Party',`${partySize} Guest${partySize>1?'s':''}`],['Menu',getMenuOrder()]])}</div>
       ${occasions||dietary||notes?`<div class="review-block"><div class="review-block-title">Details</div>${rows([['Occasion',occasions],['Allergy',dietary],['Notes',notes]])}</div>`:''}`;
   }
 
@@ -1448,8 +1564,8 @@
     const lastName  = document.getElementById('fLastName').value.trim();
     const firstName = document.getElementById('fFirstName').value.trim();
     const phone     = document.getElementById('fPhone').value.trim();
-    const date      = document.getElementById('fDate').value;
-    const altDate   = document.getElementById('fAltDate').value;
+    const date      = cdpGetValue('cdp_date');
+    const altDate   = cdpGetValue('cdp_altdate');
     const email     = document.getElementById('fEmail').value.trim();
     const notes     = document.getElementById('fNotes').value.trim();
     const source    = document.getElementById('fSource').value;
