@@ -103,11 +103,11 @@
   /* Blocked notice */
   
   /* Date availability feedback */
-  .field-input.date-available { border-color: #2a7a4a; background: rgba(42,122,74,0.05); }
-  .field-input.date-blocked   { border-color: #9a2a1a; background: rgba(154,42,26,0.05); }
-  .date-status { font-family: 'Courier Prime', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 6px; display: none; }
-  .date-status.available { color: #2a7a4a; display: block; }
-  .date-status.blocked   { color: #9a2a1a; display: block; }
+  .field-input.date-available { border: 2px solid #2a7a4a !important; background: rgba(42,122,74,0.06) !important; box-shadow: 0 0 0 3px rgba(42,122,74,0.1) !important; }
+  .field-input.date-blocked   { border: 2px solid #9a2a1a !important; background: rgba(154,42,26,0.06) !important; box-shadow: 0 0 0 3px rgba(154,42,26,0.1) !important; }
+  .date-status { font-family: 'Courier Prime', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 6px; display: none; padding: 4px 0; }
+  .date-status.available { color: #2a7a4a; display: flex; align-items: center; gap: 5px; }
+  .date-status.blocked   { color: #9a2a1a; display: flex; align-items: center; gap: 5px; }
 
   .blocked-notice { background: rgba(154,42,26,0.07); border: 1.5px solid rgba(154,42,26,0.25); padding: 12px 16px; margin-top: 8px; display: none; border-radius: 4px; }
   .blocked-notice p { font-style: italic; font-size: 15px; color: var(--red-text); line-height: 1.5; }
@@ -1056,10 +1056,10 @@
       status.className = 'date-status'; status.textContent = '';
     } else if (blocked) {
       input.classList.remove('date-available'); input.classList.add('date-blocked');
-      status.className = 'date-status blocked'; status.textContent = '✕ Not Available';
+      status.className = 'date-status blocked'; status.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#9a2a1a;flex-shrink:0"></span> NOT AVAILABLE';
     } else {
       input.classList.remove('date-blocked'); input.classList.add('date-available');
-      status.className = 'date-status available'; status.textContent = '✓ Available';
+      status.className = 'date-status available'; status.innerHTML = '<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2a7a4a;flex-shrink:0"></span> AVAILABLE';
     }
   }
 
