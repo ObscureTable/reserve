@@ -350,8 +350,8 @@
     </div>
     <div style="margin-bottom:30px"></div>
 
-    <!-- Dietary -->
-    <div class="section-label">Dietary Requirements</div>
+    <!-- Food Allergies -->
+    <div class="section-label">Food Allergies</div>
     <div class="check-grid" style="margin-bottom:8px">
       <label class="check-item"><input type="checkbox" name="dietary" value="Vegetarian"> <span>Vegetarian</span></label>
       <label class="check-item"><input type="checkbox" name="dietary" value="Vegan"> <span>Vegan</span></label>
@@ -359,10 +359,10 @@
       <label class="check-item"><input type="checkbox" name="dietary" value="Nut Allergy"> <span>Nut Allergy</span></label>
       <label class="check-item"><input type="checkbox" name="dietary" value="Shellfish Allergy"> <span>Shellfish Allergy</span></label>
       <label class="check-item"><input type="checkbox" name="dietary" value="Dairy-Free"> <span>Dairy-Free</span></label>
-      <label class="check-item"><input type="checkbox" name="dietary" value="Other" id="dietaryOtherCheck" onchange="toggleOtherReveal('dietaryOtherCheck','dietaryOtherReveal')"> <span>Other</span></label>
+      <label class="check-item"><input type="checkbox" name="dietary" value="Other" id="dietaryOtherCheck" onchange="toggleOtherReveal('dietaryOtherCheck','allergyOtherReveal')"> <span>Other</span></label>
     </div>
-    <div class="others-reveal" id="dietaryOtherReveal">
-      <input type="text" id="dietaryOtherText" placeholder="Please describe your dietary requirements…">
+    <div class="others-reveal" id="allergyOtherReveal">
+      <input type="text" id="allergyOtherText" placeholder="Please describe your food allergies…">
     </div>
     <div style="margin-bottom:30px"></div>
 
@@ -1074,7 +1074,7 @@
     if (otherCheck) {
       const txt = name==='occasion'
         ? document.getElementById('occasionOtherText').value.trim()
-        : document.getElementById('dietaryOtherText').value.trim();
+        : document.getElementById('allergyOtherText').value.trim();
       if (txt) vals.push(txt);
     }
     return vals.join(', ');
@@ -1256,7 +1256,7 @@ Menu:       ${(getMenuOrder()||'—')}
 DETAILS
 ───────
 Occasion:    ${occasions || '—'}
-Dietary:     ${dietary || '—'}
+Food Allergy:     ${dietary || '—'}
 Requests:    ${notes || '—'}
 Heard via:   ${source || '—'}
 
@@ -1300,7 +1300,7 @@ dashboard using the code above.
       section: '', occasion: occasions || '',
       dietary: dietary || '', notes, source,
       status: 'confirmed',
-      tags: dietary ? ['Dietary'] : [],
+      tags: dietary ? ['Allergy'] : [],
       created: fbId,
     };
     if (window._fbReady && window._fbWriteReservation) {

@@ -163,7 +163,7 @@
   .check-text { font-size: 19px; color: var(--ink); flex: 1; }
   .check-sub { font-size: 20px; }
 
-  /* Dietary chips */
+  /* Food Allergy chips */
   .check-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .check-chip { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 16px 10px; cursor: pointer; text-align: center; transition: all 0.15s; }
   .check-chip:active { opacity: 0.7; }
@@ -369,7 +369,7 @@
       </div>
     </div>
 
-    <!-- Step 4: Occasion & Dietary -->
+    <!-- Step 4: Occasion & Allergies -->
     <div class="step-panel" id="step4">
       <div class="step-intro"><div class="step-intro-title">Details</div><div class="step-intro-sub">Help us prepare for your evening</div></div>
 
@@ -389,9 +389,9 @@
         </div>
       </div>
 
-      <!-- Dietary -->
+      <!-- Food Allergies -->
       <div class="field">
-        <label class="field-label">Dietary Requirements</label>
+        <label class="field-label">Food Allergies</label>
         <div class="check-grid-2">
           <div class="check-chip" onclick="toggleChip(this)" data-val="Vegetarian"><div class="check-chip-icon">🥦</div><div class="check-chip-label">Vegetarian</div></div>
           <div class="check-chip" onclick="toggleChip(this)" data-val="Vegan"><div class="check-chip-icon">🌱</div><div class="check-chip-label">Vegan</div></div>
@@ -399,10 +399,10 @@
           <div class="check-chip" onclick="toggleChip(this)" data-val="Nut Allergy"><div class="check-chip-icon">⚠️</div><div class="check-chip-label">Nut Allergy</div></div>
           <div class="check-chip" onclick="toggleChip(this)" data-val="Shellfish"><div class="check-chip-icon">🦐</div><div class="check-chip-label">Shellfish Allergy</div></div>
           <div class="check-chip" onclick="toggleChip(this)" data-val="Dairy-Free"><div class="check-chip-icon">🥛</div><div class="check-chip-label">Dairy-Free</div></div>
-          <div class="check-chip" id="dietaryOtherChip" onclick="toggleDietaryOther(this)" data-val="Other" style="grid-column: 1 / -1;"><div class="check-chip-icon">✏️</div><div class="check-chip-label">Other / Please specify</div></div>
+          <div class="check-chip" id="allergyOtherChip" onclick="toggleAllergyOther(this)" data-val="Other" style="grid-column: 1 / -1;"><div class="check-chip-icon">✏️</div><div class="check-chip-label">Other / Please specify</div></div>
         </div>
-        <div class="others-reveal" id="dietaryOtherReveal">
-          <input class="field-input" id="dietaryOtherText" type="text" placeholder="Please describe your dietary requirements…" style="margin-top:0">
+        <div class="others-reveal" id="allergyOtherReveal">
+          <input class="field-input" id="allergyOtherText" type="text" placeholder="Please describe your food allergies…" style="margin-top:0">
         </div>
       </div>
 
@@ -1307,11 +1307,11 @@
     if (!el.classList.contains('checked')) document.getElementById('occasionOtherText').value='';
   }
 
-  function toggleDietaryOther(el) {
+  function toggleAllergyOther(el) {
     el.classList.toggle('checked');
-    const reveal = document.getElementById('dietaryOtherReveal');
+    const reveal = document.getElementById('allergyOtherReveal');
     reveal.classList.toggle('show', el.classList.contains('checked'));
-    if (!el.classList.contains('checked')) document.getElementById('dietaryOtherText').value='';
+    if (!el.classList.contains('checked')) document.getElementById('allergyOtherText').value='';
   }
 
   function toggleChip(el) { el.classList.toggle('checked'); }
@@ -1327,11 +1327,11 @@
     return vals.join(', ');
   }
 
-  function getDietary() {
-    const vals = [...document.querySelectorAll('.check-chip.checked:not(#dietaryOtherChip)')].map(e=>e.dataset.val);
-    const otherChip = document.getElementById('dietaryOtherChip');
+  function getFoodAllergy() {
+    const vals = [...document.querySelectorAll('.check-chip.checked:not(#allergyOtherChip)')].map(e=>e.dataset.val);
+    const otherChip = document.getElementById('allergyOtherChip');
     if (otherChip.classList.contains('checked')) {
-      const txt = document.getElementById('dietaryOtherText').value.trim();
+      const txt = document.getElementById('allergyOtherText').value.trim();
       if (txt) vals.push(txt);
     }
     return vals.join(', ');
@@ -1343,12 +1343,12 @@
   function buildReview() {
     const rows=(pairs)=>pairs.filter(([,v])=>v).map(([k,v])=>`<div class="review-row"><span class="review-key">${k}</span><span class="review-val">${v}</span></div>`).join('');
     const occasions = getOccasions();
-    const dietary = getDietary();
+    const dietary = getFoodAllergy();
     const notes = document.getElementById('fNotes').value.trim();
     document.getElementById('reviewContent').innerHTML=`
       <div class="review-block"><div class="review-block-title">Guest</div>${rows([['Name',`${document.getElementById('fLastName').value.trim()}, ${document.getElementById('fFirstName').value.trim()}`],['Phone',document.getElementById('fPhone').value.trim()],['Email',document.getElementById('fEmail').value.trim()]])}</div>
       <div class="review-block"><div class="review-block-title">Reservation</div>${rows([['Date',fmtDate(document.getElementById('fDate').value)],['Alt Date',document.getElementById('fAltDate').value?fmtDate(document.getElementById('fAltDate').value):''],['Time',fmtTime(selectedTime)],['Party',`${partySize} Guest${partySize>1?'s':''}`],['Menu',getMenuOrder()]])}</div>
-      ${occasions||dietary||notes?`<div class="review-block"><div class="review-block-title">Details</div>${rows([['Occasion',occasions],['Dietary',dietary],['Notes',notes]])}</div>`:''}`;
+      ${occasions||dietary||notes?`<div class="review-block"><div class="review-block-title">Details</div>${rows([['Occasion',occasions],['Allergy',dietary],['Notes',notes]])}</div>`:''}`;
   }
 
   function generateCode(l,d,t) { const L=l.replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X'); const dd=d.replace(/-/g,'').slice(4); const hr=t.split(':')[0]; const r=Math.random().toString(36).substring(2,5).toUpperCase(); return`OT-${L}${dd}-${hr}${r}`; }
@@ -1375,7 +1375,7 @@
     const notes     = document.getElementById('fNotes').value.trim();
     const source    = document.getElementById('fSource').value;
     const occasions = getOccasions();
-    const dietary   = getDietary();
+    const dietary   = getFoodAllergy();
 
     generatedCode = generateCode(lastName, date, selectedTime);
 
@@ -1406,7 +1406,7 @@ Menu:       ${(getMenuOrder()||'—')}
 DETAILS
 ───────
 Occasion:    ${occasions || '—'}
-Dietary:     ${dietary || '—'}
+Food Allergy:     ${dietary || '—'}
 Requests:    ${notes || '—'}
 Heard via:   ${source || '—'}
 
@@ -1448,7 +1448,7 @@ dashboard using the code above.
       section: '', occasion: occasions || '',
       dietary: dietary || '', notes, source,
       status: 'confirmed',
-      tags: dietary ? ['Dietary'] : [],
+      tags: dietary ? ['Allergy'] : [],
       created: fbId,
     };
     if (window._fbReady && window._fbWriteReservation) {
