@@ -228,15 +228,12 @@
       <div class="blocked-notice" id="blockedNotice">
         <div class="blocked-notice-text">This date is unavailable for pickup. Please select another date.</div>
       </div>
-      <!-- Blocked Dates Editor -->
-      <div class="editor-panel" id="dateEditorPanel">
-        <div class="editor-title">Blocked Pickup Dates</div>
-        <div id="blockedDatesList"></div>
-        <div class="editor-add-row">
-          <input type="date" id="newBlockedDate" class="editor-input">
-          <button class="editor-add-btn" onclick="addBlockedDate()">Block</button>
+      <!-- Blocked Dates Editor — Visual Calendar (PIN protected) -->
+        <div class="editor-panel" id="dateEditorPanel">
+          <div class="editor-title">Block Dates — Visual Calendar</div>
+          <div style="font-size:14px;color:var(--muted);font-style:italic;margin-bottom:12px;line-height:1.6">Tap dates to block. Switch to Months or Years to block in bulk. Red = blocked.</div>
+          <div id="calendarContainer" style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:14px"></div>
         </div>
-        <div class="editor-hint">Blocked dates are unavailable to customers. Tap ✕ to unblock.</div>
       </div>
     </div>
 
@@ -364,7 +361,182 @@
   // ── PIN Protection ────────────────────────────────────────
   let datePinUnlocked=false, timePinUnlocked=false;
 
-  function promptDatePin() {
+
+  // ══ VISUAL CALENDAR DATE BLOCKER ══════════════════════════
+  let calView = 'month';
+  let calYear = new Date().getFullYear();
+  let calMonth = new Date().getMonth();
+  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  function getBlockFrom() { try { return localStorage.getItem('otc_block_from')||null; } catch(e){return null;} }
+  function setBlockFrom(v) { try { if(v) localStorage.setItem('otc_block_from',v); else localStorage.removeItem('otc_block_from'); } catch(e){} }
+  function isDateBlocked(val) {
+    if (loadBlockedDates().includes(val)) return true;
+    const bf = getBlockFrom(); if (bf && val >= bf) return true; return false;
+  }
+  function isCalDateBlocked(s) { return isDateBlocked(s); }
+  function isFullMonthBlocked(y,m) {
+    const days=new Date(y,m+1,0).getDate();
+    for(let d=1;d<=days;d++){if(!isCalDateBlocked(`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`))return false;}return true;
+  }
+  function isFullYearBlocked(y){for(let m=0;m<12;m++)if(!isFullMonthBlocked(y,m))return false;return true;}
+
+  function toggleCalDate(dateStr) {
+    const dates = loadBlockedDates();
+    const bf = getBlockFrom();
+    if (isCalDateBlocked(dateStr)) {
+      if (bf && dateStr >= bf) {
+        setBlockFrom(null);
+        const start=new Date(bf+'T12:00:00'), end=new Date(); end.setHours(12,0,0,0);
+        const nd=[...dates];
+        for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
+          const s=d.toISOString().split('T')[0];
+          if(s!==dateStr&&!nd.includes(s))nd.push(s);
+        }
+        saveBlockedDates(nd);
+      } else { saveBlockedDates(dates.filter(d=>d!==dateStr)); }
+    } else { if(!dates.includes(dateStr)){dates.push(dateStr);saveBlockedDates(dates);} }
+    renderCalendar();
+  }
+
+  function toggleCalMonth(y,m) {
+    const days=new Date(y,m+1,0).getDate(), allBlocked=isFullMonthBlocked(y,m);
+    const dates=loadBlockedDates();
+    if(allBlocked){
+      const bf=getBlockFrom(); const fd=`${y}-${String(m+1).padStart(2,'0')}-01`;
+      if(bf&&fd>=bf)setBlockFrom(null);
+      const rem=new Set();
+      for(let d=1;d<=days;d++)rem.add(`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
+      saveBlockedDates(dates.filter(d=>!rem.has(d)));
+    } else {
+      for(let d=1;d<=days;d++){const s=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(!dates.includes(s))dates.push(s);}
+      saveBlockedDates(dates);
+    }
+    renderCalendar();
+  }
+
+  function toggleCalYear(y) {
+    const allBlocked=isFullYearBlocked(y), dates=loadBlockedDates();
+    if(allBlocked){
+      const bf=getBlockFrom(); if(bf&&bf.startsWith(String(y)))setBlockFrom(null);
+      saveBlockedDates(dates.filter(d=>!d.startsWith(String(y)+'-')));
+    } else {
+      for(let m=0;m<12;m++){const days=new Date(y,m+1,0).getDate();for(let d=1;d<=days;d++){const s=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(!dates.includes(s))dates.push(s);}}
+      saveBlockedDates(dates);
+    }
+    renderCalendar();
+  }
+
+  function blockFromDate(dateStr) {
+    setBlockFrom(dateStr); renderCalendar();
+    const fmt=new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    if(typeof toast==='function')toast('Blocked from '+fmt+' onwards ✓');else alert('Blocked from '+fmt+' onwards.');
+  }
+
+  const CBTN = "background:rgba(120,85,30,0.08);border:1.5px solid rgba(120,85,30,0.2);border-radius:6px;color:#9b7238;font-family:'Courier Prime',monospace;font-size:14px;padding:5px 12px;cursor:pointer;font-weight:700";
+  const CTAB = "border:1.5px solid rgba(120,85,30,0.2);border-radius:6px;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;padding:5px 10px;cursor:pointer;font-weight:700";
+  function CACT(on){return `${CTAB};background:${on?'#9b7238':'transparent'};color:${on?'#fff':'#7a6040'};border-color:${on?'transparent':'rgba(120,85,30,0.2)'}`;}
+  function CBLOCK(blocked){return `flex:1;border:1.5px solid ${blocked?'rgba(42,106,74,0.3)':'rgba(154,42,26,0.25)'};border-radius:8px;background:${blocked?'rgba(42,106,74,0.1)':'rgba(154,42,26,0.07)'};color:${blocked?'#2a6a4a':'#9a2a1a'};font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:9px 6px;cursor:pointer;font-weight:700;text-align:center`;}
+  const CFWD = "flex:1;background:rgba(154,42,26,0.07);border:1.5px solid rgba(154,42,26,0.25);border-radius:8px;color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:9px 6px;cursor:pointer;font-weight:700;text-align:center";
+
+  function renderCalendar() {
+    const container=document.getElementById('calendarContainer');
+    if(!container)return;
+    const bf=getBlockFrom(); const today=new Date(); today.setHours(0,0,0,0);
+    let lbl=calView==='month'?`${MONTH_NAMES[calMonth]} ${calYear}`:calView==='year'?String(calYear):`${calYear} – ${calYear+11}`;
+    let h=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <button onclick="calNav(-1)" style="${CBTN}">◀</button>
+      <div style="display:flex;gap:5px">
+        <button onclick="calView='month';renderCalendar()" style="${CACT(calView==='month')}">Days</button>
+        <button onclick="calView='year';renderCalendar()" style="${CACT(calView==='year')}">Months</button>
+        <button onclick="calView='years';renderCalendar()" style="${CACT(calView==='years')}">Years</button>
+      </div>
+      <button onclick="calNav(1)" style="${CBTN}">▶</button>
+    </div>
+    <div style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9b7238;text-align:center;margin-bottom:10px;font-weight:700">${lbl}</div>`;
+
+    if(calView==='month'){
+      h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px">`;
+      ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d=>h+=`<div style="font-family:'Courier Prime',monospace;font-size:8px;color:#7a6040;text-align:center;padding:2px 0;font-weight:700">${d}</div>`);
+      h+=`</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">`;
+      const fd=new Date(calYear,calMonth,1).getDay(), dim=new Date(calYear,calMonth+1,0).getDate();
+      for(let i=0;i<fd;i++)h+=`<div></div>`;
+      for(let d=1;d<=dim;d++){
+        const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const blocked=isCalDateBlocked(ds), isFwd=bf&&ds>=bf;
+        const isToday=new Date(calYear,calMonth,d).getTime()===today.getTime();
+        const bg=blocked?(isFwd?'#7a1a08':'#9a2a1a'):'#fff';
+        const col=blocked?'#fff':'#1a1208';
+        const bdr=isToday?'2px solid #9b7238':`1px solid ${blocked?'transparent':'rgba(120,85,30,0.12)'}`;
+        h+=`<button onclick="toggleCalDate('${ds}')" title="${blocked?'Blocked — tap to unblock':'Tap to block'}" style="background:${bg};border:${bdr};border-radius:5px;color:${col};font-family:'Courier Prime',monospace;font-size:11px;padding:6px 1px;cursor:pointer;text-align:center;font-weight:${blocked?700:400};width:100%;transition:all 0.1s">${d}</button>`;
+      }
+      h+=`</div>`;
+      const fm=`${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
+      h+=`<div style="display:flex;gap:6px;margin-top:10px">
+        <button onclick="toggleCalMonth(${calYear},${calMonth})" style="${CBLOCK(isFullMonthBlocked(calYear,calMonth))}">${isFullMonthBlocked(calYear,calMonth)?'Unblock Month':'Block Month'}</button>
+        <button onclick="blockFromDate('${fm}')" style="${CFWD}">Block From Here ▶</button>
+      </div>`;
+
+    } else if(calView==='year'){
+      h+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">`;
+      for(let m=0;m<12;m++){
+        const blocked=isFullMonthBlocked(calYear,m);
+        h+=`<button onclick="toggleCalMonth(${calYear},${m})" style="background:${blocked?'#9a2a1a':'#fff'};border:1.5px solid ${blocked?'transparent':'rgba(120,85,30,0.18)'};border-radius:8px;color:${blocked?'#fff':'#1a1208'};font-family:'Courier Prime',monospace;font-size:11px;padding:11px 4px;cursor:pointer;text-align:center;font-weight:700;transition:all 0.1s">${SHORT_MONTHS[m]}</button>`;
+      }
+      h+=`</div><div style="display:flex;gap:6px;margin-top:10px">
+        <button onclick="toggleCalYear(${calYear})" style="${CBLOCK(isFullYearBlocked(calYear))}">${isFullYearBlocked(calYear)?'Unblock Year':'Block Year'}</button>
+        <button onclick="blockFromDate('${calYear}-01-01')" style="${CFWD}">Block From This Year ▶</button>
+      </div>`;
+
+    } else {
+      h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">`;
+      for(let y=calYear;y<calYear+12;y++){
+        const blocked=isFullYearBlocked(y);
+        h+=`<button onclick="calYear=${y};calView='year';renderCalendar()" style="background:${blocked?'#9a2a1a':'#fff'};border:1.5px solid ${blocked?'transparent':'rgba(120,85,30,0.18)'};border-radius:8px;color:${blocked?'#fff':'#1a1208'};font-family:'Courier Prime',monospace;font-size:12px;padding:11px 2px;cursor:pointer;text-align:center;font-weight:700;transition:all 0.1s">${y}${blocked?' ✕':''}</button>`;
+      }
+      h+=`</div><div style="margin-top:10px"><button onclick="toggleCalYear(${calYear})" style="${CBLOCK(isFullYearBlocked(calYear))};width:100%">${isFullYearBlocked(calYear)?'Unblock '+calYear:'Block '+calYear}</button></div>`;
+    }
+
+    if(bf){
+      const fmtBf=new Date(bf+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      h+=`<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(154,42,26,0.07);border:1.5px solid rgba(154,42,26,0.22);border-radius:8px;padding:8px 12px;margin-top:10px">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#9a2a1a;font-weight:700">FORWARD BLOCK FROM ${fmtBf.toUpperCase()}</div>
+        <button onclick="setBlockFrom(null);renderCalendar();if(typeof toast!=='undefined')toast('Forward block cleared ✓');" style="background:rgba(42,106,74,0.1);border:1.5px solid rgba(42,106,74,0.3);border-radius:5px;color:#2a6a4a;font-family:'Courier Prime',monospace;font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700">✕ Clear</button>
+      </div>`;
+    }
+
+    h+=`<div style="border-top:1px solid rgba(120,85,30,0.15);padding-top:12px;margin-top:12px">
+      <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#7a6040;margin-bottom:8px;font-weight:700">Change Staff PIN</div>
+      <div style="display:flex;gap:6px">
+        <input type="password" id="newPin1" placeholder="New PIN" maxlength="8" style="flex:1;background:#fff;border:1.5px solid rgba(120,85,30,0.25);border-radius:8px;color:#1a1208;padding:8px 10px;font-family:'Courier Prime',monospace;font-size:14px;outline:none;letter-spacing:0.2em">
+        <input type="password" id="newPin2" placeholder="Confirm" maxlength="8" style="flex:1;background:#fff;border:1.5px solid rgba(120,85,30,0.25);border-radius:8px;color:#1a1208;padding:8px 10px;font-family:'Courier Prime',monospace;font-size:14px;outline:none;letter-spacing:0.2em">
+        <button onclick="changePin()" style="background:#9b7238;border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:8px 12px;cursor:pointer;font-weight:700;white-space:nowrap">Update</button>
+      </div>
+    </div>`;
+
+    container.innerHTML=h;
+  }
+
+  function calNav(dir){
+    if(calView==='month'){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}}
+    else if(calView==='year'){calYear+=dir;}else{calYear+=dir*12;}
+    renderCalendar();
+  }
+
+  function getStaffPin(){try{return localStorage.getItem('ot_staff_pin')||'1234';}catch(e){return'1234';}}
+  function changePin(){
+    const p1=document.getElementById('newPin1').value,p2=document.getElementById('newPin2').value;
+    if(!p1){if(typeof toast!=='undefined')toast('Enter a new PIN');else alert('Enter a new PIN');return;}
+    if(p1.length<4){if(typeof toast!=='undefined')toast('PIN must be 4+ characters');else alert('PIN must be 4+ characters');return;}
+    if(p1!==p2){if(typeof toast!=='undefined')toast('PINs do not match');else alert('PINs do not match');return;}
+    try{localStorage.setItem('ot_staff_pin',p1);}catch(e){}
+    document.getElementById('newPin1').value='';document.getElementById('newPin2').value='';
+    if(typeof toast!=='undefined')toast('PIN updated ✓');else alert('PIN updated.');
+  }
+  // ══ END CALENDAR BLOCKER ═══════════════════════════════════
+
+    function promptDatePin() {
     if(datePinUnlocked) { toggleDateEditor(); return; }
     const pin=prompt('Enter staff PIN to manage blocked dates:');
     if(pin===STAFF_PIN) { datePinUnlocked=true; toggleDateEditor(); }
