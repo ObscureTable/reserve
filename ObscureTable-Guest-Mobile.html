@@ -994,16 +994,16 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
         alert('Please remove other selections first before choosing the Grand Menu.');
         return;
       }
-      if (hasGrand && !isGrand) {
+      if (hasGrand && !isGrand && item.name !== WHOLE_NAME) {
         alert('Please remove the Grand Menu first before adding other items.');
         return;
       }
       if (isPlain && hasIndiv) {
-        alert('Please remove individual Chicharonillo items first.');
+        alert('Please remove individual Chicharonillo items first before adding the set menu.');
         return;
       }
-      if (isIndiv && hasPlain) {
-        alert('Please remove the set menu first before adding individual Chicharonillo items.');
+      if (isGrand && hasPlain) {
+        alert('Please remove the set menu first before adding the Grand Menu.');
         return;
       }
     }

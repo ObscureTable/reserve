@@ -962,7 +962,7 @@
 
   function loadMenuItems() {
     try {
-      const stored = localStorage.getItem('ot_menu_items_desktop');
+      const stored = localStorage.getItem('ot_menu_items');
       if (stored) return JSON.parse(stored);
     } catch(e) {}
     return [
@@ -975,7 +975,7 @@
   }
 
   function saveMenuItems(items) {
-    try { localStorage.setItem('ot_menu_items_desktop', JSON.stringify(items)); } catch(e) {}
+    try { localStorage.setItem('ot_menu_items', JSON.stringify(items)); } catch(e) {}
   }
 
   // -- Menu Exclusivity Rules --------------------------------
@@ -1055,20 +1055,24 @@
       const isGrand = item.name === GRAND_MENU_NAME;
       const isPlain = item.name === PLAIN_MENU_NAME;
       const isIndiv = INDIVIDUAL_NAMES.includes(item.name);
+      // Grand Menu requires clearing everything else first
       if (isGrand && (hasPlain || hasIndiv)) {
         alert('Please remove other selections first before choosing the Grand Menu.');
         return;
       }
-      if (hasGrand && !isGrand) {
+      // Nothing can be added alongside Grand Menu except Whole Chicharonillo
+      if (hasGrand && !isGrand && item.name !== WHOLE_NAME) {
         alert('Please remove the Grand Menu first before adding other items.');
         return;
       }
+      // Plain Menu (4,850) blocks Grand Menu only — Chicharonillo sizes are allowed
       if (isPlain && hasIndiv) {
-        alert('Please remove individual Chicharonillo items first.');
+        alert('Please remove individual Chicharonillo items first before adding the set menu.');
         return;
       }
-      if (isIndiv && hasPlain) {
-        alert('Please remove the set menu first before adding individual Chicharonillo items.');
+      // Grand Menu blocks being added when Plain Menu is selected
+      if (isGrand && hasPlain) {
+        alert('Please remove the set menu first before adding the Grand Menu.');
         return;
       }
     }
@@ -1268,12 +1272,12 @@
   ];
 
   function loadSlots() {
-    try { return JSON.parse(localStorage.getItem('ot_timeslots_desktop')) || DEFAULT_SLOTS; }
+    try { return JSON.parse(localStorage.getItem('ot_timeslots')) || DEFAULT_SLOTS; }
     catch(e) { return DEFAULT_SLOTS; }
   }
 
   function saveSlots(slots) {
-    try { localStorage.setItem('ot_timeslots_desktop', JSON.stringify(slots)); } catch(e) {}
+    try { localStorage.setItem('ot_timeslots', JSON.stringify(slots)); } catch(e) {}
   }
 
   function fmt12(val) {
