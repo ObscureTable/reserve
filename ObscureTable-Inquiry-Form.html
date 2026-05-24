@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   const firebaseConfig = {
     apiKey: "AIzaSyDGyboz57n06VHx_6N6nkSfi6CjcousUMU",
     authDomain: "obscure-table.firebaseapp.com",
@@ -23,6 +23,24 @@
   window._fbWriteReservation = async (id, data) => {
     await set(ref(db, `reservations/${id}`), data);
   };
+  // ── Blocked dates sync ─────────────────────────────────
+  window._fbSaveBlockedDates = async (dates) => {
+    await set(ref(db, 'config/blocked_dates'), dates.length ? dates : null);
+  };
+  window._fbSaveBlockFrom = async (val) => {
+    await set(ref(db, 'config/block_from'), val || null);
+  };
+  onValue(ref(db, 'config/blocked_dates'), (snap) => {
+    const val = snap.val();
+    const dates = Array.isArray(val) ? val : [];
+    try { localStorage.setItem('ot_blocked_dates', JSON.stringify(dates)); } catch(e) {}
+    if (window.renderCalendar) window.renderCalendar();
+  });
+  onValue(ref(db, 'config/block_from'), (snap) => {
+    const val = snap.val();
+    try { if(val) localStorage.setItem('ot_block_from',val); else localStorage.removeItem('ot_block_from'); } catch(e) {}
+    if (window.renderCalendar) window.renderCalendar();
+  });
   window._fbReady = true;
   if (window._fbQueue) {
     window._fbQueue.forEach(([id, data]) => window._fbWriteReservation(id, data).catch(console.warn));
@@ -401,7 +419,8 @@
   const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
   function getBlockFrom() { try { return localStorage.getItem('ot_block_from')||null; } catch(e){return null;} }
-  function setBlockFrom(v) { try { if(v) localStorage.setItem('ot_block_from',v); else localStorage.removeItem('ot_block_from'); } catch(e){} }
+  function setBlockFrom(v) { try { if(v) localStorage.setItem('ot_block_from',v); else localStorage.removeItem('ot_block_from'); } catch(e){}
+    if (window._fbSaveBlockFrom) window._fbSaveBlockFrom(v||null).catch(e=>console.warn('FB sync:',e)); }
   function isDateBlocked(val) {
     if (loadBlockedDates().includes(val)) return true;
     const bf = getBlockFrom(); if (bf && val >= bf) return true; return false;
@@ -597,6 +616,7 @@
 
   function saveBlockedDates(dates) {
     try { localStorage.setItem('ot_blocked_dates', JSON.stringify(dates)); } catch(e) {}
+    if (window._fbSaveBlockedDates) window._fbSaveBlockedDates(dates).catch(e=>console.warn('FB sync:',e));
   }
 
   function toggleDateEditor() {
