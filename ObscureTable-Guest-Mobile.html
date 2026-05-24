@@ -307,6 +307,29 @@
             <button onclick="addBlockedMonth()" style="width:100%;background:#9a2a1a;border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:11px;cursor:pointer;font-weight:700">Block This Month</button>
           </div>
 
+          <!-- Block from date onwards -->
+          <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:2px">
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">Block From a Date Onwards</div>
+            <div style="font-size:14px;color:var(--muted);font-style:italic;margin-bottom:10px;line-height:1.5">Blocks the selected date and all future dates — use this to control how far ahead guests can book.</div>
+            <div style="display:flex;gap:8px;margin-bottom:6px">
+              <input type="date" id="blockFromDate" style="flex:1;background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none">
+            </div>
+            <button onclick="addBlockFromDate()" style="width:100%;background:#9a2a1a;border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:11px;cursor:pointer;font-weight:700">Block This Date Onwards</button>
+            <div id="blockFromStatus" style="display:none;font-family:'Courier Prime',monospace;font-size:10px;color:#9a2a1a;font-weight:700;margin-top:8px;letter-spacing:0.06em"></div>
+            <button id="clearBlockFromBtn" onclick="clearBlockFrom()" style="display:none;width:100%;background:rgba(42,106,74,0.1);border:1.5px solid rgba(42,106,74,0.3);border-radius:8px;color:#2a6a4a;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:10px;cursor:pointer;font-weight:700;margin-top:6px">✕ Clear Forward Block</button>
+          </div>
+
+          <!-- Change PIN -->
+          <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:10px">
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:700">Change Staff PIN</div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <input type="password" id="newPin1" placeholder="New PIN" maxlength="8" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-family:'Courier Prime',monospace;font-size:16px;outline:none;letter-spacing:0.2em">
+              <input type="password" id="newPin2" placeholder="Confirm New PIN" maxlength="8" style="background:#fff;border:1.5px solid var(--border);border-radius:8px;color:var(--ink);padding:10px 12px;font-family:'Courier Prime',monospace;font-size:16px;outline:none;letter-spacing:0.2em">
+              <button onclick="changePin()" style="width:100%;background:var(--gold-btn);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;padding:11px;cursor:pointer;font-weight:700">Update PIN</button>
+            </div>
+            <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--muted);margin-top:8px;letter-spacing:0.06em">PIN applies to all editors on this form. Keep it safe.</div>
+          </div>
+
           <div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--muted);margin-top:10px;letter-spacing:0.08em">Blocked dates show as unavailable to guests. Tap ✕ to unblock individual dates.</div>
         </div>
       </div>
@@ -492,14 +515,14 @@
   function promptMenuPin() {
     if (menuPinUnlocked) { toggleMenuEditor(); return; }
     const pin = prompt('Enter staff PIN to edit menu:');
-    if (pin === STAFF_PIN) { menuPinUnlocked = true; toggleMenuEditor(); }
+    if (pin === getStaffPin()) { menuPinUnlocked = true; toggleMenuEditor(); }
     else if (pin !== null) toast('Incorrect PIN');
   }
 
   function promptTimePin() {
     if (timePinUnlocked) { toggleTimeEditor(); return; }
     const pin = prompt('Enter staff PIN to edit time slots:');
-    if (pin === STAFF_PIN) { timePinUnlocked = true; toggleTimeEditor(); }
+    if (pin === getStaffPin()) { timePinUnlocked = true; toggleTimeEditor(); }
     else if (pin !== null) toast('Incorrect PIN');
   }
 
@@ -509,7 +532,7 @@
   function promptDatePin() {
     if (datePinUnlocked) { toggleDateEditor(); return; }
     const pin = prompt('Enter staff PIN to manage blocked dates:');
-    if (pin === STAFF_PIN) { datePinUnlocked = true; toggleDateEditor(); }
+    if (pin === getStaffPin()) { datePinUnlocked = true; toggleDateEditor(); }
     else if (pin !== null) toast('Incorrect PIN');
   }
 
@@ -625,11 +648,66 @@
     toast(`${mName} ${year} blocked ✓`);
   }
 
+  // ── Block From Date Onwards ───────────────────────────────
+  function loadBlockFrom() {
+    try { return localStorage.getItem('ot_block_from') || null; } catch(e) { return null; }
+  }
+  function saveBlockFrom(val) {
+    try { localStorage.setItem('ot_block_from', val); } catch(e) {}
+  }
+  function clearBlockFrom() {
+    try { localStorage.removeItem('ot_block_from'); } catch(e) {}
+    updateBlockFromStatus();
+    toast('Forward block cleared ✓');
+  }
+  function addBlockFromDate() {
+    const val = document.getElementById('blockFromDate').value;
+    if (!val) { toast('Please select a start date'); return; }
+    saveBlockFrom(val);
+    document.getElementById('blockFromDate').value = '';
+    updateBlockFromStatus();
+    const fmt = new Date(val+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+    toast(`Blocked from ${fmt} onwards ✓`);
+  }
+  function updateBlockFromStatus() {
+    const val = loadBlockFrom();
+    const status = document.getElementById('blockFromStatus');
+    const clearBtn = document.getElementById('clearBlockFromBtn');
+    if (!status || !clearBtn) return;
+    if (val) {
+      const fmt = new Date(val+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+      status.textContent = `BLOCKED FROM: ${fmt.toUpperCase()} ONWARDS`;
+      status.style.display = 'block';
+      clearBtn.style.display = 'block';
+    } else {
+      status.style.display = 'none';
+      clearBtn.style.display = 'none';
+    }
+  }
+
+  // ── Change PIN ────────────────────────────────────────────
+  function changePin() {
+    const p1 = document.getElementById('newPin1').value;
+    const p2 = document.getElementById('newPin2').value;
+    if (!p1) { toast('Please enter a new PIN'); return; }
+    if (p1.length < 4) { toast('PIN must be at least 4 characters'); return; }
+    if (p1 !== p2) { toast('PINs do not match'); return; }
+    try { localStorage.setItem('ot_staff_pin', p1); } catch(e) {}
+    document.getElementById('newPin1').value = '';
+    document.getElementById('newPin2').value = '';
+    toast('PIN updated ✓');
+  }
+
+  // Override STAFF_PIN to read from localStorage if set
+  function getStaffPin() {
+    try { return localStorage.getItem('ot_staff_pin') || '1234'; } catch(e) { return '1234'; }
+  }
+
   function checkAltDate(val) {
     const BLOCKED = loadBlockedDates();
     const notice = document.getElementById('altBlockedNotice');
     if (!notice) return;
-    notice.style.display = BLOCKED.includes(val) ? 'block' : 'none';
+    notice.style.display = isDateBlocked(val) ? 'block' : 'none';
   }
 
   // ── Menu Manager ──────────────────────────────────────────
@@ -870,11 +948,17 @@
   renderMenuGrid();
 
   // ── Blocked date check ────────────────────────────────────
+  function isDateBlocked(val) {
+    if (loadBlockedDates().includes(val)) return true;
+    const blockFrom = loadBlockFrom();
+    if (blockFrom && val >= blockFrom) return true;
+    return false;
+  }
+
   function checkBlockedDate(val) {
-    const BLOCKED = loadBlockedDates();
     const notice = document.getElementById('blockedNotice');
     const msg = document.getElementById('blockedMsg');
-    if (BLOCKED.includes(val)) {
+    if (isDateBlocked(val)) {
       dateBlocked = true;
       msg.textContent = BLOCKED_MESSAGE;
       notice.style.display = 'block';
@@ -885,6 +969,8 @@
       notice.style.display = 'none';
       document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('blocked'));
     }
+    const altVal = document.getElementById('fAltDate')?.value;
+    if (altVal) checkAltDate(altVal);
   }
 
   // ── Progress ──────────────────────────────────────────────
