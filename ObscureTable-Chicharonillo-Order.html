@@ -331,7 +331,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── EmailJS ───────────────────────────────────────────────
+  //    EmailJS                                                
   const EJS_SERVICE  = 'service_xo8aoro';
   const EJS_TEMPLATE = 'template_yfe626s';
   const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
@@ -340,29 +340,29 @@
     else window.addEventListener('load', () => emailjs.init({ publicKey: EJS_KEY }));
   })();
 
-  // ── State ─────────────────────────────────────────────────
+  //    State                                                  
   const STAFF_PIN = '1234';
   let currentStep = 1, selectedTime = '', generatedCode = '', dateBlocked = false;
   let orderQty = {};
   const TOTAL_STEPS = 4;
 
   const CHICHARONILLO_ITEMS = [
-    { id:'whole', icon:'🐷', name:'Whole Chicharonillo', desc:'A whole Chicharonillo with Accoutrements. Feeds approximately 8–10.', price:14950, priceLabel:'PHP 14,950' },
+    { id:'whole', icon:' ', name:'Whole Chicharonillo', desc:'A whole Chicharonillo with Accoutrements. Feeds approximately 8 10.', price:14950, priceLabel:'PHP 14,950' },
   ];
 
   const todayStr = new Date().toISOString().split('T')[0];
   document.getElementById('fDate').min = todayStr;
 
-  function fmtDate(d) { if(!d)return'—'; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); }
-  function fmtTime(t) { if(!t)return'—'; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; }
+  function fmtDate(d) { if(!d)return' '; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); }
+  function fmtTime(t) { if(!t)return' '; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; }
   function toast(msg) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800); }
   function generateCode(last,date) { const L=last.replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X'); const dd=date.replace(/-/g,'').slice(4); const r=Math.random().toString(36).substring(2,5).toUpperCase(); return`OTC-${L}${dd}-${r}`; }
 
-  // ── PIN Protection ────────────────────────────────────────
+  //    PIN Protection                                         
   let datePinUnlocked=false, timePinUnlocked=false;
 
 
-  // ══ VISUAL CALENDAR DATE BLOCKER ══════════════════════════
+  //    VISUAL CALENDAR DATE BLOCKER                           
   let calView = 'month';
   let calYear = new Date().getFullYear();
   let calMonth = new Date().getMonth();
@@ -431,7 +431,7 @@
   function blockFromDate(dateStr) {
     setBlockFrom(dateStr); renderCalendar();
     const fmt=new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-    if(typeof toast==='function')toast('Blocked from '+fmt+' onwards ✓');else alert('Blocked from '+fmt+' onwards.');
+    if(typeof toast==='function')toast('Blocked from '+fmt+' onwards  ');else alert('Blocked from '+fmt+' onwards.');
   }
 
   const CBTN = "background:rgba(120,85,30,0.08);border:1.5px solid rgba(120,85,30,0.2);border-radius:6px;color:#9b7238;font-family:'Courier Prime',monospace;font-size:14px;padding:5px 12px;cursor:pointer;font-weight:700";
@@ -444,15 +444,15 @@
     const container=document.getElementById('calendarContainer');
     if(!container)return;
     const bf=getBlockFrom(); const today=new Date(); today.setHours(0,0,0,0);
-    let lbl=calView==='month'?`${MONTH_NAMES[calMonth]} ${calYear}`:calView==='year'?String(calYear):`${calYear} – ${calYear+11}`;
+    let lbl=calView==='month'?`${MONTH_NAMES[calMonth]} ${calYear}`:calView==='year'?String(calYear):`${calYear}   ${calYear+11}`;
     let h=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <button onclick="calNav(-1)" style="${CBTN}">◀</button>
+      <button onclick="calNav(-1)" style="${CBTN}"> </button>
       <div style="display:flex;gap:5px">
         <button onclick="calView='month';renderCalendar()" style="${CACT(calView==='month')}">Days</button>
         <button onclick="calView='year';renderCalendar()" style="${CACT(calView==='year')}">Months</button>
         <button onclick="calView='years';renderCalendar()" style="${CACT(calView==='years')}">Years</button>
       </div>
-      <button onclick="calNav(1)" style="${CBTN}">▶</button>
+      <button onclick="calNav(1)" style="${CBTN}"> </button>
     </div>
     <div style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9b7238;text-align:center;margin-bottom:10px;font-weight:700">${lbl}</div>`;
 
@@ -469,13 +469,13 @@
         const bg=blocked?(isFwd?'#7a1a08':'#9a2a1a'):'#fff';
         const col=blocked?'#fff':'#1a1208';
         const bdr=isToday?'2px solid #9b7238':`1px solid ${blocked?'transparent':'rgba(120,85,30,0.12)'}`;
-        h+=`<button onclick="toggleCalDate('${ds}')" title="${blocked?'Blocked — tap to unblock':'Tap to block'}" style="background:${bg};border:${bdr};border-radius:5px;color:${col};font-family:'Courier Prime',monospace;font-size:11px;padding:6px 1px;cursor:pointer;text-align:center;font-weight:${blocked?700:400};width:100%;transition:all 0.1s">${d}</button>`;
+        h+=`<button onclick="toggleCalDate('${ds}')" title="${blocked?'Blocked   tap to unblock':'Tap to block'}" style="background:${bg};border:${bdr};border-radius:5px;color:${col};font-family:'Courier Prime',monospace;font-size:11px;padding:6px 1px;cursor:pointer;text-align:center;font-weight:${blocked?700:400};width:100%;transition:all 0.1s">${d}</button>`;
       }
       h+=`</div>`;
       const fm=`${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
       h+=`<div style="display:flex;gap:6px;margin-top:10px">
         <button onclick="toggleCalMonth(${calYear},${calMonth})" style="${CBLOCK(isFullMonthBlocked(calYear,calMonth))}">${isFullMonthBlocked(calYear,calMonth)?'Unblock Month':'Block Month'}</button>
-        <button onclick="blockFromDate('${fm}')" style="${CFWD}">Block From Here ▶</button>
+        <button onclick="blockFromDate('${fm}')" style="${CFWD}">Block From Here  </button>
       </div>`;
 
     } else if(calView==='year'){
@@ -486,14 +486,14 @@
       }
       h+=`</div><div style="display:flex;gap:6px;margin-top:10px">
         <button onclick="toggleCalYear(${calYear})" style="${CBLOCK(isFullYearBlocked(calYear))}">${isFullYearBlocked(calYear)?'Unblock Year':'Block Year'}</button>
-        <button onclick="blockFromDate('${calYear}-01-01')" style="${CFWD}">Block From This Year ▶</button>
+        <button onclick="blockFromDate('${calYear}-01-01')" style="${CFWD}">Block From This Year  </button>
       </div>`;
 
     } else {
       h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">`;
       for(let y=calYear;y<calYear+12;y++){
         const blocked=isFullYearBlocked(y);
-        h+=`<button onclick="calYear=${y};calView='year';renderCalendar()" style="background:${blocked?'#9a2a1a':'#fff'};border:1.5px solid ${blocked?'transparent':'rgba(120,85,30,0.18)'};border-radius:8px;color:${blocked?'#fff':'#1a1208'};font-family:'Courier Prime',monospace;font-size:12px;padding:11px 2px;cursor:pointer;text-align:center;font-weight:700;transition:all 0.1s">${y}${blocked?' ✕':''}</button>`;
+        h+=`<button onclick="calYear=${y};calView='year';renderCalendar()" style="background:${blocked?'#9a2a1a':'#fff'};border:1.5px solid ${blocked?'transparent':'rgba(120,85,30,0.18)'};border-radius:8px;color:${blocked?'#fff':'#1a1208'};font-family:'Courier Prime',monospace;font-size:12px;padding:11px 2px;cursor:pointer;text-align:center;font-weight:700;transition:all 0.1s">${y}${blocked?'  ':''}</button>`;
       }
       h+=`</div><div style="margin-top:10px"><button onclick="toggleCalYear(${calYear})" style="${CBLOCK(isFullYearBlocked(calYear))};width:100%">${isFullYearBlocked(calYear)?'Unblock '+calYear:'Block '+calYear}</button></div>`;
     }
@@ -502,7 +502,7 @@
       const fmtBf=new Date(bf+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
       h+=`<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(154,42,26,0.07);border:1.5px solid rgba(154,42,26,0.22);border-radius:8px;padding:8px 12px;margin-top:10px">
         <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#9a2a1a;font-weight:700">FORWARD BLOCK FROM ${fmtBf.toUpperCase()}</div>
-        <button onclick="setBlockFrom(null);renderCalendar();if(typeof toast!=='undefined')toast('Forward block cleared ✓');" style="background:rgba(42,106,74,0.1);border:1.5px solid rgba(42,106,74,0.3);border-radius:5px;color:#2a6a4a;font-family:'Courier Prime',monospace;font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700">✕ Clear</button>
+        <button onclick="setBlockFrom(null);renderCalendar();if(typeof toast!=='undefined')toast('Forward block cleared  ');" style="background:rgba(42,106,74,0.1);border:1.5px solid rgba(42,106,74,0.3);border-radius:5px;color:#2a6a4a;font-family:'Courier Prime',monospace;font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700">  Clear</button>
       </div>`;
     }
 
@@ -532,9 +532,9 @@
     if(p1!==p2){if(typeof toast!=='undefined')toast('PINs do not match');else alert('PINs do not match');return;}
     try{localStorage.setItem('ot_staff_pin',p1);}catch(e){}
     document.getElementById('newPin1').value='';document.getElementById('newPin2').value='';
-    if(typeof toast!=='undefined')toast('PIN updated ✓');else alert('PIN updated.');
+    if(typeof toast!=='undefined')toast('PIN updated  ');else alert('PIN updated.');
   }
-  // ══ END CALENDAR BLOCKER ═══════════════════════════════════
+  //    END CALENDAR BLOCKER                                    
 
     function promptDatePin() {
     if(datePinUnlocked) { toggleDateEditor(); return; }
@@ -549,7 +549,7 @@
     else if(pin!==null) toast('Incorrect PIN');
   }
 
-  // ── Blocked Dates ─────────────────────────────────────────
+  //    Blocked Dates                                          
   function loadBlockedDates() { try { return JSON.parse(localStorage.getItem('otc_blocked_dates')||'[]'); } catch(e) { return []; } }
   function saveBlockedDates(d) { try { localStorage.setItem('otc_blocked_dates',JSON.stringify(d)); } catch(e) {} }
 
@@ -558,7 +558,7 @@
     const btn=document.getElementById('editDatesBtn');
     const open=panel.style.display==='none'||!panel.style.display;
     panel.style.display=open?'block':'none';
-    btn.textContent=open?'✕ Close':'🚫 Block Dates';
+    btn.textContent=open?'  Close':'  Block Dates';
     if(open) renderBlockedDates();
   }
 
@@ -568,7 +568,7 @@
     if(!dates.length) { c.innerHTML=`<div style="font-style:italic;color:var(--muted);font-size:15px;padding:4px 0 10px">No dates blocked.</div>`; return; }
     c.innerHTML=[...dates].sort().map(d=>{
       const fmt=new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
-      return `<div class="editor-item"><div><div class="editor-item-label">${fmt}</div><div class="editor-item-tag">BLOCKED</div></div><button class="editor-remove" onclick="removeBlockedDate('${d}')">✕ Unblock</button></div>`;
+      return `<div class="editor-item"><div><div class="editor-item-label">${fmt}</div><div class="editor-item-tag">BLOCKED</div></div><button class="editor-remove" onclick="removeBlockedDate('${d}')">  Unblock</button></div>`;
     }).join('');
   }
 
@@ -580,12 +580,12 @@
     dates.push(val); saveBlockedDates(dates);
     document.getElementById('newBlockedDate').value='';
     renderBlockedDates();
-    toast(new Date(val+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})+' blocked ✓');
+    toast(new Date(val+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})+' blocked  ');
   }
   function removeBlockedDate(val) {
     saveBlockedDates(loadBlockedDates().filter(d=>d!==val));
     renderBlockedDates();
-    toast('Unblocked ✓');
+    toast('Unblocked  ');
   }
   function checkBlockedDate(val) {
     const blocked=loadBlockedDates();
@@ -600,7 +600,7 @@
     }
   }
 
-  // ── Time Slots ────────────────────────────────────────────
+  //    Time Slots                                             
   function loadTimeSlots() {
     try { const s=localStorage.getItem('otc_time_slots'); if(s) return JSON.parse(s); } catch(e) {}
     return ['10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
@@ -612,7 +612,7 @@
     const btn=document.getElementById('editTimesBtn');
     const open=panel.style.display==='none'||!panel.style.display;
     panel.style.display=open?'block':'none';
-    btn.textContent=open?'✕ Close':'✏ Edit Times';
+    btn.textContent=open?'  Close':'  Edit Times';
     if(open) renderTimeSlotEditor();
   }
 
@@ -620,7 +620,7 @@
     const slots=loadTimeSlots();
     const c=document.getElementById('timeSlotList');
     if(!slots.length) { c.innerHTML=`<div style="font-style:italic;color:var(--muted);font-size:15px;padding:4px 0 10px">No time slots.</div>`; return; }
-    c.innerHTML=[...slots].sort().map(t=>`<div class="editor-item"><div class="editor-item-label">${fmtTime(t)}</div><button class="editor-remove" onclick="removeTimeSlot('${t}')">✕ Remove</button></div>`).join('');
+    c.innerHTML=[...slots].sort().map(t=>`<div class="editor-item"><div class="editor-item-label">${fmtTime(t)}</div><button class="editor-remove" onclick="removeTimeSlot('${t}')">  Remove</button></div>`).join('');
   }
 
   function addTimeSlot() {
@@ -631,7 +631,7 @@
     slots.push(val); saveTimeSlots(slots);
     document.getElementById('newTimeSlot').value='';
     renderTimeSlotEditor(); buildTimeGrid();
-    toast(fmtTime(val)+' added ✓');
+    toast(fmtTime(val)+' added  ');
   }
   function removeTimeSlot(val) {
     saveTimeSlots(loadTimeSlots().filter(s=>s!==val));
@@ -640,7 +640,7 @@
     toast('Removed');
   }
 
-  // ── Time Grid ─────────────────────────────────────────────
+  //    Time Grid                                              
   function buildTimeGrid() {
     const grid=document.getElementById('timeGrid');
     grid.innerHTML='';
@@ -664,7 +664,7 @@
   }
   buildTimeGrid();
 
-  // ── Order Grid ────────────────────────────────────────────
+  //    Order Grid                                             
   function buildOrderGrid() {
     const grid=document.getElementById('orderGrid');
     grid.innerHTML='';
@@ -682,7 +682,7 @@
           </div>
         </div>
         <div class="stepper">
-          <button class="stepper-btn" onclick="changeQty('${item.id}',-1)">−</button>
+          <button class="stepper-btn" onclick="changeQty('${item.id}',-1)"> </button>
           <div class="stepper-display">
             <div class="stepper-num">${qty}</div>
             <div class="stepper-word">units</div>
@@ -710,13 +710,13 @@
     const selected=CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0);
     if(!selected.length) { wrap.style.display='none'; return; }
     wrap.style.display='block';
-    rows.innerHTML=selected.map(m=>`<div class="order-summary-row"><span style="font-size:15px;color:var(--ink)">${m.icon} ${m.name}</span><span style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--gold);font-weight:700">×${orderQty[m.id]}</span></div>`).join('');
+    rows.innerHTML=selected.map(m=>`<div class="order-summary-row"><span style="font-size:15px;color:var(--ink)">${m.icon} ${m.name}</span><span style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--gold);font-weight:700"> ${orderQty[m.id]}</span></div>`).join('');
     total.textContent='PHP '+getOrderTotal().toLocaleString('en-PH');
   }
 
   buildOrderGrid();
 
-  // ── Navigation ────────────────────────────────────────────
+  //    Navigation                                             
   function updateProgress() {
     for(let i=1;i<=TOTAL_STEPS;i++) {
       const dot=document.getElementById(`dot${i}`);
@@ -726,7 +726,7 @@
       if(i<TOTAL_STEPS) document.getElementById(`line${i}`).className='step-line'+(i<currentStep?' done':'');
     }
     document.getElementById('backBtn').style.display=currentStep>1?'block':'none';
-    document.getElementById('nextBtn').textContent=currentStep===TOTAL_STEPS?'Submit Order →':'Continue →';
+    document.getElementById('nextBtn').textContent=currentStep===TOTAL_STEPS?'Submit Order  ':'Continue  ';
   }
 
   function showStep(n) {
@@ -744,7 +744,7 @@
     }
     if(currentStep===2) {
       if(!v('fDate')) { toast('Please select a pickup date'); return false; }
-      if(dateBlocked) { toast('This date is unavailable — please choose another'); return false; }
+      if(dateBlocked) { toast('This date is unavailable   please choose another'); return false; }
       if(!selectedTime) { toast('Please select a pickup time'); return false; }
     }
     if(currentStep===3) {
@@ -761,14 +761,14 @@
       <div class="review-block"><div class="review-block-title">Contact</div>
         <div class="review-row"><span class="review-key">Name</span><span class="review-val">${v('fLastName')}, ${v('fFirstName')}</span></div>
         <div class="review-row"><span class="review-key">Phone</span><span class="review-val">${v('fPhone')}</span></div>
-        ${v('fEmail')?`<div class="review-row"><span class="review-key">Email</span><span class="review-val">${v('fEmail')}</span></div>`:''}
+        ${v('fEmail')? '<div class="review-row"><span class="review-key">Email</span><span class="review-val">'+v('fEmail')+'</span></div>' : ''}
       </div>
       <div class="review-block"><div class="review-block-title">Pickup</div>
         <div class="review-row"><span class="review-key">Date</span><span class="review-val">${fmtDate(v('fDate'))}</span></div>
         <div class="review-row"><span class="review-key">Time</span><span class="review-val">${fmtTime(selectedTime)}</span></div>
       </div>
       <div class="review-block"><div class="review-block-title">Order</div>
-        ${CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0).map(m=>`<div class="review-row"><span class="review-key">${m.icon} ${m.name}</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:15px;color:var(--gold)">×${orderQty[m.id]} — PHP ${(m.price*orderQty[m.id]).toLocaleString()}</span></div>`).join('')}
+        ${CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0).map(m=>`<div class="review-row"><span class="review-key">${m.icon} ${m.name}</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:15px;color:var(--gold)"> ${orderQty[m.id]}   PHP ${(m.price*orderQty[m.id]).toLocaleString()}</span></div>`).join('')}
         <div class="review-row"><span class="review-key">Total</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:17px;color:var(--gold);font-weight:700">PHP ${total.toLocaleString()}</span></div>
       </div>
       <div class="review-block"><div class="review-block-title">Payment</div>
@@ -804,9 +804,9 @@
     showStep(1); updateProgress();
   }
 
-  function copySuccess() { navigator.clipboard.writeText(generatedCode).catch(()=>{}); toast('Code copied ✓'); }
+  function copySuccess() { navigator.clipboard.writeText(generatedCode).catch(()=>{}); toast('Code copied  '); }
 
-  // ── Submit ────────────────────────────────────────────────
+  //    Submit                                                 
   async function submitOrder() {
     const lastName=document.getElementById('fLastName').value.trim();
     const firstName=document.getElementById('fFirstName').value.trim();
@@ -819,20 +819,20 @@
 
     generatedCode=generateCode(lastName,date);
     const btn=document.getElementById('nextBtn');
-    btn.textContent='Sending…'; btn.disabled=true;
+    btn.textContent='Sending '; btn.disabled=true;
 
     const orderLines=CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0)
-      .map(m=>`  ${m.icon} ${m.name} x${orderQty[m.id]} — PHP ${(m.price*orderQty[m.id]).toLocaleString()}`)
+      .map(m=>`  ${m.icon} ${m.name} x${orderQty[m.id]}   PHP ${(m.price*orderQty[m.id]).toLocaleString()}`)
       .join('\n');
 
-    const message=`OBSCURE TABLE — CHICHARONILLO PICKUP ORDER
+    const message=`OBSCURE TABLE   CHICHARONILLO PICKUP ORDER
 ==========================================
 ORDER CODE: ${generatedCode}
 
 CONTACT
 Name:   ${lastName}, ${firstName}
 Phone:  ${phone}
-Email:  ${email||'—'}
+Email:  ${email||' '}
 
 PICKUP
 Date:   ${fmtDate(date)}
@@ -845,13 +845,13 @@ Total:         PHP ${total.toLocaleString()}
 Down Payment:  PHP ${downPmt.toLocaleString()}
 Balance:       PHP ${(total-downPmt).toLocaleString()}
 
-NOTES: ${notes||'—'}
+NOTES: ${notes||' '}
 ==========================================`.trim();
 
     try {
       await emailjs.send(EJS_SERVICE,EJS_TEMPLATE,{
         to_email:'obscuretableph@gmail.com',
-        subject:`🐷 Chicharonillo Order — ${generatedCode} — ${lastName}, ${firstName}`,
+        subject:`  Chicharonillo Order   ${generatedCode}   ${lastName}, ${firstName}`,
         message, reply_to:email||phone,
       });
     } catch(err) { console.error('EmailJS:',err); }
@@ -877,7 +877,7 @@ NOTES: ${notes||'—'}
     document.getElementById('footerNav').style.display='none';
     document.getElementById('successScreen').classList.add('show');
     window.scrollTo({top:0});
-    btn.textContent='Submit Order →'; btn.disabled=false;
+    btn.textContent='Submit Order  '; btn.disabled=false;
   }
 
   updateProgress();
