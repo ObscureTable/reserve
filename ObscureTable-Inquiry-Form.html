@@ -35,13 +35,13 @@
     const dates = Array.isArray(val) ? val : [];
     try { localStorage.setItem('ot_blocked_dates', JSON.stringify(dates)); } catch(e) {}
     if (window.renderCalendar) window.renderCalendar();
-    if (window._cdpState) { Object.keys(_cdpState).forEach(id=>cdpRenderGrid(id)); Object.keys(_cdpState).forEach(id=>cdpUpdateField(id)); }
+    if (window._cdpState) { Object.keys(_cdpState).forEach(id=>{ cdpRenderGrid(id); cdpUpdateField(id); }); }
   });
   onValue(ref(db, 'config/block_from'), (snap) => {
     const val = snap.val();
     try { if(val) localStorage.setItem('ot_block_from',val); else localStorage.removeItem('ot_block_from'); } catch(e) {}
     if (window.renderCalendar) window.renderCalendar();
-    if (window._cdpState) { Object.keys(_cdpState).forEach(id=>cdpRenderGrid(id)); Object.keys(_cdpState).forEach(id=>cdpUpdateField(id)); }
+    if (window._cdpState) { Object.keys(_cdpState).forEach(id=>{ cdpRenderGrid(id); cdpUpdateField(id); }); }
   });
   window._fbReady = true;
   if (window._fbQueue) {
@@ -964,9 +964,12 @@
   }
 
   function checkAltDate(val) {
+    if (!val) val = cdpGetValue('cdp_altdate');
     const notice = document.getElementById('altBlockedNotice');
-    if (!notice) return;
-    notice.style.display = isDateBlocked(val) ? 'block' : 'none';
+    if (!val) { if (notice) notice.style.display = 'none'; return; }
+    const blocked = isDateBlocked(val);
+    if (notice) notice.style.display = blocked ? 'block' : 'none';
+    cdpUpdateField('cdp_altdate');
   }
 
   // ── Menu Manager ──────────────────────────────────────────
@@ -1229,21 +1232,21 @@
     if (!val) val = cdpGetValue('cdp_date');
     const notice = document.getElementById('blockedNotice');
     const msg = document.getElementById('blockedMsg');
-    if (isDateBlocked(val)) {
+    const blocked = val ? isDateBlocked(val) : false;
+    // Update the picker field colour
+    if (val) cdpUpdateField('cdp_date');
+    if (blocked) {
       dateBlocked = true;
-      msg.textContent = BLOCKED_MESSAGE;
-      notice.style.display = 'block';
-      const tsel = document.getElementById('time'); if(tsel){tsel.value='';tsel.disabled=true;}
-      setDateStatus('date','fDateStatus', true);
-      updateDateDisplay('date');
+      if (msg) msg.textContent = BLOCKED_MESSAGE;
+      if (notice) notice.style.display = 'block';
+      document.querySelectorAll('.time-chip').forEach(c => c.classList.add('blocked'));
+      selectedTime = '';
     } else {
       dateBlocked = false;
-      notice.style.display = 'none';
-      const tsel2 = document.getElementById('time'); if(tsel2) tsel2.disabled=false;
-      setDateStatus('date','fDateStatus', val ? false : null);
-      updateDateDisplay('date');
+      if (notice) notice.style.display = 'none';
+      document.querySelectorAll('.time-chip').forEach(c => c.classList.remove('blocked'));
     }
-    const altVal = document.getElementById('altDate')?.value;
+    const altVal = cdpGetValue('cdp_altdate');
     if (altVal) checkAltDate(altVal);
   }
 
