@@ -304,6 +304,32 @@
   </div>
 
   <div style="padding:16px" id="reportsContent"></div>
+
+  <!-- Delete PIN Settings -->
+  <div style="margin:0 16px 24px;background:#fff;border:1.5px solid var(--border);border-radius:14px;overflow:hidden">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <div style="font-size:18px">🔐</div>
+      <div>
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--gold);font-weight:700">Delete PIN</div>
+        <div style="font-size:14px;color:var(--muted);font-style:italic;margin-top:2px">Required to delete any booking or order</div>
+      </div>
+    </div>
+    <div style="padding:16px">
+      <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px">Change Delete PIN</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <input type="password" id="deletePinCurrent" placeholder="Current PIN" maxlength="12" autocomplete="off"
+          style="width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--ink);padding:12px 14px;font-family:'Courier Prime',monospace;font-size:16px;letter-spacing:0.2em;outline:none">
+        <input type="password" id="deletePinNew" placeholder="New PIN" maxlength="12" autocomplete="off"
+          style="width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--ink);padding:12px 14px;font-family:'Courier Prime',monospace;font-size:16px;letter-spacing:0.2em;outline:none">
+        <input type="password" id="deletePinConfirm" placeholder="Confirm New PIN" maxlength="12" autocomplete="off"
+          style="width:100%;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--ink);padding:12px 14px;font-family:'Courier Prime',monospace;font-size:16px;letter-spacing:0.2em;outline:none">
+        <button onclick="changeDeletePin()"
+          style="width:100%;background:var(--gold-btn);border:none;border-radius:10px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;padding:13px;cursor:pointer;font-weight:700;margin-top:2px">
+          Update Delete PIN
+        </button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Guest Directory Panel -->
@@ -649,9 +675,11 @@
 
   async function deleteChicharonilloOrder(id) {
     const o = window.chicharonilloOrders.find(x=>String(x.id)===String(id));
-    if (!o || !window.confirm(`Delete order for ${o.name}, ${o.first}?\nThis cannot be undone.`)) return;
-    try { await window._fbDeleteChicha(id); closeChicharonilloDetail(); toast('Order deleted'); }
-    catch(e) { toast('Delete failed'); }
+    if (!o) return;
+    promptDeletePin(async function(){
+      try { await window._fbDeleteChicha(id); closeChicharonilloDetail(); toast('Order deleted'); }
+      catch(e) { toast('Delete failed'); }
+    });
   }
 
   // ── Guest Directory ───────────────────────────────────────
@@ -1198,11 +1226,32 @@
     renderList();
   }
 
+  function getDeletePin(){try{return localStorage.getItem('ot_delete_pin')||'1234';}catch(e){return'1234';}}
+  function changeDeletePin(){
+    const cur=document.getElementById('deletePinCurrent').value;
+    const nw=document.getElementById('deletePinNew').value;
+    const cf=document.getElementById('deletePinConfirm').value;
+    if(cur!==getDeletePin()){toast('Current PIN is incorrect');return;}
+    if(!nw||nw.length<4){toast('New PIN must be at least 4 characters');return;}
+    if(nw!==cf){toast('New PINs do not match');return;}
+    try{localStorage.setItem('ot_delete_pin',nw);}catch(e){}
+    document.getElementById('deletePinCurrent').value='';
+    document.getElementById('deletePinNew').value='';
+    document.getElementById('deletePinConfirm').value='';
+    toast('Delete PIN updated');
+  }
+  function promptDeletePin(callback){
+    const pin=prompt('Enter Delete PIN to confirm:');
+    if(pin===null)return;
+    if(pin!==getDeletePin()){toast('Incorrect PIN — deletion cancelled');return;}
+    callback();
+  }
   async function deleteReservation(id){
     const r=window.reservations.find(x=>String(x.id)===String(id));if(!r)return;
-    if(!window.confirm(`Delete reservation for ${r.name}, ${r.first}?\n\nThis cannot be undone.`))return;
-    try{await window._fbDelete(id);closeDetail();toast('Reservation deleted');}
-    catch(e){toast('Delete failed — check connection');}
+    promptDeletePin(async function(){
+      try{await window._fbDelete(id);closeDetail();toast('Reservation deleted');}
+      catch(e){toast('Delete failed — check connection');}
+    });
   }
 
   function openEdit(id){

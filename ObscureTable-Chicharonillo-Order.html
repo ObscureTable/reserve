@@ -2,895 +2,596 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#f5f0e8">
-<title>OT Chicharonillo — Pickup Order</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>OT Chicharonillo - Pickup Order</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-  const firebaseConfig = {
-    apiKey: "AIzaSyDGyboz57n06VHx_6N6nkSfi6CjcousUMU",
-    authDomain: "obscure-table.firebaseapp.com",
-    databaseURL: "https://obscure-table-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "obscure-table",
-    storageBucket: "obscure-table.firebasestorage.app",
-    messagingSenderId: "170560318474",
-    appId: "1:170560318474:web:734bb2a7f6404fac43c3f3"
-  };
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-  window._fbWriteOrder = async (id, data) => {
-    await set(ref(db, `chicharonillo_orders/${id}`), data);
-  };
-  window._fbReady = true;
-  if (window._fbQueue) {
-    window._fbQueue.forEach(([id,data]) => window._fbWriteOrder(id,data).catch(console.warn));
-    window._fbQueue = [];
-  }
+  var cfg={apiKey:"AIzaSyDGyboz57n06VHx_6N6nkSfi6CjcousUMU",authDomain:"obscure-table.firebaseapp.com",databaseURL:"https://obscure-table-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"obscure-table",storageBucket:"obscure-table.firebasestorage.app",messagingSenderId:"170560318474",appId:"1:170560318474:web:734bb2a7f6404fac43c3f3"};
+  var app=initializeApp(cfg);var db=getDatabase(app);
+  window._fbWriteOrder=async function(id,data){await set(ref(db,'chicharonillo_orders/'+id),data);};
+  window._fbReady=true;
+  if(window._fbQ){window._fbQ.forEach(function(x){window._fbWriteOrder(x[0],x[1]);});window._fbQ=[];}
 </script>
 <style>
-  :root {
-    --bg: #f5f0e8;
-    --surface: #ede6d6;
-    --surface2: #e4dbc8;
-    --border: rgba(120,85,30,0.2);
-    --gold: #b84a08;
-    --gold-btn: #c85510;
-    --ink: #1a1208;
-    --muted: #7a5030;
-    --stone: #5a3820;
-    --safe-top: env(safe-area-inset-top, 0px);
-    --safe-bot: env(safe-area-inset-bottom, 0px);
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-  html { scroll-behavior: smooth; }
-  body { background: var(--bg); color: var(--ink); font-family: 'Cormorant Garamond', Georgia, serif; min-height: 100dvh; -webkit-font-smoothing: antialiased; }
-
-  .header { background: var(--bg); border-bottom: 1.5px solid var(--border); padding: max(16px, calc(var(--safe-top) + 12px)) 20px 14px; text-align: center; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 12px rgba(120,85,30,0.08); }
-  .header-sub { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--gold); margin-top: 6px; font-weight: 700; }
-
-  .progress-wrap { padding: 14px 20px 0; background: var(--bg); }
-  .progress-steps { display: flex; align-items: center; margin-bottom: 8px; }
-  .step-dot { width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--muted); flex-shrink: 0; transition: all 0.3s; background: var(--surface); }
-  .step-dot.active { border-color: var(--gold); color: var(--gold); background: rgba(184,74,8,0.1); font-weight: 700; }
-  .step-dot.done { border-color: var(--gold); color: #fff; background: var(--gold); }
-  .step-line { flex: 1; height: 1.5px; background: var(--border); transition: background 0.3s; }
-  .step-line.done { background: rgba(184,74,8,0.4); }
-  .step-labels { display: flex; justify-content: space-between; padding-bottom: 12px; border-bottom: 1.5px solid var(--border); }
-  .step-label { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); text-align: center; flex: 1; transition: color 0.3s; }
-  .step-label.active { color: var(--gold); font-weight: 700; }
-
-  .scroll-body { padding: 0 20px calc(110px + var(--safe-bot)); }
-  .step-panel { display: none; animation: fadeIn 0.25s ease; }
-  .step-panel.active { display: block; }
-  @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-
-  .step-intro { padding: 24px 0 20px; border-bottom: 1.5px solid var(--border); margin-bottom: 26px; }
-  .step-intro-title { font-size: 30px; font-weight: 300; letter-spacing: 0.05em; color: var(--ink); margin-bottom: 5px; }
-  .step-intro-sub { font-style: italic; font-size: 18px; color: var(--muted); }
-
-  .field { margin-bottom: 22px; }
-  .field-label { display: block; font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 9px; font-weight: 700; }
-  .req { color: #b84a3a; margin-left: 2px; }
-
-  .field-input { width: 100%; background: #fff; border: 1.5px solid var(--border); border-radius: 12px; color: var(--ink); padding: 16px 18px; font-family: 'Cormorant Garamond', serif; font-size: 20px; outline: none; appearance: none; -webkit-appearance: none; transition: border-color 0.2s, box-shadow 0.2s; }
-  .field-input:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(184,74,8,0.1); }
-  .field-input::placeholder { color: #b8a888; font-style: italic; }
-  textarea.field-input { resize: none; height: 100px; line-height: 1.6; }
-
-  /* Stepper */
-  .stepper { display: flex; align-items: center; background: #fff; border: 1.5px solid var(--border); border-radius: 12px; overflow: hidden; }
-  .stepper-btn { background: var(--surface); border: none; color: var(--gold); font-size: 30px; padding: 12px 24px; cursor: pointer; line-height: 1; font-weight: 300; transition: background 0.15s; }
-  .stepper-btn:active { background: var(--surface2); }
-  .stepper-display { flex: 1; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-  .stepper-num { font-size: 34px; font-weight: 300; color: var(--ink); line-height: 1; }
-  .stepper-word { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
-
-  /* Time Grid */
-  .time-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-  .time-chip { background: #fff; border: 1.5px solid var(--border); border-radius: 12px; padding: 15px 8px; text-align: center; cursor: pointer; transition: all 0.15s; }
-  .time-chip.selected { background: rgba(184,74,8,0.08); border-color: var(--gold); border-width: 2px; }
-  .time-chip.blocked { background: var(--surface2); border-color: var(--border); cursor: not-allowed; opacity: 0.45; pointer-events: none; }
-  .time-chip-hr { font-size: 22px; font-weight: 400; color: var(--ink); line-height: 1; }
-  .time-chip-ampm { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.1em; color: var(--muted); margin-top: 3px; }
-
-  /* Blocked date notice */
-  .blocked-notice { background: rgba(154,42,26,0.06); border: 1.5px solid rgba(154,42,26,0.2); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: none; }
-  .blocked-notice-text { font-size: 16px; color: #9a2a1a; font-style: italic; line-height: 1.5; }
-
-  /* Order card */
-  .order-card { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; padding: 18px 16px; margin-bottom: 12px; transition: all 0.15s; }
-  .order-card.selected { background: rgba(184,74,8,0.07); border-color: var(--gold); border-width: 2px; }
-  .order-card-icon { font-size: 26px; flex-shrink: 0; margin-top: 2px; }
-  .order-card-name { font-size: 18px; font-weight: 400; color: var(--ink); margin-bottom: 3px; }
-  .order-card-desc { font-size: 14px; color: var(--muted); font-style: italic; line-height: 1.5; }
-  .order-card-price { font-family: 'Courier Prime', monospace; font-size: 12px; color: var(--gold); margin-top: 4px; letter-spacing: 0.06em; font-weight: 700; }
-
-  /* Review */
-  .review-block { background: #fff; border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(120,85,30,0.06); }
-  .review-block-title { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); padding: 13px 18px; border-bottom: 1.5px solid var(--border); background: rgba(184,74,8,0.05); font-weight: 700; }
-  .review-row { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 18px; border-bottom: 1px solid rgba(120,85,30,0.08); }
-  .review-row:last-child { border-bottom: none; }
-  .review-key { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
-  .review-val { font-size: 18px; color: var(--ink); text-align: right; max-width: 65%; }
-
-  /* Policy */
-  .policy-strip { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 16px; }
-  .policy-title { font-family: 'Courier Prime', monospace; font-size: 12px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); margin-bottom: 10px; font-weight: 700; }
-  .policy-text { font-size: 16px; color: var(--muted); line-height: 1.75; font-style: italic; }
-
-  /* Footer nav */
-  .footer-nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--bg); border-top: 1.5px solid var(--border); padding: 14px 20px max(20px, var(--safe-bot)); display: flex; gap: 12px; z-index: 100; box-shadow: 0 -4px 20px rgba(120,85,30,0.1); }
-  .btn-back { background: transparent; border: 1.5px solid var(--border); border-radius: 14px; color: var(--stone); padding: 16px 22px; font-family: 'Courier Prime', monospace; font-size: 14px; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; flex-shrink: 0; }
-  .btn-next { flex: 1; background: var(--gold-btn); border: none; border-radius: 14px; color: #fff; padding: 18px; font-family: 'Courier Prime', monospace; font-size: 14px; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 700; cursor: pointer; box-shadow: 0 4px 16px rgba(184,74,8,0.3); transition: background 0.2s; }
-  .btn-next:active { background: var(--gold); }
-
-  /* Success */
-  .success-screen { display: none; text-align: center; padding: 40px 24px 120px; }
-  .success-screen.show { display: block; }
-  .success-mark { font-size: 52px; margin-bottom: 14px; }
-  .success-title { font-size: 36px; font-weight: 300; letter-spacing: 0.08em; color: var(--ink); margin-bottom: 8px; }
-  .success-sub { font-style: italic; font-size: 17px; color: var(--muted); margin-bottom: 28px; line-height: 1.7; }
-  .success-code-wrap { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; }
-  .success-code-label { font-family: 'Courier Prime', monospace; font-size: 9px; letter-spacing: 0.22em; text-transform: uppercase; color: var(--gold); margin-bottom: 8px; }
-  .success-code-val { font-family: 'Courier Prime', monospace; font-size: 22px; font-weight: 700; color: var(--ink); letter-spacing: 0.08em; word-break: break-all; }
-  .success-note { font-style: italic; font-size: 14px; color: var(--muted); line-height: 1.7; margin-top: 10px; }
-  .btn-copy-success { background: var(--gold-btn); border: none; border-radius: 14px; color: #fff; padding: 16px 32px; font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; font-weight: 700; cursor: pointer; margin-bottom: 14px; }
-  .btn-new { background: transparent; border: 1.5px solid var(--border); border-radius: 14px; color: var(--muted); padding: 16px 32px; font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 700; cursor: pointer; }
-
-  /* PIN-locked editor buttons */
-  .pin-btn { background: rgba(184,74,8,0.08); border: 1.5px solid rgba(184,74,8,0.25); border-radius: 8px; color: var(--gold); font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 5px 12px; cursor: pointer; font-weight: 700; }
-
-  /* Editor panels */
-  .editor-panel { display: none; background: var(--surface); border: 1.5px solid var(--border); border-radius: 12px; padding: 16px; margin-top: 10px; }
-  .editor-title { font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 12px; }
-  .editor-item { display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; padding: 11px 14px; margin-bottom: 8px; }
-  .editor-item-label { font-size: 16px; color: var(--ink); }
-  .editor-item-tag { font-family: 'Courier Prime', monospace; font-size: 9px; color: var(--gold); font-weight: 700; letter-spacing: 0.06em; margin-top: 2px; }
-  .editor-remove { background: rgba(154,42,26,0.07); border: 1.5px solid rgba(154,42,26,0.2); border-radius: 6px; color: #9a2a1a; font-family: 'Courier Prime', monospace; font-size: 11px; padding: 5px 10px; cursor: pointer; font-weight: 700; }
-  .editor-add-row { display: flex; gap: 8px; border-top: 1px solid var(--border); padding-top: 12px; margin-top: 4px; }
-  .editor-input { flex: 1; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; color: var(--ink); padding: 12px 14px; font-family: 'Cormorant Garamond', serif; font-size: 18px; outline: none; }
-  .editor-input:focus { border-color: var(--gold); }
-  .editor-add-btn { background: var(--gold-btn); border: none; border-radius: 10px; color: #fff; font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 16px; cursor: pointer; font-weight: 700; white-space: nowrap; }
-  .editor-hint { font-family: 'Courier Prime', monospace; font-size: 9px; color: var(--muted); margin-top: 8px; letter-spacing: 0.08em; }
-
-  /* Order summary */
-  .order-summary { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; padding: 16px; margin-top: 18px; }
-  .order-summary-title { font-family: 'Courier Prime', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold); font-weight: 700; margin-bottom: 12px; }
-  .order-summary-row { display: flex; justify-content: space-between; align-items: baseline; padding: 7px 0; border-bottom: 1px solid rgba(120,85,30,0.08); }
-  .order-total { display: flex; justify-content: space-between; align-items: baseline; padding-top: 12px; margin-top: 4px; }
-  .order-total-label { font-family: 'Courier Prime', monospace; font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
-  .order-total-val { font-family: 'Courier Prime', monospace; font-size: 18px; color: var(--gold); font-weight: 700; }
-
-  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(184,74,8,0.92); color: #fff; padding: 12px 22px; border-radius: 24px; font-family: 'Courier Prime', monospace; font-size: 13px; letter-spacing: 0.1em; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 999; white-space: nowrap; }
-  .toast.show { opacity: 1; }
+:root{--bg:#f5f0e8;--surf:#ede6d4;--bd:rgba(120,85,30,0.2);--gold:#b84a08;--gb:#c85510;--ink:#1a1208;--mu:#7a5030;--sv:env(safe-area-inset-bottom,0px);}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:var(--bg);color:var(--ink);font-family:'Cormorant Garamond',Georgia,serif;min-height:100vh;padding-bottom:calc(80px + var(--sv));}
+.hdr{text-align:center;padding:24px 20px 16px;border-bottom:1.5px solid var(--bd);background:var(--bg);}
+.hdr img{max-width:220px;height:auto;display:block;margin:0 auto 6px;}
+.hdr-sub{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);font-weight:700;}
+.hdr-ig{font-family:'Courier Prime',monospace;font-size:10px;color:var(--mu);margin-top:3px;}
+.hdr-ig a{color:var(--mu);text-decoration:none;}
+.prog{padding:14px 20px 0;background:var(--bg);position:sticky;top:0;z-index:10;border-bottom:1px solid var(--bd);}
+.ps{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:8px;}
+.sd{width:28px;height:28px;border-radius:50%;border:1.5px solid var(--bd);background:var(--bg);color:var(--mu);font-family:'Courier Prime',monospace;font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+.sd.on{border-color:var(--gold);color:var(--gold);background:rgba(200,85,16,.1);font-weight:700;}
+.sd.dn{border-color:var(--gold);background:var(--gold);color:#fff;}
+.sl{flex:1;height:1px;background:var(--bd);max-width:40px;transition:background .2s;}
+.sl.dn{background:var(--gold);}
+.slbs{display:flex;justify-content:space-between;padding:0 2px;margin-bottom:10px;}
+.slb{font-family:'Courier Prime',monospace;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);text-align:center;width:25%;}
+.slb.on{color:var(--gold);font-weight:700;}
+.stp{display:none;padding:20px 20px 16px;}
+.stp.on{display:block;}
+.si{margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--bd);}
+.sit{font-size:32px;font-weight:300;color:var(--ink);line-height:1.1;}
+.sis{font-size:16px;font-style:italic;color:var(--mu);margin-top:4px;}
+.fld{margin-bottom:18px;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px;}
+.lb{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;display:block;margin-bottom:8px;}
+.rq{color:#9a2a1a;}
+.inp{width:100%;background:#fff;border:none;border-bottom:2px solid rgba(120,85,30,.3);color:var(--ink);padding:12px 2px;font-family:'Cormorant Garamond',serif;font-size:20px;outline:none;transition:border-color .2s;-webkit-appearance:none;appearance:none;}
+.inp:focus{border-bottom-color:var(--gold);}
+.inp::placeholder{color:#c0ad90;font-style:italic;}
+select.inp{cursor:pointer;background:#fff;}
+.eb{background:rgba(200,85,16,.1);border:1.5px solid rgba(200,85,16,.3);border-radius:8px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;cursor:pointer;font-weight:700;}
+.ep{display:none;background:var(--surf);border:1.5px solid var(--bd);border-radius:12px;padding:14px;margin-top:10px;max-height:70vh;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+.bn{display:none;background:rgba(154,42,26,.05);border:1.5px solid rgba(154,42,26,.2);border-radius:10px;padding:12px 16px;margin-top:8px;}
+.bn p{font-style:italic;font-size:15px;color:#9a2a1a;line-height:1.5;}
+.str{display:flex;align-items:stretch;border:1.5px solid var(--bd);border-radius:14px;overflow:hidden;}
+.stb{background:var(--surf);border:none;color:var(--gold);font-size:30px;padding:12px 24px;cursor:pointer;line-height:1;font-weight:300;}
+.stv{flex:1;text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;padding:14px 8px;background:#fff;}
+.stn{font-size:34px;font-weight:300;color:var(--ink);line-height:1;}
+.stw{font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu);}
+.oc{background:#fff;border:1.5px solid var(--bd);border-radius:14px;padding:16px;margin-bottom:12px;}
+.oc.sel{border-color:var(--gold);background:rgba(200,85,16,.04);}
+.oc-top{display:flex;align-items:flex-start;gap:14px;margin-bottom:14px;}
+.oc-ico{font-size:32px;flex-shrink:0;}
+.oc-nm{font-size:20px;color:var(--ink);line-height:1.2;}
+.oc-dc{font-size:15px;color:var(--mu);font-style:italic;margin-top:4px;line-height:1.4;}
+.oc-pr{font-family:'Courier Prime',monospace;font-size:13px;color:var(--gold);margin-top:6px;font-weight:700;}
+.rb{background:#fff;border:1px solid var(--bd);border-radius:12px;padding:14px 16px;margin-bottom:12px;}
+.rbt{font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px;}
+.rr{display:flex;justify-content:space-between;align-items:baseline;padding:6px 0;border-bottom:1px solid rgba(120,85,30,.1);font-size:16px;gap:12px;}
+.rr:last-child{border-bottom:none;}
+.rk{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--mu);flex-shrink:0;}
+.rv{color:var(--ink);text-align:right;}
+.pol{background:rgba(154,42,26,.05);border:1px solid rgba(154,42,26,.2);border-radius:10px;padding:14px 16px;margin-bottom:16px;font-size:15px;color:var(--mu);line-height:1.7;font-style:italic;}
+.nxt{width:100%;background:var(--gb);border:none;border-radius:14px;color:#fff;font-family:'Courier Prime',monospace;font-size:13px;letter-spacing:.18em;text-transform:uppercase;padding:17px;cursor:pointer;font-weight:700;margin-top:8px;}
+.bk{background:transparent;border:none;color:var(--mu);font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:.12em;cursor:pointer;padding:4px 0;display:none;text-transform:uppercase;}
+.fb{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid var(--bd);padding:12px 20px calc(12px + var(--sv));z-index:20;}
+.tst{position:fixed;bottom:calc(100px + var(--sv));left:50%;transform:translateX(-50%);background:var(--ink);color:#f5f0e8;font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:.1em;padding:10px 20px;border-radius:20px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap;max-width:90vw;}
+.tst.on{opacity:1;}
+.scs{display:none;padding:40px 24px;text-align:center;}
+.scs-ico{font-size:44px;margin-bottom:16px;}
+.scs-ey{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.scs-h{font-size:30px;font-weight:300;color:var(--ink);margin-bottom:18px;}
+.scs-cb{background:var(--ink);border-radius:14px;padding:20px;margin:0 auto 20px;max-width:300px;}
+.scs-cl{font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:.22em;color:rgba(200,175,130,.7);margin-bottom:8px;text-transform:uppercase;}
+.scs-cv{font-family:'Courier Prime',monospace;font-size:24px;letter-spacing:.12em;color:#e09050;font-weight:700;}
+.scs-m{font-size:17px;color:var(--mu);font-style:italic;line-height:1.75;margin-bottom:14px;}
+.scs-imp{background:rgba(154,42,26,.06);border:1px solid rgba(154,42,26,.2);border-radius:10px;padding:14px 16px;margin-bottom:14px;text-align:left;}
+.scs-it{font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#9a2a1a;font-weight:700;margin-bottom:6px;}
+.scs-ib{font-size:15px;color:var(--mu);line-height:1.7;font-style:italic;}
+/* Date picker */
+.dpf{width:100%;background:#fff;border:2px solid var(--bd);border-radius:14px;color:var(--ink);padding:15px 16px;font-family:'Cormorant Garamond',serif;font-size:19px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;transition:all .2s;user-select:none;-webkit-user-select:none;}
+.dpf.av{border-color:#2a7a4a;background:rgba(42,122,74,.07);box-shadow:0 0 0 3px rgba(42,122,74,.12);}
+.dpf.bkd{border-color:#9a2a1a;background:rgba(154,42,26,.07);box-shadow:0 0 0 3px rgba(154,42,26,.12);}
+.dpbg{font-family:'Courier Prime',monospace;font-size:10px;font-weight:700;letter-spacing:.1em;padding:3px 8px;border-radius:6px;display:none;}
+.dpf.av .dpbg{display:inline;color:#2a7a4a;background:rgba(42,122,74,.12);}
+.dpf.bkd .dpbg{display:inline;color:#9a2a1a;background:rgba(154,42,26,.1);}
+.dpc{display:none;background:#fff;border:1.5px solid var(--bd);border-radius:14px;padding:14px;margin-top:6px;box-shadow:0 8px 30px rgba(120,85,30,.12);}
+.dpc.on{display:block;}
+.dpn{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.dpnb{background:rgba(120,85,30,.08);border:1.5px solid rgba(120,85,30,.2);border-radius:8px;color:var(--gold);font-size:16px;padding:5px 14px;cursor:pointer;font-weight:700;}
+.dpnl{font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);font-weight:700;}
+.dptbs{display:flex;gap:4px;}
+.dptb{border:1.5px solid rgba(120,85,30,.2);border-radius:6px;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:4px 8px;cursor:pointer;font-weight:700;background:transparent;color:var(--mu);}
+.dptb.on{background:var(--gb);border-color:transparent;color:#fff;}
+.dpgd{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:8px;}
+.dw{font-family:'Courier Prime',monospace;font-size:8px;color:var(--mu);text-align:center;padding:3px 0;font-weight:700;}
+.dy{border:none;border-radius:6px;padding:8px 2px;font-family:'Cormorant Garamond',serif;font-size:17px;cursor:pointer;text-align:center;background:transparent;width:100%;color:var(--ink);}
+.dy:hover{background:rgba(200,85,16,.1);}
+.dy.db{background:rgba(154,42,26,.1);color:#9a2a1a;font-weight:700;cursor:default;text-decoration:line-through;opacity:.8;}
+.dy.ds{background:var(--gb);color:#fff;font-weight:700;}
+.dy.dt{border:2px solid var(--gold);}
+.dy.dp{color:var(--mu);opacity:.35;cursor:default;}
+.dpleg{display:flex;gap:12px;margin-top:10px;padding-top:10px;border-top:1px solid var(--bd);}
+.dll{display:flex;align-items:center;gap:5px;font-family:'Courier Prime',monospace;font-size:9px;color:var(--mu);letter-spacing:.06em;}
+.dld{width:10px;height:10px;border-radius:3px;flex-shrink:0;}
+.tsr{display:flex;align-items:center;justify-content:space-between;background:#fff;border-radius:10px;padding:10px 14px;margin-bottom:6px;}
 </style>
 </head>
 <body>
+<div id="T" class="tst"></div>
 
-<!-- Header -->
-<div class="header">
-  <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjc1IDEyNTciPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojZDg2NjNmO30uY2xzLTJ7ZmlsbDojMDU0YTUxO308L3N0eWxlPjwvZGVmcz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik01MTguMTUsNzc2LjgzYy01MC40OSwwLTk3LjI1LTIyLjY2LTEwNi43MS03My40NC04LjAzLTQzLjYsMi44Ny05OS41NCwzNy4wMS0xMjcuOTQsMTQuMDYtMTEuNDcsNDMuMDMtMTYuNjQsNjkuOTktMTYuNjQsMTcuNzksMCwzNC43MSwyLjI5LDQ2LjE4LDYuMDIsMjQuNjcsOC4wMywxNS4yLDQ5LjkxLDE0LjkyLDc2LjMxLTEwLjA0LTIuNTgtMzEuODQtNS43NC00OS45MS01Ljc0LTEwLjA0LDAtMTkuMjIuODYtMjQuMzgsMy43My0zMi4xMywxNy41LTIwLjY1LDY0LjI2LDE1LjQ5LDY5LjEzLDE2LjY0LDIuMywzOS44Ny0xMC42MSw1My4zNi0xMC42MSw1Ljc0LDAsOS43NSwyLjI5LDEwLjMzLDkuNzUsMS43MiwyMC45NCw1Ljc0LDU1LjY1LTE0LjYzLDYxLjY4LTE2LjkyLDUuMTYtMzQuNDIsNy43NS01MS42NCw3Ljc1WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTY2Ni40Miw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTkxMy42OSw3NzYuMjZsLTE4LjA3LS44Ni0xNC4wNi0uMjktOC4zMi0xLjQzLTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDguNTctMjIuOTUuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuMTQuMjktNTEuMzUuMjktMTIuMzQuODYtMjQuNjcuODYtMzcuMDEuMjktMTAuMDQuNTctMjAuMzcsMS40My0zMC42OS4yOS0uNTcuMjktMi41OC41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uMjkuODYtLjU3LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjQzLDE3Ljc5LTEuNDNoMjAuOTRjNy4xNy0uMjksMTQuMDYtLjU3LDIwLjk0LS4yOSwyLjI5LDAsNC41OSwwLDYuNi44NiwxLjcyLjg2LDIuODcsMi4yOSwzLjczLDQuMDIuODYsMi41OCwxLjQzLDUuNDUsMS43Miw4LjMyLjI5LDMuNDQuMjksNy4xNy41NywxMC42MS4yOSwxMC45LS4yOSwyMi4wOS0uNTcsMzIuOTktLjU3LDIwLjM3LS41Nyw0MS4wMi0uNTcsNjEuMzkuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksNy43NS0uMjksMjMuNTItLjI5LDIzLjUybC0uODYsMS40My0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0LDEuMTVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTA5NS4wNCw3NzYuODNjLTUwLjQ5LDAtOTcuMjUtMjIuNjYtMTA2LjcxLTczLjQ0LTguMDMtNDMuNiwyLjg3LTk5LjU0LDM3LjAxLTEyNy45NCwxNC4wNi0xMS40Nyw0My4wMy0xNi42NCw2OS45OS0xNi42NCwxNy43OSwwLDM0LjcxLDIuMjksNDYuMTgsNi4wMiwyNC42Nyw4LjAzLDE1LjIsNDkuOTEsMTQuOTIsNzYuMzEtMTAuMDQtMi41OC0zMS44NC01Ljc0LTQ5LjkxLTUuNzQtMTAuMDQsMC0xOS4yMi44Ni0yNC4zOCwzLjczLTMyLjEzLDE3LjUtMjAuNjUsNjQuMjYsMTUuNDksNjkuMTMsMTYuNjQsMi4zLDM5Ljg3LTEwLjYxLDUzLjM2LTEwLjYxLDUuNzQsMCw5Ljc1LDIuMjksMTAuMzMsOS43NSwxLjcyLDIwLjk0LDUuNzQsNTUuNjUtMTQuNjMsNjEuNjgtMTYuOTIsNS4xNi0zNC40Miw3Ljc1LTUxLjY0LDcuNzVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTI0My4zMSw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE0NzEuOSw3NzAuMjNjLTExLjE5LDAtMjEuMjMtLjg2LTI0Ljk2LTQuMy04LjYxLTcuNzUtLjg2LTQzLjYsMC01Ni41MSwzLjczLTUwLjc4LTQuMy0xMjkuOTUsNTQuNS0xNDEuNzEsMTIuMzQtMi4zLDI2LjY4LTQuNTksNDAuNDUtNC41OSwyNC45NiwwLDQ4Ljc3LDYuNiw1OS4wOSwyOS44MywyMy41Miw1My4wNywxOC42NSwxMTYuNDcsMjMuNTIsMTc1LjI3LTEwLjYxLDAtMzUuNTcsMS43Mi01My4wNywxLjcyLTcuNDYsMC0xMy40OC0uMjktMTYuNjQtMS4xNS0uODYtMTIuMDUsMC0yNC4xLDAtMzYuNDMtMTMuNDgtLjU3LTI3LjI1LS41Ny00MC43My41Ny00Ljg4LjI5LDIuMjksMzUuODYtNS43NCwzNS44Ni02LjYsMC0yMi4zOCwxLjQzLTM2LjQzLDEuNDNaTTE1NTAuNSw2NzYuNDNjLTEuNDMtMjIuMzgtOC44OS0zMy44NS0xNi4zNS0zMy44NXMtMTQuOTIsMTAuOS0xNi4wNiwzMy4yOGMxMC42MS4yOSwyMS41MS4yOSwzMi40Mi41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xODI2LjYyLDc2Ny44N2MtMy41OSwwLTguODQtMS4xLTEyLjk4LTEuMzgtMTkuNi0uODMtMzkuMjEsMC01OC41NC0uODMtNC4xNC0xNy45NS02LjM1LTM2LjQ1LTE0LjkxLTUyLjQ2LTEuOTMtMy41OS01LjI1LTUuMjUtOC4yOC01LjI1LTMuNTksMC02LjYzLDIuNDktNi42Myw3LjE4LDAsMTYuNTctLjU1LDMzLjQxLjU1LDQ5Ljk4LTguMDEtLjU1LTQ0LjE4LTEuMS02Mi4xMi0xLjFoLTguODRjLTYuMDcsMC0yLjQ4LTEyLjE1LTEuOTMtMTguMjIsMy41OS01Ny4xNi00Ljk3LTExNC41OS0xLjM4LTE3MS43NCwxMi40Mi02LjYzLDU4LjU0LTguMDEsNzguMTQtOC4wMSwyMi45MiwwLDQ3Ljc3LjI4LDY4Ljc1LDEwLjc3LDIxLjI2LDEwLjQ5LDM3LDM5LjIxLDMzLjY5LDYyLjk1LTMuMDQsMjEuNTQtMTkuODgsMzkuNzYtMzUuODksNTQuOTUsMTguMjIsMTguMjIsMzAuMSw0My4wNywzNS44OSw2Ny45MiwxLjEsNC4xNC0xLjY2LDUuMjUtNS41Miw1LjI1Wk0xNzMyLjE5LDY2MS44NGM0MC4zMSwwLDQ4Ljg3LTQ1LjI4LDMuNTktNDYuNjYtMS45MywwLTMuODctLjI4LTYuMDctLjI4LTMuODcsMC03LjQ1LjgzLTcuMTgsNC40MiwxLjM4LDEzLjgxLDEuMSwyOC4xNi44Myw0MS45NywzLjA0LjU1LDYuMDcuNTUsOC44NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xOTQwLjQ4LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0xOTM5LjEsNzAwLjIyYzIwLjE2LjI4LDM1LjYyLTE4LjIyLDMxLjQ4LTM4LjEtMi43Ni0xNC4wOC0xNS40Ni0yNC44NS0yOS44Mi0yNS40LTQuNDIsMC04Ljg0LjgzLTEyLjk4LDIuMjEtOC4yOCwzLjMxLTE0LjkxLDEwLjIyLTE3Ljk1LDE4LjUtMi4yMSw1LjUyLTIuNzYsMTEuODctMS4zOCwxNy40LDIuNDksMTQuNjMsMTYuMDEsMjUuNCwzMC42NSwyNS40WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTIxMjMuNzUsNzY2LjIxYy0xMS42LDAtNTYuMzMuNTUtNjYuODItMy44Nyw0LjY5LTU1LjIyLS4yOC0xMTAuNzIuMjgtMTY2LjIyLDAtMjYuNzgsMS4zOC0yOC40NCwyNi41MS0yOC45OSw0LjE0LDAsMTEuMDUtLjU1LDE4LjIyLS41NSwxMC4yMiwwLDIwLjk4LjgzLDI1LjEzLDQuOTcsOS4xMSw5LjM5LDI5LjU0LDYxLjAyLDM1LjA3LDcyLjYyLTEuMzgtMjMuNzUsMS4xLTQ4LjA0LTMuMDQtNzEuNzksMjQuMy0uMjgsNDguMzItMy41OSw3Mi42Mi0yLjIxLTUuMjUsNjQuMzMtOC41NiwxMjguOTQtMy44NywxOTMtMjIuMzcsMi4yMS00NS4wMSwxLjY2LTY3LjM3LDEuNjYtMTQuMzYtMjMuMTktMjIuOTItNDkuNDItMzUuODktNzMuMTcuMjgsMjQuODUtMS45Myw0OS43LS44Myw3NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMjg5LjcyLDc2OS44bC0xNy4zOS0uODMtMTMuNTMtLjI4LTguMDEtMS4zOC0xLjEtLjgzcy0uODMtMzAuNjUtLjgzLTQ1LjgzYzAtMTEuMDUuNTUtMjIuMDkuODMtMzMuNDEuMjgtMTYuNTcuMjgtMzIuODYuMjgtNDkuNDIuMjgtMTEuODcuODMtMjMuNzUuODMtMzUuNjIuMjgtOS42Ni41NS0xOS42LDEuMzgtMjkuNTQuMjgtLjU1LjI4LTIuNDkuNTUtMy4wNC41NS0uNTUsMS4xLS44MywxLjY2LS41NS4yOC0uMjguODMtLjU1LDEuMzgtLjU1LDUuNTItMS4zOCwxMS4zMi0xLjM4LDE3LjEyLTEuMzhoMjAuMTZjNi45LS4yOCwxMy41My0uNTUsMjAuMTYtLjI4LDIuMjEsMCw0LjQyLDAsNi4zNS44MywxLjY2LjgzLDIuNzYsMi4yMSwzLjU5LDMuODcuODMsMi40OSwxLjM4LDUuMjUsMS42Niw4LjAxLjI4LDMuMzEuMjgsNi45LjU1LDEwLjIyLjI4LDEwLjQ5LS4yOCwyMS4yNi0uNTUsMzEuNzUtLjU1LDE5LjYtLjU1LDM5LjQ4LS41NSw1OS4wOS41NSwyMC40My44Myw0MC41OS44Myw2MS4wMi0uMjgsNy40Ni0uMjgsMjIuNjQtLjI4LDIyLjY0bC0uODMsMS4zOC0xLjkzLDEuOTMtNS44LDEuMS0yNi41MSwxLjFaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjM0OC42Myw3NjIuNjNjLTEuNjYtNjQuMzMtNS44LTEyOC45NC0xLjEtMTkzLDExLjYtNC4xNCwyNC41Ny02LjA3LDM3LTYuMDcsOC4yOCwwLDE2LjAxLjgzLDIzLjc1LDIuNDgsMTIuNDIsMi43NiwxMi4xNSwyMS4yNiwxMS44NywzMy45Ni0uMjgsMzIuMzEtMi4yMSw2NC42MS0xLjkzLDk2LjkyLDIyLjA5LjU1LDQ0LjQ1LDEuNjYsNjYuNTQsMS42Ni0uODMsMjIuMDktMy4wNCw0NC43My0xLjM4LDY2LjgyLTE4LjUsMC0xMTYuMjQtLjI4LTEzNC43NC0yLjc2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTI0OTQuMDgsNzYyLjYzYy0xLjY2LTY0LjMzLTUuOC0xMjguOTQtMS4xLTE5MywxMS42LTQuMTQsMjQuNTctNi4wNywzNy02LjA3LDguMjgsMCwxNi4wMS44MywyMy43NSwyLjQ4LDEyLjQyLDIuNzYsMTIuMTUsMjEuMjYsMTEuODcsMzMuOTYtLjI4LDMyLjMxLTIuMjEsNjQuNjEtMS45Myw5Ni45MiwyMi4wOS41NSw0NC40NSwxLjY2LDY2LjU0LDEuNjYtLjgzLDIyLjA5LTMuMDQsNDQuNzMtMS4zOCw2Ni44Mi0xOC41LDAtMTE2LjI0LS4yOC0xMzQuNzQtMi43NloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNzM1Ljk1LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0yNzM0LjU3LDcwMC4yMmMyMC4xNi4yOCwzNS42Mi0xOC4yMiwzMS40OC0zOC4xLTIuNzYtMTQuMDgtMTUuNDYtMjQuODUtMjkuODItMjUuNC00LjQyLDAtOC44NC44My0xMi45OCwyLjIxLTguMjgsMy4zMS0xNC45MSwxMC4yMi0xNy45NSwxOC41LTIuMjEsNS41Mi0yLjc2LDExLjg3LTEuMzgsMTcuNCwyLjQ4LDE0LjYzLDE2LjAxLDI1LjQsMzAuNjUsMjUuNFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMjUuOTgsNTI3LjQ4bDEyLjQtMTUuODZjMy4yLTQuMSw5LjI5LTQuNDIsMTIuOTEtLjY4bDU4LjM5LDUzLjk3YzIuOTcsMy4wNywzLjIyLDcuODcuNTksMTEuMjNsLTQuMyw1LjVjLTIuNzMsMy40OS03LjY4LDQuMzItMTEuNCwxLjkybC02Ni40OS00My42MmMtNC4yMy0yLjczLTUuMTktOC41MS0yLjA5LTEyLjQ3WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTM4Ny4xNSw0OTAuNzJsMTcuNzMtOS41M2M0LjU4LTIuNDYsMTAuMjgtLjMxLDEyLjA5LDQuNTdsMjEuNDMsNTMuN2MxLjQ5LDQuMDEtLjIxLDguNS0zLjk4LDEwLjUybC02LjE1LDMuM2MtMy45MSwyLjEtOC43Ny44Ny0xMS4yMS0yLjgzbC0zMy4wMS00Ny40N2MtMi43Ny00LjItMS4zNC05Ljg4LDMuMS0xMi4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMTcuNDUsNTc5Ljg1bC00Ljk4LDE5LjVjLTEuMjksNS4wNCwyLjE4LDEwLjA1LDcuMzUsMTAuNjNsNTcuMjgsNy44NWM0LjI1LjQ4LDguMi0yLjI1LDkuMjUtNi40bDEuNzMtNi43NmMxLjEtNC4zLTEuMjctOC43Mi01LjQ1LTEwLjJsLTU0LjAzLTIwLjZjLTQuNzUtMS42Ny05LjkxLDEuMDgtMTEuMTUsNS45NloiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTYyLjc5LDY1NC40djIwLjEzYzAsNS4yLTQuNiw5LjItOS43NSw4LjQ5bC03OS4yNC02LjU1Yy00LjIzLS41OS03LjM4LTQuMjEtNy4zOC04LjQ5di02Ljk4YzAtNC40NCwzLjM5LTguMTQsNy44LTguNTNsNzkuMjQtNi42YzUuMDEtLjQ1LDkuMzMsMy41LDkuMzMsOC41M1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDcyMS4wNGwtOC4wOSwxOC40M2MtMi4wOSw0Ljc2LTcuOTEsNi41OC0xMi4zNCwzLjg1bC00OS45Ni0yOS4xYy0zLjY0LTIuMjQtNS4wNy02LjgyLTMuMzUtMTAuNzRsMi44MS02LjM5YzEuNzgtNC4wNiw2LjM3LTYuMDksMTAuNTgtNC42N2w1NS4yNSwxNy4wNmM0Ljc3LDEuNiw3LjE0LDYuOTYsNS4xMSwxMS41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDYwNy45bC04LjA5LTE4LjQzYy0yLjA5LTQuNzYtNy45MS02LjU4LTEyLjM0LTMuODVsLTQ5Ljk2LDI5LjFjLTMuNjQsMi4yNC01LjA3LDYuODItMy4zNSwxMC43NGwyLjgxLDYuMzljMS43OCw0LjA2LDYuMzcsNi4wOSwxMC41OCw0LjY3bDU1LjI1LTE3LjA2YzQuNzctMS42LDcuMTQtNi45Niw1LjExLTExLjU3WiIvPjwvc3ZnPgo=" alt="OT Chicharonillo" style="display:block;max-width:220px;height:auto;margin:0 auto;">
-  <div class="header-sub">Pickup Order</div>
+<div class="hdr">
+  <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjc1IDEyNTciPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojZDg2NjNmO30uY2xzLTJ7ZmlsbDojMDU0YTUxO308L3N0eWxlPjwvZGVmcz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik01MTguMTUsNzc2LjgzYy01MC40OSwwLTk3LjI1LTIyLjY2LTEwNi43MS03My40NC04LjAzLTQzLjYsMi44Ny05OS41NCwzNy4wMS0xMjcuOTQsMTQuMDYtMTEuNDcsNDMuMDMtMTYuNjQsNjkuOTktMTYuNjQsMTcuNzksMCwzNC43MSwyLjI5LDQ2LjE4LDYuMDIsMjQuNjcsOC4wMywxNS4yLDQ5LjkxLDE0LjkyLDc2LjMxLTEwLjA0LTIuNTgtMzEuODQtNS43NC00OS45MS01Ljc0LTEwLjA0LDAtMTkuMjIuODYtMjQuMzgsMy43My0zMi4xMywxNy41LTIwLjY1LDY0LjI2LDE1LjQ5LDY5LjEzLDE2LjY0LDIuMywzOS44Ny0xMC42MSw1My4zNi0xMC42MSw1Ljc0LDAsOS43NSwyLjI5LDEwLjMzLDkuNzUsMS43MiwyMC45NCw1Ljc0LDU1LjY1LTE0LjYzLDYxLjY4LTE2LjkyLDUuMTYtMzQuNDIsNy43NS01MS42NCw3Ljc1WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTY2Ni40Miw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTkxMy42OSw3NzYuMjZsLTE4LjA3LS44Ni0xNC4wNi0uMjktOC4zMi0xLjQzLTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDguNTctMjIuOTUuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuMTQuMjktNTEuMzUuMjktMTIuMzQuODYtMjQuNjcuODYtMzcuMDEuMjktMTAuMDQuNTctMjAuMzcsMS40My0zMC42OS4yOS0uNTcuMjktMi41OC41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uMjkuODYtLjU3LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjQzLDE3Ljc5LTEuNDNoMjAuOTRjNy4xNy0uMjksMTQuMDYtLjU3LDIwLjk0LS4yOSwyLjI5LDAsNC41OSwwLDYuNi44NiwxLjcyLjg2LDIuODcsMi4yOSwzLjczLDQuMDIuODYsMi41OCwxLjQzLDUuNDUsMS43Miw4LjMyLjI5LDMuNDQuMjksNy4xNy41NywxMC42MS4yOSwxMC45LS4yOSwyMi4wOS0uNTcsMzIuOTktLjU3LDIwLjM3LS41Nyw0MS4wMi0uNTcsNjEuMzkuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksNy43NS0uMjksMjMuNTItLjI5LDIzLjUybC0uODYsMS40My0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0LDEuMTVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTA5NS4wNCw3NzYuODNjLTUwLjQ5LDAtOTcuMjUtMjIuNjYtMTA2LjcxLTczLjQ0LTguMDMtNDMuNiwyLjg3LTk5LjU0LDM3LjAxLTEyNy45NCwxNC4wNi0xMS40Nyw0My4wMy0xNi42NCw2OS45OS0xNi42NCwxNy43OSwwLDM0LjcxLDIuMjksNDYuMTgsNi4wMiwyNC42Nyw4LjAzLDE1LjIsNDkuOTEsMTQuOTIsNzYuMzEtMTAuMDQtMi41OC0zMS44NC01Ljc0LTQ5LjkxLTUuNzQtMTAuMDQsMC0xOS4yMi44Ni0yNC4zOCwzLjczLTMyLjEzLDE3LjUtMjAuNjUsNjQuMjYsMTUuNDksNjkuMTMsMTYuNjQsMi4zLDM5Ljg3LTEwLjYxLDUzLjM2LTEwLjYxLDUuNzQsMCw5Ljc1LDIuMjksMTAuMzMsOS43NSwxLjcyLDIwLjk0LDUuNzQsNTUuNjUtMTQuNjMsNjEuNjgtMTYuOTIsNS4xNi0zNC40Miw3Ljc1LTUxLjY0LDcuNzVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTI0My4zMSw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE0NzEuOSw3NzAuMjNjLTExLjE5LDAtMjEuMjMtLjg2LTI0Ljk2LTQuMy04LjYxLTcuNzUtLjg2LTQzLjYsMC01Ni41MSwzLjczLTUwLjc4LTQuMy0xMjkuOTUsNTQuNS0xNDEuNzEsMTIuMzQtMi4zLDI2LjY4LTQuNTksNDAuNDUtNC41OSwyNC45NiwwLDQ4Ljc3LDYuNiw1OS4wOSwyOS44MywyMy41Miw1My4wNywxOC42NSwxMTYuNDcsMjMuNTIsMTc1LjI3LTEwLjYxLDAtMzUuNTcsMS43Mi01My4wNywxLjcyLTcuNDYsMC0xMy40OC0uMjktMTYuNjQtMS4xNS0uODYtMTIuMDUsMC0yNC4xLDAtMzYuNDMtMTMuNDgtLjU3LTI3LjI1LS41Ny00MC43My41Ny00Ljg4LjI5LDIuMjksMzUuODYtNS43NCwzNS44Ni02LjYsMC0yMi4zOCwxLjQzLTM2LjQzLDEuNDNaTTE1NTAuNSw2NzYuNDNjLTEuNDMtMjIuMzgtOC44OS0zMy44NS0xNi4zNS0zMy44NXMtMTQuOTIsMTAuOS0xNi4wNiwzMy4yOGMxMC42MS4yOSwyMS41MS4yOSwzMi40Mi41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xODI2LjYyLDc2Ny44N2MtMy41OSwwLTguODQtMS4xLTEyLjk4LTEuMzgtMTkuNi0uODMtMzkuMjEsMC01OC41NC0uODMtNC4xNC0xNy45NS02LjM1LTM2LjQ1LTE0LjkxLTUyLjQ2LTEuOTMtMy41OS01LjI1LTUuMjUtOC4yOC01LjI1LTMuNTksMC02LjYzLDIuNDktNi42Myw3LjE4LDAsMTYuNTctLjU1LDMzLjQxLjU1LDQ5Ljk4LTguMDEtLjU1LTQ0LjE4LTEuMS02Mi4xMi0xLjFoLTguODRjLTYuMDcsMC0yLjQ4LTEyLjE1LTEuOTMtMTguMjIsMy41OS01Ny4xNi00Ljk3LTExNC41OS0xLjM4LTE3MS43NCwxMi40Mi02LjYzLDU4LjU0LTguMDEsNzguMTQtOC4wMSwyMi45MiwwLDQ3Ljc3LjI4LDY4Ljc1LDEwLjc3LDIxLjI2LDEwLjQ5LDM3LDM5LjIxLDMzLjY5LDYyLjk1LTMuMDQsMjEuNTQtMTkuODgsMzkuNzYtMzUuODksNTQuOTUsMTguMjIsMTguMjIsMzAuMSw0My4wNywzNS44OSw2Ny45MiwxLjEsNC4xNC0xLjY2LDUuMjUtNS41Miw1LjI1Wk0xNzMyLjE5LDY2MS44NGM0MC4zMSwwLDQ4Ljg3LTQ1LjI4LDMuNTktNDYuNjYtMS45MywwLTMuODctLjI4LTYuMDctLjI4LTMuODcsMC03LjQ1LjgzLTcuMTgsNC40MiwxLjM4LDEzLjgxLDEuMSwyOC4xNi44Myw0MS45NywzLjA0LjU1LDYuMDcuNTUsOC44NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xOTQwLjQ4LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0xOTM5LjEsNzAwLjIyYzIwLjE2LjI4LDM1LjYyLTE4LjIyLDMxLjQ4LTM4LjEtMi43Ni0xNC4wOC0xNS40Ni0yNC44NS0yOS44Mi0yNS40LTQuNDIsMC04Ljg0LjgzLTEyLjk4LDIuMjEtOC4yOCwzLjMxLTE0LjkxLDEwLjIyLTE3Ljk1LDE4LjUtMi4yMSw1LjUyLTIuNzYsMTEuODctMS4zOCwxNy40LDIuNDksMTQuNjMsMTYuMDEsMjUuNCwzMC42NSwyNS40WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTIxMjMuNzUsNzY2LjIxYy0xMS42LDAtNTYuMzMuNTUtNjYuODItMy44Nyw0LjY5LTU1LjIyLS4yOC0xMTAuNzIuMjgtMTY2LjIyLDAtMjYuNzgsMS4zOC0yOC40NCwyNi41MS0yOC45OSw0LjE0LDAsMTEuMDUtLjU1LDE4LjIyLS41NSwxMC4yMiwwLDIwLjk4LjgzLDI1LjEzLDQuOTcsOS4xMSw5LjM5LDI5LjU0LDYxLjAyLDM1LjA3LDcyLjYyLTEuMzgtMjMuNzUsMS4xLTQ4LjA0LTMuMDQtNzEuNzksMjQuMy0uMjgsNDguMzItMy41OSw3Mi42Mi0yLjIxLTUuMjUsNjQuMzMtOC41NiwxMjguOTQtMy44NywxOTMtMjIuMzcsMi4yMS00NS4wMSwxLjY2LTY3LjM3LDEuNjYtMTQuMzYtMjMuMTktMjIuOTItNDkuNDItMzUuODktNzMuMTcuMjgsMjQuODUtMS45Myw0OS43LS44Myw3NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMjg5LjcyLDc2OS44bC0xNy4zOS0uODMtMTMuNTMtLjI4LTguMDEtMS4zOC0xLjEtLjgzcy0uODMtMzAuNjUtLjgzLTQ1LjgzYzAtMTEuMDUuNTUtMjIuMDkuODMtMzMuNDEuMjgtMTYuNTcuMjgtMzIuODYuMjgtNDkuNDIuMjgtMTEuODcuODMtMjMuNzUuODMtMzUuNjIuMjgtOS42Ni41NS0xOS42LDEuMzgtMjkuNTQuMjgtLjU1LjI4LTIuNDkuNTUtMy4wNC41NS0uNTUsMS4xLS44MywxLjY2LS41NS4yOC0uMjguODMtLjU1LDEuMzgtLjU1LDUuNTItMS4zOCwxMS4zMi0xLjM4LDE3LjEyLTEuMzhoMjAuMTZjNi45LS4yOCwxMy41My0uNTUsMjAuMTYtLjI4LDIuMjEsMCw0LjQyLDAsNi4zNS44MywxLjY2LjgzLDIuNzYsMi4yMSwzLjU5LDMuODcuODMsMi40OSwxLjM4LDUuMjUsMS42Niw4LjAxLjI4LDMuMzEuMjgsNi45LjU1LDEwLjIyLjI4LDEwLjQ5LS4yOCwyMS4yNi0uNTUsMzEuNzUtLjU1LDE5LjYtLjU1LDM5LjQ4LS41NSw1OS4wOS41NSwyMC40My44Myw0MC41OS44Myw2MS4wMi0uMjgsNy40Ni0uMjgsMjIuNjQtLjI4LDIyLjY0bC0uODMsMS4zOC0xLjkzLDEuOTMtNS44LDEuMS0yNi41MSwxLjFaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjM0OC42Myw3NjIuNjNjLTEuNjYtNjQuMzMtNS44LTEyOC45NC0xLjEtMTkzLDExLjYtNC4xNCwyNC41Ny02LjA3LDM3LTYuMDcsOC4yOCwwLDE2LjAxLjgzLDIzLjc1LDIuNDgsMTIuNDIsMi43NiwxMi4xNSwyMS4yNiwxMS44NywzMy45Ni0uMjgsMzIuMzEtMi4yMSw2NC42MS0xLjkzLDk2LjkyLDIyLjA5LjU1LDQ0LjQ1LDEuNjYsNjYuNTQsMS42Ni0uODMsMjIuMDktMy4wNCw0NC43My0xLjM4LDY2LjgyLTE4LjUsMC0xMTYuMjQtLjI4LTEzNC43NC0yLjc2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTI0OTQuMDgsNzYyLjYzYy0xLjY2LTY0LjMzLTUuOC0xMjguOTQtMS4xLTE5MywxMS42LTQuMTQsMjQuNTctNi4wNywzNy02LjA3LDguMjgsMCwxNi4wMS44MywyMy43NSwyLjQ4LDEyLjQyLDIuNzYsMTIuMTUsMjEuMjYsMTEuODcsMzMuOTYtLjI4LDMyLjMxLTIuMjEsNjQuNjEtMS45Myw5Ni45MiwyMi4wOS41NSw0NC40NSwxLjY2LDY2LjU0LDEuNjYtLjgzLDIyLjA5LTMuMDQsNDQuNzMtMS4zOCw2Ni44Mi0xOC41LDAtMTE2LjI0LS4yOC0xMzQuNzQtMi43NloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNzM1Ljk1LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0yNzM0LjU3LDcwMC4yMmMyMC4xNi4yOCwzNS42Mi0xOC4yMiwzMS40OC0zOC4xLTIuNzYtMTQuMDgtMTUuNDYtMjQuODUtMjkuODItMjUuNC00LjQyLDAtOC44NC44My0xMi45OCwyLjIxLTguMjgsMy4zMS0xNC45MSwxMC4yMi0xNy45NSwxOC41LTIuMjEsNS41Mi0yLjc2LDExLjg3LTEuMzgsMTcuNCwyLjQ4LDE0LjYzLDE2LjAxLDI1LjQsMzAuNjUsMjUuNFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMjUuOTgsNTI3LjQ4bDEyLjQtMTUuODZjMy4yLTQuMSw5LjI5LTQuNDIsMTIuOTEtLjY4bDU4LjM5LDUzLjk3YzIuOTcsMy4wNywzLjIyLDcuODcuNTksMTEuMjNsLTQuMyw1LjVjLTIuNzMsMy40OS03LjY4LDQuMzItMTEuNCwxLjkybC02Ni40OS00My42MmMtNC4yMy0yLjczLTUuMTktOC41MS0yLjA5LTEyLjQ3WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTM4Ny4xNSw0OTAuNzJsMTcuNzMtOS41M2M0LjU4LTIuNDYsMTAuMjgtLjMxLDEyLjA5LDQuNTdsMjEuNDMsNTMuN2MxLjQ5LDQuMDEtLjIxLDguNS0zLjk4LDEwLjUybC02LjE1LDMuM2MtMy45MSwyLjEtOC43Ny44Ny0xMS4yMS0yLjgzbC0zMy4wMS00Ny40N2MtMi43Ny00LjItMS4zNC05Ljg4LDMuMS0xMi4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMTcuNDUsNTc5Ljg1bC00Ljk4LDE5LjVjLTEuMjksNS4wNCwyLjE4LDEwLjA1LDcuMzUsMTAuNjNsNTcuMjgsNy44NWM0LjI1LjQ4LDguMi0yLjI1LDkuMjUtNi40bDEuNzMtNi43NmMxLjEtNC4zLTEuMjctOC43Mi01LjQ1LTEwLjJsLTU0LjAzLTIwLjZjLTQuNzUtMS42Ny05LjkxLDEuMDgtMTEuMTUsNS45NloiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTYyLjc5LDY1NC40djIwLjEzYzAsNS4yLTQuNiw5LjItOS43NSw4LjQ5bC03OS4yNC02LjU1Yy00LjIzLS41OS03LjM4LTQuMjEtNy4zOC04LjQ5di02Ljk4YzAtNC40NCwzLjM5LTguMTQsNy44LTguNTNsNzkuMjQtNi42YzUuMDEtLjQ1LDkuMzMsMy41LDkuMzMsOC41M1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDcyMS4wNGwtOC4wOSwxOC40M2MtMi4wOSw0Ljc2LTcuOTEsNi41OC0xMi4zNCwzLjg1bC00OS45Ni0yOS4xYy0zLjY0LTIuMjQtNS4wNy02LjgyLTMuMzUtMTAuNzRsMi44MS02LjM5YzEuNzgtNC4wNiw2LjM3LTYuMDksMTAuNTgtNC42N2w1NS4yNSwxNy4wNmM0Ljc3LDEuNiw3LjE0LDYuOTYsNS4xMSwxMS41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDYwNy45bC04LjA5LTE4LjQzYy0yLjA5LTQuNzYtNy45MS02LjU4LTEyLjM0LTMuODVsLTQ5Ljk2LDI5LjFjLTMuNjQsMi4yNC01LjA3LDYuODItMy4zNSwxMC43NGwyLjgxLDYuMzljMS43OCw0LjA2LDYuMzcsNi4wOSwxMC41OCw0LjY3bDU1LjI1LTE3LjA2YzQuNzctMS42LDcuMTQtNi45Niw1LjExLTExLjU3WiIvPjwvc3ZnPgo=" alt="OT Chicharonillo" width="220">
+  <div class="hdr-sub">Pickup Order</div>
+  <div class="hdr-ig"><a href="https://instagram.com/chicharonillo" target="_blank">@chicharonillo</a></div>
 </div>
 
-<!-- Progress indicator -->
-<div class="progress-wrap">
-  <div class="progress-steps">
-    <div class="step-dot active" id="dot1">1</div>
-    <div class="step-line" id="line1"></div>
-    <div class="step-dot" id="dot2">2</div>
-    <div class="step-line" id="line2"></div>
-    <div class="step-dot" id="dot3">3</div>
-    <div class="step-line" id="line3"></div>
-    <div class="step-dot" id="dot4">4</div>
+<div class="prog">
+  <div class="ps">
+    <div class="sd on" id="d1">1</div><div class="sl" id="l1"></div>
+    <div class="sd" id="d2">2</div><div class="sl" id="l2"></div>
+    <div class="sd" id="d3">3</div><div class="sl" id="l3"></div>
+    <div class="sd" id="d4">4</div>
   </div>
-  <div class="step-labels">
-    <div class="step-label active" id="lbl1">You</div>
-    <div class="step-label" id="lbl2">When</div>
-    <div class="step-label" id="lbl3">Order</div>
-    <div class="step-label" id="lbl4">Review</div>
+  <div class="slbs">
+    <div class="slb on" id="lb1">You</div>
+    <div class="slb" id="lb2">When</div>
+    <div class="slb" id="lb3">Order</div>
+    <div class="slb" id="lb4">Review</div>
   </div>
 </div>
 
-<div class="scroll-body" id="mainForm">
-
-  <!-- STEP 1: Who -->
-  <div class="step-panel active" id="step1">
-    <div class="step-intro">
-      <div class="step-intro-title">Who's ordering?</div>
-      <div class="step-intro-sub">Your contact details</div>
-    </div>
-    <div class="field"><label class="field-label">Last Name <span class="req">✦</span></label><input class="field-input" id="fLastName" type="text" placeholder="dela Cruz" autocomplete="family-name"></div>
-    <div class="field"><label class="field-label">First Name <span class="req">✦</span></label><input class="field-input" id="fFirstName" type="text" placeholder="Juan" autocomplete="given-name"></div>
-    <div class="field"><label class="field-label">Phone <span class="req">✦</span></label><input class="field-input" id="fPhone" type="tel" placeholder="+63 917 000 0000" autocomplete="tel"></div>
-    <div class="field"><label class="field-label">Email</label><input class="field-input" id="fEmail" type="email" placeholder="juan@email.com" autocomplete="email"></div>
+<!-- STEP 1: Who's ordering -->
+<div class="stp on" id="stp1">
+  <div class="si"><div class="sit">Who's ordering?</div><div class="sis">Your contact details</div></div>
+  <div class="fr">
+    <div class="fld"><label class="lb">Last Name <span class="rq">*</span></label><input class="inp" id="fLN" type="text" placeholder="Surname" autocomplete="family-name" autocapitalize="words"></div>
+    <div class="fld"><label class="lb">First Name <span class="rq">*</span></label><input class="inp" id="fFN" type="text" placeholder="Given" autocomplete="given-name" autocapitalize="words"></div>
   </div>
+  <div class="fld"><label class="lb">Phone <span class="rq">*</span></label><input class="inp" id="fPH" type="tel" placeholder="+63 917 000 0000" autocomplete="tel"></div>
+  <div class="fld"><label class="lb">Email</label><input class="inp" id="fEM" type="email" placeholder="For your confirmation" autocomplete="email"></div>
+</div>
 
-  <!-- STEP 2: When -->
-  <div class="step-panel" id="step2">
-    <div class="step-intro">
-      <div class="step-intro-title">When to pick up?</div>
-      <div class="step-intro-sub">Choose your date and time</div>
+<!-- STEP 2: When -->
+<div class="stp" id="stp2">
+  <div class="si"><div class="sit">When</div><div class="sis">Choose your pickup date and time</div></div>
+  <div class="fld">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <label class="lb" style="margin-bottom:0">Pickup Date <span class="rq">*</span></label>
+      <button class="eb" id="btnD" onclick="promptDatePin()">Block Dates</button>
     </div>
-
-    <!-- Date -->
-    <div class="field">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
-        <label class="field-label" style="margin-bottom:0">Pickup Date <span class="req">✦</span></label>
-        <button class="pin-btn" onclick="promptDatePin()" id="editDatesBtn">🚫 Block Dates</button>
+    <div id="dpW">
+      <div class="dpf" id="dpF">
+        <span id="dpTxt" style="color:var(--mu);font-style:italic">Tap to choose a date</span>
+        <div style="display:flex;align-items:center;gap:8px"><span class="dpbg" id="dpBg"></span><span style="font-size:18px;opacity:.4">&#128197;</span></div>
       </div>
-      <input class="field-input" id="fDate" type="date" onchange="checkBlockedDate(this.value)">
-      <div class="blocked-notice" id="blockedNotice">
-        <div class="blocked-notice-text">This date is unavailable for pickup. Please select another date.</div>
-      </div>
-      <!-- Blocked Dates Editor — Visual Calendar (PIN protected) -->
-        <div class="editor-panel" id="dateEditorPanel">
-          <div class="editor-title">Block Dates — Visual Calendar</div>
-          <div style="font-size:14px;color:var(--muted);font-style:italic;margin-bottom:12px;line-height:1.6">Tap dates to block. Switch to Months or Years to block in bulk. Red = blocked.</div>
-          <div id="calendarContainer" style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:14px"></div>
+      <div class="dpc" id="dpC">
+        <div class="dpn">
+          <button class="dpnb" id="dpPrev">&#9664;</button>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div class="dpnl" id="dpL"></div>
+            <div class="dptbs">
+              <button class="dptb on" id="dpTD">Days</button>
+              <button class="dptb" id="dpTM">Months</button>
+              <button class="dptb" id="dpTY">Years</button>
+            </div>
+          </div>
+          <button class="dpnb" id="dpNext">&#9654;</button>
+        </div>
+        <div id="dpG"></div>
+        <div class="dpleg">
+          <div class="dll"><div class="dld" style="background:rgba(42,122,74,.5)"></div>Available</div>
+          <div class="dll"><div class="dld" style="background:rgba(154,42,26,.5)"></div>Not Available</div>
+          <div class="dll"><div class="dld" style="border:2px solid var(--gold)"></div>Today</div>
         </div>
       </div>
     </div>
-
-    <!-- Time -->
-    <div class="field">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
-        <label class="field-label" style="margin-bottom:0">Pickup Time <span class="req">✦</span></label>
-        <button class="pin-btn" onclick="promptTimePin()" id="editTimesBtn">✏ Edit Times</button>
-      </div>
-      <div class="time-grid" id="timeGrid"></div>
-      <!-- Time Slot Editor -->
-      <div class="editor-panel" id="timeEditorPanel" style="margin-top:12px">
-        <div class="editor-title">Manage Pickup Time Slots</div>
-        <div id="timeSlotList"></div>
-        <div class="editor-add-row">
-          <input type="time" id="newTimeSlot" class="editor-input">
-          <button class="editor-add-btn" onclick="addTimeSlot()">Add</button>
-        </div>
-        <div class="editor-hint">Only enabled times are shown to customers.</div>
-      </div>
-    </div>
-
-    <div class="field">
-      <label class="field-label">Special Instructions</label>
-      <textarea class="field-input" id="fNotes" placeholder="Any special requests for your order…" rows="3"></textarea>
+    <div class="bn" id="bN"><p id="bM"></p></div>
+    <div class="ep" id="epD" style="display:none">
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px">Block Dates</div>
+      <div style="font-size:14px;color:var(--mu);font-style:italic;margin-bottom:12px;line-height:1.6">Tap dates to block/unblock. Switch to Months or Years to block in bulk.</div>
+      <div id="calC" style="background:#fff;border:1px solid var(--bd);padding:14px;border-radius:8px"></div>
     </div>
   </div>
-
-  <!-- STEP 3: Order -->
-  <div class="step-panel" id="step3">
-    <div class="step-intro">
-      <div class="step-intro-title">Your order</div>
-      <div class="step-intro-sub">Select quantity</div>
+  <div class="fld">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <label class="lb" style="margin-bottom:0">Pickup Time <span class="rq">*</span></label>
+      <button class="eb" id="btnT" onclick="promptTimePin()">Edit Times</button>
     </div>
-    <div id="orderGrid"></div>
-    <div id="orderSummaryWrap" style="display:none">
-      <div class="order-summary">
-        <div class="order-summary-title">Order Summary</div>
-        <div id="orderSummaryRows"></div>
-        <div class="order-total">
-          <div class="order-total-label">Total</div>
-          <div class="order-total-val" id="orderTotalVal">PHP 0</div>
-        </div>
-        <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--muted);margin-top:10px;letter-spacing:0.06em;font-style:italic">50% down payment required to confirm order</div>
+    <div class="ep" id="epT" style="display:none">
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px">Manage Time Slots</div>
+      <div id="tsL" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+      <div style="border-top:1px solid var(--bd);padding-top:12px;display:flex;gap:8px;align-items:center">
+        <input type="time" id="nTI" class="inp" style="flex:1;padding:8px 2px;font-size:17px">
+        <button id="btnAS" style="background:var(--gb);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:10px;padding:9px 16px;cursor:pointer;font-weight:700;white-space:nowrap">+ Add</button>
       </div>
     </div>
+    <select class="inp" id="fTime"><option value="">Select pickup time</option></select>
   </div>
+</div>
 
-  <!-- STEP 4: Review -->
-  <div class="step-panel" id="step4">
-    <div class="step-intro">
-      <div class="step-intro-title">Review your order</div>
-      <div class="step-intro-sub">Confirm before submitting</div>
-    </div>
-    <div id="reviewContent"></div>
-    <div class="policy-strip">
-      <div class="policy-title">Pickup & Payment Policy</div>
-      <div class="policy-text" style="margin-bottom:10px">A <strong style="color:var(--gold);font-style:normal">50% down payment</strong> is required to confirm your order. The remaining 50% is due upon pickup.</div>
-      <div class="policy-text" style="margin-bottom:6px">✦ <strong style="color:var(--gold);font-style:normal">48 hours or more before</strong> pickup — full refund of down payment.</div>
-      <div class="policy-text">✦ <strong style="color:#9a2a1a;font-style:normal">Less than 48 hours</strong> before pickup — down payment is non-refundable.</div>
+<!-- STEP 3: Order -->
+<div class="stp" id="stp3">
+  <div class="si"><div class="sit">Your order</div><div class="sis">Select quantity</div></div>
+  <div id="oG"></div>
+  <div id="oSW" style="display:none">
+    <div style="background:rgba(200,85,16,.06);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;margin-top:14px">
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px">Order Summary</div>
+      <div id="oSR"></div>
+      <div style="display:flex;justify-content:space-between;align-items:baseline;padding-top:10px;margin-top:8px;border-top:1px solid var(--bd)">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)">Total</div>
+        <div style="font-family:'Courier Prime',monospace;font-size:17px;color:var(--gold);font-weight:700" id="oTV">PHP 0</div>
+      </div>
+      <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--mu);margin-top:8px;font-style:italic">50% down payment required to confirm order</div>
     </div>
   </div>
+</div>
 
-</div><!-- /mainForm -->
+<!-- STEP 4: Review -->
+<div class="stp" id="stp4">
+  <div class="si"><div class="sit">Review</div><div class="sis">Confirm your order</div></div>
+  <div id="rC"></div>
+  <div class="pol">A <strong style="color:var(--gold);font-style:normal">50% down payment</strong> is required to confirm your pickup order. Cancellations less than <strong style="color:#9a2a1a;font-style:normal">48 hours</strong> before pickup are non-refundable.</div>
+</div>
 
 <!-- Success -->
-<div class="success-screen" id="successScreen">
-  <div class="success-mark">🐷</div>
-  <div class="success-title">Order Received</div>
-  <p class="success-sub">Thank you. Our team will be in touch to confirm your pickup and payment details.</p>
-  <div class="success-code-wrap">
-    <div class="success-code-label">Your Order Reference</div>
-    <div class="success-code-val" id="successCode">—</div>
-    <p class="success-note">Keep this code. Quote it when you arrive for pickup.</p>
+<div class="scs" id="scs">
+  <div class="scs-ico">&#127993;</div>
+  <div class="scs-ey">Chicharonillo</div>
+  <div class="scs-h">Order Received!</div>
+  <p class="scs-m">Thank you, <span id="scsN"></span>. Your pickup order has been submitted.</p>
+  <div class="scs-cb">
+    <div class="scs-cl">Your Order Code</div>
+    <div class="scs-cv" id="scsC">-</div>
   </div>
-  <div style="background:rgba(184,74,8,0.07);border:1.5px solid rgba(184,74,8,0.22);border-radius:14px;padding:14px 16px;margin-top:14px;text-align:left">
-    <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px">📸 Important</div>
-    <div style="font-size:15px;color:var(--muted);line-height:1.7;font-style:italic">Please take a screenshot of this screen and save your order code. You will need it to confirm, amend or cancel your order.</div>
+  <div class="scs-imp">
+    <div class="scs-it">Important</div>
+    <div class="scs-ib">Please screenshot this screen and save your order code. Your order is only confirmed once the 50% down payment has been settled. Our team will be in touch with payment details.</div>
   </div>
-  <div style="background:rgba(154,42,26,0.06);border:1.5px solid rgba(154,42,26,0.2);border-radius:14px;padding:14px 16px;margin-top:12px;text-align:left">
-    <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#9a2a1a;font-weight:700;margin-bottom:6px">⚠ Order Confirmation</div>
-    <div style="font-size:15px;color:var(--muted);line-height:1.7;font-style:italic">Your order will only be confirmed once the <strong style="color:#9a2a1a;font-style:normal">50% down payment has been settled</strong>. Our team will send payment details shortly.</div>
-  </div>
-  <br>
-  <button class="btn-copy-success" onclick="copySuccess()">Copy Order Code</button><br><br>
-  <button class="btn-new" onclick="resetForm()">Place Another Order</button>
+  <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--gold);letter-spacing:.12em;margin-top:12px">@chicharonillo</div>
 </div>
 
-<!-- Footer nav -->
-<div class="footer-nav" id="footerNav">
-  <button class="btn-back" id="backBtn" onclick="goBack()" style="display:none">← Back</button>
-  <button class="btn-next" id="nextBtn" onclick="goNext()">Continue →</button>
+<div class="fb" id="fBot">
+  <button class="bk" id="btnBk">Back</button>
+  <button class="nxt" id="btnNx">Continue</button>
 </div>
-
-<div class="toast" id="toast"></div>
 
 <script>
-  //    EmailJS                                                
-  const EJS_SERVICE  = 'service_xo8aoro';
-  const EJS_TEMPLATE = 'template_yfe626s';
-  const EJS_KEY      = 'rIleGjrFVUgM57KYZ';
-  (function(){
-    if(window.emailjs) emailjs.init({ publicKey: EJS_KEY });
-    else window.addEventListener('load', () => emailjs.init({ publicKey: EJS_KEY }));
-  })();
+// ============================================================
+// OT CHICHARONILLO PICKUP ORDER
+// ============================================================
+(function(){
+  if(window.emailjs) emailjs.init({publicKey:'rIleGjrFVUgM57KYZ'});
+  else window.addEventListener('load',function(){emailjs.init({publicKey:'rIleGjrFVUgM57KYZ'});});
+})();
 
-  //    State                                                  
-  const STAFF_PIN = '1234';
-  let currentStep = 1, selectedTime = '', generatedCode = '', dateBlocked = false;
-  let orderQty = {};
-  const TOTAL_STEPS = 4;
+// STATE
+var step=1, dpVal='', selTime='', dBlk=false, oQty={};
+var dpView='days', dpYr=new Date().getFullYear(), dpMo=new Date().getMonth();
+var cView='month', cYr=new Date().getFullYear(), cMo=new Date().getMonth();
+var PIN_DEF='1234', dpPinOk=false, tPinOk=false;
+var MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var SM=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+var BM="We're sorry, this date is unavailable. Please select another date.";
+var ITEMS=[
+  {id:'whole',icon:'&#127993;',name:'Whole Chicharonillo',desc:'A whole Chicharonillo served with Garlic Rice, sauces, and condiments. Feeds approximately 8-10.',price:14950,priceLabel:'PHP 14,950'}
+];
 
-  const CHICHARONILLO_ITEMS = [
-    { id:'whole', icon:' ', name:'Whole Chicharonillo', desc:'A whole Chicharonillo with Accoutrements. Feeds approximately 8 10.', price:14950, priceLabel:'PHP 14,950' },
-  ];
+// HELPERS
+function toast(m){var e=document.getElementById('T');e.textContent=m;e.classList.add('on');setTimeout(function(){e.classList.remove('on');},2500);}
+function pad(n){return n<10?'0'+n:String(n);}
+function gpin(){try{return localStorage.getItem('ot_staff_pin')||PIN_DEF;}catch(e){return PIN_DEF;}}
+function gv(id){var el=document.getElementById(id);return el?el.value.trim():'';}
 
-  const todayStr = new Date().toISOString().split('T')[0];
-  document.getElementById('fDate').min = todayStr;
+// BLOCKED DATES (uses otc_ prefix - separate from reservation tool)
+function gBD(){try{return JSON.parse(localStorage.getItem('otc_blocked_dates')||'[]');}catch(e){return[];}}
+function sBD(d){try{localStorage.setItem('otc_blocked_dates',JSON.stringify(d));}catch(e){}}
+function gBF(){try{return localStorage.getItem('otc_block_from')||null;}catch(e){return null;}}
+function sBF(v){try{if(v)localStorage.setItem('otc_block_from',v);else localStorage.removeItem('otc_block_from');}catch(e){}}
+function isBlk(ds){if(!ds)return false;if(gBD().indexOf(ds)!==-1)return true;var bf=gBF();if(bf&&ds>=bf)return true;return false;}
+function mBlk(y,m){var days=new Date(y,m+1,0).getDate();for(var d=1;d<=days;d++){if(!isBlk(y+'-'+pad(m+1)+'-'+pad(d)))return false;}return days>0;}
+function yBlk(y){for(var m=0;m<12;m++){if(!mBlk(y,m))return false;}return true;}
 
-  function fmtDate(d) { if(!d)return' '; return new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}); }
-  function fmtTime(t) { if(!t)return' '; const[h,m]=t.split(':').map(Number); return`${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; }
-  function toast(msg) { const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2800); }
-  function generateCode(last,date) { const L=last.replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X'); const dd=date.replace(/-/g,'').slice(4); const r=Math.random().toString(36).substring(2,5).toUpperCase(); return`OTC-${L}${dd}-${r}`; }
-
-  //    PIN Protection                                         
-  let datePinUnlocked=false, timePinUnlocked=false;
-
-
-  //    VISUAL CALENDAR DATE BLOCKER                           
-  let calView = 'month';
-  let calYear = new Date().getFullYear();
-  let calMonth = new Date().getMonth();
-  const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-  const SHORT_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-
-  function getBlockFrom() { try { return localStorage.getItem('otc_block_from')||null; } catch(e){return null;} }
-  function setBlockFrom(v) { try { if(v) localStorage.setItem('otc_block_from',v); else localStorage.removeItem('otc_block_from'); } catch(e){} }
-  function isDateBlocked(val) {
-    if (loadBlockedDates().includes(val)) return true;
-    const bf = getBlockFrom(); if (bf && val >= bf) return true; return false;
+// CALENDAR BLOCK EDITOR
+function rCal(){
+  var c=document.getElementById('calC');if(!c)return;
+  var bf=gBF();var today=new Date();today.setHours(0,0,0,0);
+  var lbl=cView==='month'?(MO[cMo]+' '+cYr):cView==='year'?String(cYr):(cYr+' - '+(cYr+11));
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  h+='<button id="cPv" style="background:rgba(120,85,30,.08);border:1.5px solid rgba(120,85,30,.2);border-radius:6px;color:'+' var(--gold);font-size:16px;padding:5px 14px;cursor:pointer;font-weight:700">&#9664;</button>';
+  h+='<div style="display:flex;gap:4px">';
+  var cvs=['month','year','years'],cvl=['Days','Months','Years'];
+  for(var vi=0;vi<3;vi++){
+    var act=cView===cvs[vi];
+    h+='<button id="cV'+vi+'" style="border:1.5px solid '+(act?'transparent':'rgba(120,85,30,.2)')+';border-radius:6px;background:'+(act?'var(--gb)':'transparent')+';color:'+(act?'#fff':'var(--mu)')+';font-family:Courier Prime,monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:5px 8px;cursor:pointer;font-weight:700">'+cvl[vi]+'</button>';
   }
-  function isCalDateBlocked(s) { return isDateBlocked(s); }
-  function isFullMonthBlocked(y,m) {
-    const days=new Date(y,m+1,0).getDate();
-    for(let d=1;d<=days;d++){if(!isCalDateBlocked(`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`))return false;}return true;
-  }
-  function isFullYearBlocked(y){for(let m=0;m<12;m++)if(!isFullMonthBlocked(y,m))return false;return true;}
+  h+='</div><button id="cNx" style="background:rgba(120,85,30,.08);border:1.5px solid rgba(120,85,30,.2);border-radius:6px;color:var(--gold);font-size:16px;padding:5px 14px;cursor:pointer;font-weight:700">&#9654;</button></div>';
+  h+='<div style="font-family:Courier Prime,monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold);text-align:center;margin-bottom:10px;font-weight:700">'+lbl+'</div>';
 
-  function toggleCalDate(dateStr) {
-    const dates = loadBlockedDates();
-    const bf = getBlockFrom();
-    if (isCalDateBlocked(dateStr)) {
-      if (bf && dateStr >= bf) {
-        setBlockFrom(null);
-        const start=new Date(bf+'T12:00:00'), end=new Date(); end.setHours(12,0,0,0);
-        const nd=[...dates];
-        for(let d=new Date(start);d<=end;d.setDate(d.getDate()+1)){
-          const s=d.toISOString().split('T')[0];
-          if(s!==dateStr&&!nd.includes(s))nd.push(s);
-        }
-        saveBlockedDates(nd);
-      } else { saveBlockedDates(dates.filter(d=>d!==dateStr)); }
-    } else { if(!dates.includes(dateStr)){dates.push(dateStr);saveBlockedDates(dates);} }
-    renderCalendar();
+  if(cView==='month'){
+    h+='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px">';
+    var dws=['Su','Mo','Tu','We','Th','Fr','Sa'];
+    for(var di=0;di<7;di++) h+='<div style="font-family:Courier Prime,monospace;font-size:8px;color:var(--mu);text-align:center;padding:2px 0;font-weight:700">'+dws[di]+'</div>';
+    h+='</div><div id="cGd" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px"></div>';
+    var fm=cYr+'-'+pad(cMo+1)+'-01';var mb=mBlk(cYr,cMo);
+    h+='<div style="display:flex;gap:6px;margin-top:10px">';
+    h+='<button id="cBM" style="flex:1;border:1.5px solid '+(mb?'rgba(42,106,74,.3)':'rgba(154,42,26,.25)')+';border-radius:8px;background:'+(mb?'rgba(42,106,74,.1)':'rgba(154,42,26,.07)')+';color:'+(mb?'#2a6a4a':'#9a2a1a')+';font-family:Courier Prime,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:9px 6px;cursor:pointer;font-weight:700;text-align:center">'+(mb?'Unblock Month':'Block Month')+'</button>';
+    h+='<button id="cBF" data-ds="'+fm+'" style="flex:1;background:rgba(154,42,26,.07);border:1.5px solid rgba(154,42,26,.25);border-radius:8px;color:#9a2a1a;font-family:Courier Prime,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:9px 6px;cursor:pointer;font-weight:700;text-align:center">Block From Here &#9654;</button>';
+    h+='</div>';
+  } else if(cView==='year'){
+    h+='<div id="cGd" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px"></div>';
+    var yb=yBlk(cYr);
+    h+='<div style="display:flex;gap:6px;margin-top:10px">';
+    h+='<button id="cBY" style="flex:1;border:1.5px solid '+(yb?'rgba(42,106,74,.3)':'rgba(154,42,26,.25)')+';border-radius:8px;background:'+(yb?'rgba(42,106,74,.1)':'rgba(154,42,26,.07)')+';color:'+(yb?'#2a6a4a':'#9a2a1a')+';font-family:Courier Prime,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:9px 6px;cursor:pointer;font-weight:700;text-align:center">'+(yb?'Unblock Year':'Block Year')+'</button>';
+    h+='<button id="cBFY" data-ds="'+cYr+'-01-01" style="flex:1;background:rgba(154,42,26,.07);border:1.5px solid rgba(154,42,26,.25);border-radius:8px;color:#9a2a1a;font-family:Courier Prime,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:9px 6px;cursor:pointer;font-weight:700;text-align:center">Block From Year &#9654;</button>';
+    h+='</div>';
+  } else {
+    h+='<div id="cGd" style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px"></div>';
   }
 
-  function toggleCalMonth(y,m) {
-    const days=new Date(y,m+1,0).getDate(), allBlocked=isFullMonthBlocked(y,m);
-    const dates=loadBlockedDates();
-    if(allBlocked){
-      const bf=getBlockFrom(); const fd=`${y}-${String(m+1).padStart(2,'0')}-01`;
-      if(bf&&fd>=bf)setBlockFrom(null);
-      const rem=new Set();
-      for(let d=1;d<=days;d++)rem.add(`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`);
-      saveBlockedDates(dates.filter(d=>!rem.has(d)));
-    } else {
-      for(let d=1;d<=days;d++){const s=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(!dates.includes(s))dates.push(s);}
-      saveBlockedDates(dates);
+  if(bf){
+    var fmtBf=new Date(bf+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    h+='<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(154,42,26,.07);border:1.5px solid rgba(154,42,26,.22);border-radius:8px;padding:8px 12px;margin-top:10px"><div style="font-family:Courier Prime,monospace;font-size:10px;color:#9a2a1a;font-weight:700">FORWARD BLOCK FROM '+fmtBf.toUpperCase()+'</div><button id="cClr" style="background:rgba(42,106,74,.1);border:1.5px solid rgba(42,106,74,.3);border-radius:5px;color:#2a6a4a;font-family:Courier Prime,monospace;font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700">x Clear</button></div>';
+  }
+  h+='<div style="border-top:1px solid rgba(120,85,30,.15);padding-top:12px;margin-top:12px"><div style="font-family:Courier Prime,monospace;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--mu);margin-bottom:8px;font-weight:700">Change Staff PIN</div>';
+  h+='<div style="display:flex;gap:6px"><input type="password" id="np1" placeholder="New PIN" maxlength="8" style="flex:1;background:#fff;border:1.5px solid rgba(120,85,30,.25);border-radius:8px;color:var(--ink);padding:8px 10px;font-family:Courier Prime,monospace;font-size:14px;outline:none;letter-spacing:.2em"><input type="password" id="np2" placeholder="Confirm" maxlength="8" style="flex:1;background:#fff;border:1.5px solid rgba(120,85,30,.25);border-radius:8px;color:var(--ink);padding:8px 10px;font-family:Courier Prime,monospace;font-size:14px;outline:none;letter-spacing:.2em"><button id="btnSP" style="background:var(--gb);border:none;border-radius:8px;color:#fff;font-family:Courier Prime,monospace;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:8px 12px;cursor:pointer;font-weight:700;white-space:nowrap">Update</button></div></div>';
+  c.innerHTML=h;
+
+  // Wire events
+  var el;
+  el=document.getElementById('cPv');if(el)el.addEventListener('click',function(){cNav(-1);});
+  el=document.getElementById('cNx');if(el)el.addEventListener('click',function(){cNav(1);});
+  for(var vi2=0;vi2<3;vi2++){(function(i){el=document.getElementById('cV'+i);if(el)el.addEventListener('click',function(){cView=['month','year','years'][i];rCal();});})(vi2);}
+  el=document.getElementById('cBM');if(el)el.addEventListener('click',function(){togMon(cYr,cMo);});
+  el=document.getElementById('cBY');if(el)el.addEventListener('click',function(){togYr(cYr);});
+  el=document.getElementById('cBF');if(el)el.addEventListener('click',function(){blkFrom(this.getAttribute('data-ds'));});
+  el=document.getElementById('cBFY');if(el)el.addEventListener('click',function(){blkFrom(this.getAttribute('data-ds'));});
+  el=document.getElementById('cClr');if(el)el.addEventListener('click',function(){sBF(null);rCal();dpRend();dpUpd();toast('Forward block cleared');});
+  el=document.getElementById('btnSP');if(el)el.addEventListener('click',chgPin);
+
+  // Fill grid
+  var g=document.getElementById('cGd');if(!g)return;
+  if(cView==='month'){
+    var fd=new Date(cYr,cMo,1).getDay(),dim=new Date(cYr,cMo+1,0).getDate(),gh='';
+    for(var ei=0;ei<fd;ei++) gh+='<div></div>';
+    for(var d=1;d<=dim;d++){
+      var ds=cYr+'-'+pad(cMo+1)+'-'+pad(d);
+      var blkd=isBlk(ds),isFwd=bf&&ds>=bf,isTod=new Date(cYr,cMo,d).getTime()===today.getTime();
+      var bg=blkd?(isFwd?'#7a1a08':'#9a2a1a'):'#fff',col=blkd?'#fff':'#1a1208';
+      var bdr=isTod?'2px solid var(--gold)':'1px solid rgba(120,85,30,.12)';
+      gh+='<button data-ds="'+ds+'" style="background:'+bg+';border:'+bdr+';border-radius:5px;color:'+col+';font-family:Courier Prime,monospace;font-size:11px;padding:6px 1px;cursor:pointer;text-align:center;font-weight:'+(blkd?'700':'400')+';width:100%">'+d+'</button>';
     }
-    renderCalendar();
+    g.innerHTML=gh;
+    g.querySelectorAll('button[data-ds]').forEach(function(btn){btn.addEventListener('click',function(){togDate(this.getAttribute('data-ds'));});});
+  } else if(cView==='year'){
+    var gh='';
+    for(var m=0;m<12;m++){var mb2=mBlk(cYr,m);gh+='<button data-m="'+m+'" style="background:'+(mb2?'#9a2a1a':'#fff')+';border:1.5px solid '+(mb2?'transparent':'rgba(120,85,30,.18)')+';border-radius:8px;color:'+(mb2?'#fff':'#1a1208')+';font-family:Courier Prime,monospace;font-size:11px;padding:11px 4px;cursor:pointer;text-align:center;font-weight:700">'+SM[m]+'</button>';}
+    g.innerHTML=gh;
+    g.querySelectorAll('button[data-m]').forEach(function(btn){btn.addEventListener('click',function(){togMon(cYr,parseInt(this.getAttribute('data-m')));});});
+  } else {
+    var gh='';
+    for(var y=cYr;y<cYr+12;y++){var yb2=yBlk(y);gh+='<button data-y="'+y+'" style="background:'+(yb2?'#9a2a1a':'#fff')+';border:1.5px solid '+(yb2?'transparent':'rgba(120,85,30,.18)')+';border-radius:8px;color:'+(yb2?'#fff':'#1a1208')+';font-family:Courier Prime,monospace;font-size:12px;padding:11px 2px;cursor:pointer;text-align:center;font-weight:700">'+y+'</button>';}
+    g.innerHTML=gh;
+    g.querySelectorAll('button[data-y]').forEach(function(btn){btn.addEventListener('click',function(){togYr(parseInt(this.getAttribute('data-y')));});});
   }
+}
+function cNav(dir){if(cView==='month'){cMo+=dir;if(cMo>11){cMo=0;cYr++;}if(cMo<0){cMo=11;cYr--;}}else if(cView==='year'){cYr+=dir;}else{cYr+=dir*12;}rCal();}
+function togDate(ds){var d=gBD();var bf=gBF();if(isBlk(ds)){if(bf&&ds>=bf){sBF(null);var st=new Date(bf+'T12:00:00'),en=new Date();en.setHours(12,0,0,0);for(var c=new Date(st);c<=en;c.setDate(c.getDate()+1)){var s=c.toISOString().split('T')[0];if(s!==ds&&d.indexOf(s)===-1)d.push(s);}sBD(d);}else{sBD(d.filter(function(x){return x!==ds;}));}}else{if(d.indexOf(ds)===-1){d.push(ds);sBD(d);}}rCal();dpRend();dpUpd();}
+function togMon(y,m){var days=new Date(y,m+1,0).getDate(),all=mBlk(y,m),d=gBD();if(all){var rem={};for(var i=1;i<=days;i++)rem[y+'-'+pad(m+1)+'-'+pad(i)]=true;sBD(d.filter(function(x){return!rem[x];}));var bf=gBF();if(bf&&(y+'-'+pad(m+1)+'-01')>=bf)sBF(null);}else{for(var i=1;i<=days;i++){var s=y+'-'+pad(m+1)+'-'+pad(i);if(d.indexOf(s)===-1)d.push(s);}sBD(d);}rCal();dpRend();}
+function togYr(y){var all=yBlk(y),d=gBD();if(all){sBD(d.filter(function(x){return x.indexOf(y+'-')!==0;}));var bf=gBF();if(bf&&bf.indexOf(y+'-')===0)sBF(null);}else{for(var m=0;m<12;m++){var days=new Date(y,m+1,0).getDate();for(var i=1;i<=days;i++){var s=y+'-'+pad(m+1)+'-'+pad(i);if(d.indexOf(s)===-1)d.push(s);}}sBD(d);}rCal();dpRend();}
+function blkFrom(ds){sBF(ds);rCal();dpRend();dpUpd();var fmt=new Date(ds+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});toast('Blocked from '+fmt+' onwards');}
+function chgPin(){var p1=document.getElementById('np1').value;var p2=document.getElementById('np2').value;if(!p1){toast('Enter a new PIN');return;}if(p1.length<4){toast('PIN must be 4+ chars');return;}if(p1!==p2){toast('PINs do not match');return;}try{localStorage.setItem('ot_staff_pin',p1);}catch(e){}document.getElementById('np1').value='';document.getElementById('np2').value='';toast('PIN updated');}
 
-  function toggleCalYear(y) {
-    const allBlocked=isFullYearBlocked(y), dates=loadBlockedDates();
-    if(allBlocked){
-      const bf=getBlockFrom(); if(bf&&bf.startsWith(String(y)))setBlockFrom(null);
-      saveBlockedDates(dates.filter(d=>!d.startsWith(String(y)+'-')));
-    } else {
-      for(let m=0;m<12;m++){const days=new Date(y,m+1,0).getDate();for(let d=1;d<=days;d++){const s=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;if(!dates.includes(s))dates.push(s);}}
-      saveBlockedDates(dates);
+// DATE PICKER
+function dpToggle(){var c=document.getElementById('dpC');c.classList.contains('on')?dpClose():dpOpen();}
+function dpOpen(){document.getElementById('dpC').classList.add('on');dpRend();}
+function dpClose(){document.getElementById('dpC').classList.remove('on');}
+function dpUpd(){
+  var f=document.getElementById('dpF'),t=document.getElementById('dpTxt'),b=document.getElementById('dpBg');
+  if(!f||!t)return;
+  if(!dpVal){t.textContent='Tap to choose a date';t.style.color='var(--mu)';t.style.fontStyle='italic';f.className='dpf';if(b)b.style.display='none';return;}
+  var d=new Date(dpVal+'T12:00:00');t.textContent=d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});t.style.color='var(--ink)';t.style.fontStyle='normal';
+  var blkd=isBlk(dpVal);f.className='dpf '+(blkd?'bkd':'av');
+  if(b){b.style.display='inline';b.textContent=blkd?'x Not Available':'v Available';}
+}
+function dpSel(ds){dpVal=ds;dpClose();dpUpd();chkBlk(ds);}
+function dpRend(){
+  var g=document.getElementById('dpG'),lbl=document.getElementById('dpL');if(!g)return;
+  var today=new Date();today.setHours(0,0,0,0);
+  var tabs=['dpTD','dpTM','dpTY'],tvs=['days','months','years'];
+  for(var i=0;i<3;i++){var el=document.getElementById(tabs[i]);if(el)el.className='dptb'+(dpView===tvs[i]?' on':'');}
+  if(dpView==='days'){
+    if(lbl)lbl.textContent=MO[dpMo]+' '+dpYr;
+    var gh='';var dws=['Su','Mo','Tu','We','Th','Fr','Sa'];
+    for(var i=0;i<7;i++) gh+='<div class="dw">'+dws[i]+'</div>';
+    var fd=new Date(dpYr,dpMo,1).getDay(),dim=new Date(dpYr,dpMo+1,0).getDate();
+    for(var i=0;i<fd;i++) gh+='<div class="dy" style="cursor:default"></div>';
+    for(var d=1;d<=dim;d++){
+      var ds=dpYr+'-'+pad(dpMo+1)+'-'+pad(d);
+      var dt=new Date(dpYr,dpMo,d),isPast=dt<today,isTod=dt.getTime()===today.getTime(),isB=isBlk(ds),isSel=ds===dpVal;
+      var cls='dy';if(isPast)cls+=' dp';else if(isB)cls+=' db';if(isTod)cls+=' dt';if(isSel)cls+=' ds';
+      gh+='<button class="'+cls+'" data-ds="'+ds+'" '+(isPast||isB?'disabled':'')+'>'+d+'</button>';
     }
-    renderCalendar();
+    g.className='dpgd';g.innerHTML=gh;
+    g.querySelectorAll('button[data-ds]:not([disabled])').forEach(function(btn){btn.addEventListener('click',function(){dpSel(this.getAttribute('data-ds'));});});
+  } else if(dpView==='months'){
+    if(lbl)lbl.textContent=String(dpYr);
+    var gh='';
+    for(var m=0;m<12;m++){var mb=mBlk(dpYr,m);gh+='<button data-m="'+m+'" style="border:1.5px solid '+(mb?'transparent':'rgba(120,85,30,.2)')+';border-radius:8px;padding:10px 4px;cursor:pointer;text-align:center;font-weight:700;font-family:Courier Prime,monospace;font-size:11px;background:'+(mb?'#9a2a1a':'#fff')+';color:'+(mb?'#fff':'#1a1208')+'">'+SM[m]+'</button>';}
+    g.className='dpgd';g.style.gridTemplateColumns='repeat(3,1fr)';g.style.gap='6px';g.innerHTML=gh;
+    g.querySelectorAll('button[data-m]').forEach(function(btn){btn.addEventListener('click',function(){togMon(dpYr,parseInt(this.getAttribute('data-m')));});});
+  } else {
+    if(lbl)lbl.textContent=dpYr+' - '+(dpYr+11);
+    var gh='';
+    for(var y=dpYr;y<dpYr+12;y++){var yb=yBlk(y);gh+='<button data-y="'+y+'" style="border:1.5px solid '+(yb?'transparent':'rgba(120,85,30,.2)')+';border-radius:8px;padding:11px 2px;cursor:pointer;text-align:center;font-weight:700;font-family:Courier Prime,monospace;font-size:12px;background:'+(yb?'#9a2a1a':'#fff')+';color:'+(yb?'#fff':'#1a1208')+'">'+y+'</button>';}
+    g.className='dpgd';g.style.gridTemplateColumns='repeat(4,1fr)';g.style.gap='6px';g.innerHTML=gh;
+    g.querySelectorAll('button[data-y]').forEach(function(btn){btn.addEventListener('click',function(){dpYr=parseInt(this.getAttribute('data-y'));dpView='months';dpRend();});});
   }
+}
+function chkBlk(ds){
+  var n=document.getElementById('bN'),m=document.getElementById('bM');
+  if(isBlk(ds)){dBlk=true;if(m)m.textContent=BM;if(n)n.style.display='block';var ts=document.getElementById('fTime');if(ts){ts.disabled=true;ts.value='';selTime='';}}
+  else{dBlk=false;if(n)n.style.display='none';var ts=document.getElementById('fTime');if(ts)ts.disabled=false;}
+  dpUpd();
+}
 
-  function blockFromDate(dateStr) {
-    setBlockFrom(dateStr); renderCalendar();
-    const fmt=new Date(dateStr+'T12:00:00').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
-    if(typeof toast==='function')toast('Blocked from '+fmt+' onwards  ');else alert('Blocked from '+fmt+' onwards.');
-  }
+// PIN prompts
+function promptDatePin(){if(dpPinOk){togEp('epD','btnD','Block Dates','Close');if(document.getElementById('epD').style.display!=='none')rCal();return;}var p=prompt('Enter staff PIN:');if(p===gpin()){dpPinOk=true;togEp('epD','btnD','Block Dates','Close');rCal();}else if(p!==null)toast('Incorrect PIN');}
+function promptTimePin(){if(tPinOk){togEp('epT','btnT','Edit Times','Close');return;}var p=prompt('Enter staff PIN:');if(p===gpin()){tPinOk=true;togEp('epT','btnT','Edit Times','Close');rTEd();}else if(p!==null)toast('Incorrect PIN');}
+function togEp(pid,bid,open,close){var p=document.getElementById(pid),b=document.getElementById(bid);var isOpen=p.style.display==='block';p.style.display=isOpen?'none':'block';if(b)b.textContent=isOpen?open:close;if(!isOpen)setTimeout(function(){p.scrollIntoView({behavior:'smooth',block:'nearest'});},100);}
 
-  const CBTN = "background:rgba(120,85,30,0.08);border:1.5px solid rgba(120,85,30,0.2);border-radius:6px;color:#9b7238;font-family:'Courier Prime',monospace;font-size:14px;padding:5px 12px;cursor:pointer;font-weight:700";
-  const CTAB = "border:1.5px solid rgba(120,85,30,0.2);border-radius:6px;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.12em;text-transform:uppercase;padding:5px 10px;cursor:pointer;font-weight:700";
-  function CACT(on){return `${CTAB};background:${on?'#9b7238':'transparent'};color:${on?'#fff':'#7a6040'};border-color:${on?'transparent':'rgba(120,85,30,0.2)'}`;}
-  function CBLOCK(blocked){return `flex:1;border:1.5px solid ${blocked?'rgba(42,106,74,0.3)':'rgba(154,42,26,0.25)'};border-radius:8px;background:${blocked?'rgba(42,106,74,0.1)':'rgba(154,42,26,0.07)'};color:${blocked?'#2a6a4a':'#9a2a1a'};font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:9px 6px;cursor:pointer;font-weight:700;text-align:center`;}
-  const CFWD = "flex:1;background:rgba(154,42,26,0.07);border:1.5px solid rgba(154,42,26,0.25);border-radius:8px;color:#9a2a1a;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:9px 6px;cursor:pointer;font-weight:700;text-align:center";
+// TIME SLOTS
+function gSlots(){try{var s=JSON.parse(localStorage.getItem('otc_time_slots')||'null');if(s)return s;}catch(e){}return [{val:'09:00',active:true},{val:'10:00',active:true},{val:'11:00',active:true},{val:'12:00',active:true},{val:'13:00',active:true},{val:'14:00',active:true},{val:'15:00',active:true},{val:'16:00',active:true}];}
+function sSlots(s){try{localStorage.setItem('otc_time_slots',JSON.stringify(s));}catch(e){}}
+function fmtT(v){if(!v)return'';var p=v.split(':');var h=parseInt(p[0]);var m=p[1];return(h>12?h-12:(h||12))+':'+m+' '+(h>=12?'PM':'AM');}
+function rTSel(){
+  var sel=document.getElementById('fTime');if(!sel)return;
+  var cur=sel.value;
+  sel.innerHTML='<option value="">Select pickup time</option>';
+  gSlots().filter(function(s){return s.active!==false;}).forEach(function(s){
+    var opt=document.createElement('option');opt.value=s.val;opt.textContent=fmtT(s.val);
+    if(s.val===cur)opt.selected=true;
+    sel.appendChild(opt);
+  });
+}
+function rTEd(){
+  var c=document.getElementById('tsL');if(!c)return;
+  var slots=gSlots();c.innerHTML='';
+  slots.forEach(function(s){
+    var act=s.active!==false;
+    var row=document.createElement('div');row.className='tsr';row.style.border='1.5px solid '+(act?'rgba(42,106,74,.3)':'rgba(154,42,26,.25)');
+    row.innerHTML='<div><div style="font-size:17px;color:var(--ink)">'+fmtT(s.val)+'</div><div style="font-family:Courier Prime,monospace;font-size:9px;font-weight:700;color:'+(act?'#2a6a4a':'#9a2a1a')+'">'+(act?'AVAILABLE':'BLOCKED')+'</div></div>';
+    var btns=document.createElement('div');btns.style.display='flex';btns.style.gap='6px';
+    var tog=document.createElement('button');tog.textContent=act?'Block':'Enable';tog.style.cssText='background:'+(act?'rgba(154,42,26,.07)':'rgba(42,106,74,.08)')+';border:1.5px solid '+(act?'rgba(154,42,26,.25)':'rgba(42,106,74,.3)')+';border-radius:6px;color:'+(act?'#9a2a1a':'#2a6a4a')+';font-family:Courier Prime,monospace;font-size:10px;padding:5px 10px;cursor:pointer;font-weight:700';
+    tog.setAttribute('data-v',s.val);
+    tog.addEventListener('click',function(){var sl=gSlots();sl.forEach(function(x){if(x.val===this.getAttribute('data-v'))x.active=!x.active;},this);sSlots(sl);rTEd();rTSel();});
+    var rm=document.createElement('button');rm.textContent='x';rm.style.cssText='background:rgba(154,42,26,.06);border:1.5px solid rgba(154,42,26,.2);border-radius:6px;color:#9a2a1a;font-family:Courier Prime,monospace;font-size:10px;padding:5px 10px;cursor:pointer;font-weight:700';
+    rm.setAttribute('data-v',s.val);
+    rm.addEventListener('click',function(){sSlots(gSlots().filter(function(x){return x.val!==this.getAttribute('data-v');},this));rTEd();rTSel();});
+    btns.appendChild(tog);btns.appendChild(rm);row.appendChild(btns);c.appendChild(row);
+  });
+}
+function addSlot(){var inp=document.getElementById('nTI');var v=inp.value;if(!v){toast('Please select a time');return;}var s=gSlots();if(s.some(function(x){return x.val===v;})){toast('Slot exists');return;}s.push({val:v,active:true});s.sort(function(a,b){return a.val.localeCompare(b.val);});sSlots(s);inp.value='';rTEd();rTSel();toast(fmtT(v)+' added');}
 
-  function renderCalendar() {
-    const container=document.getElementById('calendarContainer');
-    if(!container)return;
-    const bf=getBlockFrom(); const today=new Date(); today.setHours(0,0,0,0);
-    let lbl=calView==='month'?`${MONTH_NAMES[calMonth]} ${calYear}`:calView==='year'?String(calYear):`${calYear}   ${calYear+11}`;
-    let h=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-      <button onclick="calNav(-1)" style="${CBTN}"> </button>
-      <div style="display:flex;gap:5px">
-        <button onclick="calView='month';renderCalendar()" style="${CACT(calView==='month')}">Days</button>
-        <button onclick="calView='year';renderCalendar()" style="${CACT(calView==='year')}">Months</button>
-        <button onclick="calView='years';renderCalendar()" style="${CACT(calView==='years')}">Years</button>
-      </div>
-      <button onclick="calNav(1)" style="${CBTN}"> </button>
-    </div>
-    <div style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#9b7238;text-align:center;margin-bottom:10px;font-weight:700">${lbl}</div>`;
-
-    if(calView==='month'){
-      h+=`<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:3px">`;
-      ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(d=>h+=`<div style="font-family:'Courier Prime',monospace;font-size:8px;color:#7a6040;text-align:center;padding:2px 0;font-weight:700">${d}</div>`);
-      h+=`</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px">`;
-      const fd=new Date(calYear,calMonth,1).getDay(), dim=new Date(calYear,calMonth+1,0).getDate();
-      for(let i=0;i<fd;i++)h+=`<div></div>`;
-      for(let d=1;d<=dim;d++){
-        const ds=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const blocked=isCalDateBlocked(ds), isFwd=bf&&ds>=bf;
-        const isToday=new Date(calYear,calMonth,d).getTime()===today.getTime();
-        const bg=blocked?(isFwd?'#7a1a08':'#9a2a1a'):'#fff';
-        const col=blocked?'#fff':'#1a1208';
-        const bdr=isToday?'2px solid #9b7238':`1px solid ${blocked?'transparent':'rgba(120,85,30,0.12)'}`;
-        h+=`<button onclick="toggleCalDate('${ds}')" title="${blocked?'Blocked   tap to unblock':'Tap to block'}" style="background:${bg};border:${bdr};border-radius:5px;color:${col};font-family:'Courier Prime',monospace;font-size:11px;padding:6px 1px;cursor:pointer;text-align:center;font-weight:${blocked?700:400};width:100%;transition:all 0.1s">${d}</button>`;
-      }
-      h+=`</div>`;
-      const fm=`${calYear}-${String(calMonth+1).padStart(2,'0')}-01`;
-      h+=`<div style="display:flex;gap:6px;margin-top:10px">
-        <button onclick="toggleCalMonth(${calYear},${calMonth})" style="${CBLOCK(isFullMonthBlocked(calYear,calMonth))}">${isFullMonthBlocked(calYear,calMonth)?'Unblock Month':'Block Month'}</button>
-        <button onclick="blockFromDate('${fm}')" style="${CFWD}">Block From Here  </button>
-      </div>`;
-
-    } else if(calView==='year'){
-      h+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">`;
-      for(let m=0;m<12;m++){
-        const blocked=isFullMonthBlocked(calYear,m);
-        h+=`<button onclick="toggleCalMonth(${calYear},${m})" style="background:${blocked?'#9a2a1a':'#fff'};border:1.5px solid ${blocked?'transparent':'rgba(120,85,30,0.18)'};border-radius:8px;color:${blocked?'#fff':'#1a1208'};font-family:'Courier Prime',monospace;font-size:11px;padding:11px 4px;cursor:pointer;text-align:center;font-weight:700;transition:all 0.1s">${SHORT_MONTHS[m]}</button>`;
-      }
-      h+=`</div><div style="display:flex;gap:6px;margin-top:10px">
-        <button onclick="toggleCalYear(${calYear})" style="${CBLOCK(isFullYearBlocked(calYear))}">${isFullYearBlocked(calYear)?'Unblock Year':'Block Year'}</button>
-        <button onclick="blockFromDate('${calYear}-01-01')" style="${CFWD}">Block From This Year  </button>
-      </div>`;
-
-    } else {
-      h+=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">`;
-      for(let y=calYear;y<calYear+12;y++){
-        const blocked=isFullYearBlocked(y);
-        h+=`<button onclick="calYear=${y};calView='year';renderCalendar()" style="background:${blocked?'#9a2a1a':'#fff'};border:1.5px solid ${blocked?'transparent':'rgba(120,85,30,0.18)'};border-radius:8px;color:${blocked?'#fff':'#1a1208'};font-family:'Courier Prime',monospace;font-size:12px;padding:11px 2px;cursor:pointer;text-align:center;font-weight:700;transition:all 0.1s">${y}${blocked?'  ':''}</button>`;
-      }
-      h+=`</div><div style="margin-top:10px"><button onclick="toggleCalYear(${calYear})" style="${CBLOCK(isFullYearBlocked(calYear))};width:100%">${isFullYearBlocked(calYear)?'Unblock '+calYear:'Block '+calYear}</button></div>`;
-    }
-
-    if(bf){
-      const fmtBf=new Date(bf+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-      h+=`<div style="display:flex;align-items:center;justify-content:space-between;background:rgba(154,42,26,0.07);border:1.5px solid rgba(154,42,26,0.22);border-radius:8px;padding:8px 12px;margin-top:10px">
-        <div style="font-family:'Courier Prime',monospace;font-size:10px;color:#9a2a1a;font-weight:700">FORWARD BLOCK FROM ${fmtBf.toUpperCase()}</div>
-        <button onclick="setBlockFrom(null);renderCalendar();if(typeof toast!=='undefined')toast('Forward block cleared  ');" style="background:rgba(42,106,74,0.1);border:1.5px solid rgba(42,106,74,0.3);border-radius:5px;color:#2a6a4a;font-family:'Courier Prime',monospace;font-size:10px;padding:4px 10px;cursor:pointer;font-weight:700">  Clear</button>
-      </div>`;
-    }
-
-    h+=`<div style="border-top:1px solid rgba(120,85,30,0.15);padding-top:12px;margin-top:12px">
-      <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#7a6040;margin-bottom:8px;font-weight:700">Change Staff PIN</div>
-      <div style="display:flex;gap:6px">
-        <input type="password" id="newPin1" placeholder="New PIN" maxlength="8" style="flex:1;background:#fff;border:1.5px solid rgba(120,85,30,0.25);border-radius:8px;color:#1a1208;padding:8px 10px;font-family:'Courier Prime',monospace;font-size:14px;outline:none;letter-spacing:0.2em">
-        <input type="password" id="newPin2" placeholder="Confirm" maxlength="8" style="flex:1;background:#fff;border:1.5px solid rgba(120,85,30,0.25);border-radius:8px;color:#1a1208;padding:8px 10px;font-family:'Courier Prime',monospace;font-size:14px;outline:none;letter-spacing:0.2em">
-        <button onclick="changePin()" style="background:#9b7238;border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:8px 12px;cursor:pointer;font-weight:700;white-space:nowrap">Update</button>
-      </div>
-    </div>`;
-
-    container.innerHTML=h;
-  }
-
-  function calNav(dir){
-    if(calView==='month'){calMonth+=dir;if(calMonth>11){calMonth=0;calYear++;}if(calMonth<0){calMonth=11;calYear--;}}
-    else if(calView==='year'){calYear+=dir;}else{calYear+=dir*12;}
-    renderCalendar();
-  }
-
-  function getStaffPin(){try{return localStorage.getItem('ot_staff_pin')||'1234';}catch(e){return'1234';}}
-  function changePin(){
-    const p1=document.getElementById('newPin1').value,p2=document.getElementById('newPin2').value;
-    if(!p1){if(typeof toast!=='undefined')toast('Enter a new PIN');else alert('Enter a new PIN');return;}
-    if(p1.length<4){if(typeof toast!=='undefined')toast('PIN must be 4+ characters');else alert('PIN must be 4+ characters');return;}
-    if(p1!==p2){if(typeof toast!=='undefined')toast('PINs do not match');else alert('PINs do not match');return;}
-    try{localStorage.setItem('ot_staff_pin',p1);}catch(e){}
-    document.getElementById('newPin1').value='';document.getElementById('newPin2').value='';
-    if(typeof toast!=='undefined')toast('PIN updated  ');else alert('PIN updated.');
-  }
-  //    END CALENDAR BLOCKER                                    
-
-    function promptDatePin() {
-    if(datePinUnlocked) { toggleDateEditor(); return; }
-    const pin=prompt('Enter staff PIN to manage blocked dates:');
-    if(pin===STAFF_PIN) { datePinUnlocked=true; toggleDateEditor(); }
-    else if(pin!==null) toast('Incorrect PIN');
-  }
-  function promptTimePin() {
-    if(timePinUnlocked) { toggleTimeEditor(); return; }
-    const pin=prompt('Enter staff PIN to edit time slots:');
-    if(pin===STAFF_PIN) { timePinUnlocked=true; toggleTimeEditor(); }
-    else if(pin!==null) toast('Incorrect PIN');
-  }
-
-  //    Blocked Dates                                          
-  function loadBlockedDates() { try { return JSON.parse(localStorage.getItem('otc_blocked_dates')||'[]'); } catch(e) { return []; } }
-  function saveBlockedDates(d) { try { localStorage.setItem('otc_blocked_dates',JSON.stringify(d)); } catch(e) {} }
-
-  function toggleDateEditor() {
-    const panel=document.getElementById('dateEditorPanel');
-    const btn=document.getElementById('editDatesBtn');
-    const open=panel.style.display==='none'||!panel.style.display;
-    panel.style.display=open?'block':'none';
-    btn.textContent=open?'  Close':'  Block Dates';
-    if(open) renderBlockedDates();
-  }
-
-  function renderBlockedDates() {
-    const dates=loadBlockedDates();
-    const c=document.getElementById('blockedDatesList');
-    if(!dates.length) { c.innerHTML=`<div style="font-style:italic;color:var(--muted);font-size:15px;padding:4px 0 10px">No dates blocked.</div>`; return; }
-    c.innerHTML=[...dates].sort().map(d=>{
-      const fmt=new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'long',day:'numeric',year:'numeric'});
-      return `<div class="editor-item"><div><div class="editor-item-label">${fmt}</div><div class="editor-item-tag">BLOCKED</div></div><button class="editor-remove" onclick="removeBlockedDate('${d}')">  Unblock</button></div>`;
-    }).join('');
-  }
-
-  function addBlockedDate() {
-    const val=document.getElementById('newBlockedDate').value;
-    if(!val) { toast('Please select a date'); return; }
-    const dates=loadBlockedDates();
-    if(dates.includes(val)) { toast('Already blocked'); return; }
-    dates.push(val); saveBlockedDates(dates);
-    document.getElementById('newBlockedDate').value='';
-    renderBlockedDates();
-    toast(new Date(val+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})+' blocked  ');
-  }
-  function removeBlockedDate(val) {
-    saveBlockedDates(loadBlockedDates().filter(d=>d!==val));
-    renderBlockedDates();
-    toast('Unblocked  ');
-  }
-  function checkBlockedDate(val) {
-    const blocked=loadBlockedDates();
-    const notice=document.getElementById('blockedNotice');
-    if(blocked.includes(val)) {
-      dateBlocked=true; notice.style.display='block';
-      document.querySelectorAll('.time-chip').forEach(c=>c.classList.add('blocked'));
-      selectedTime='';
-    } else {
-      dateBlocked=false; notice.style.display='none';
-      document.querySelectorAll('.time-chip').forEach(c=>c.classList.remove('blocked'));
-    }
-  }
-
-  //    Time Slots                                             
-  function loadTimeSlots() {
-    try { const s=localStorage.getItem('otc_time_slots'); if(s) return JSON.parse(s); } catch(e) {}
-    return ['10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00'];
-  }
-  function saveTimeSlots(s) { try { localStorage.setItem('otc_time_slots',JSON.stringify(s)); } catch(e) {} }
-
-  function toggleTimeEditor() {
-    const panel=document.getElementById('timeEditorPanel');
-    const btn=document.getElementById('editTimesBtn');
-    const open=panel.style.display==='none'||!panel.style.display;
-    panel.style.display=open?'block':'none';
-    btn.textContent=open?'  Close':'  Edit Times';
-    if(open) renderTimeSlotEditor();
-  }
-
-  function renderTimeSlotEditor() {
-    const slots=loadTimeSlots();
-    const c=document.getElementById('timeSlotList');
-    if(!slots.length) { c.innerHTML=`<div style="font-style:italic;color:var(--muted);font-size:15px;padding:4px 0 10px">No time slots.</div>`; return; }
-    c.innerHTML=[...slots].sort().map(t=>`<div class="editor-item"><div class="editor-item-label">${fmtTime(t)}</div><button class="editor-remove" onclick="removeTimeSlot('${t}')">  Remove</button></div>`).join('');
-  }
-
-  function addTimeSlot() {
-    const val=document.getElementById('newTimeSlot').value;
-    if(!val) { toast('Please select a time'); return; }
-    const slots=loadTimeSlots();
-    if(slots.includes(val)) { toast('Already added'); return; }
-    slots.push(val); saveTimeSlots(slots);
-    document.getElementById('newTimeSlot').value='';
-    renderTimeSlotEditor(); buildTimeGrid();
-    toast(fmtTime(val)+' added  ');
-  }
-  function removeTimeSlot(val) {
-    saveTimeSlots(loadTimeSlots().filter(s=>s!==val));
-    if(selectedTime===val) selectedTime='';
-    renderTimeSlotEditor(); buildTimeGrid();
-    toast('Removed');
-  }
-
-  //    Time Grid                                              
-  function buildTimeGrid() {
-    const grid=document.getElementById('timeGrid');
-    grid.innerHTML='';
-    const slots=loadTimeSlots();
-    if(!slots.length) { grid.innerHTML=`<div style="font-style:italic;color:var(--muted);font-size:15px">No pickup times available.</div>`; return; }
-    [...slots].sort().forEach(t=>{
-      const[h,m]=t.split(':').map(Number);
-      const hr=h>12?h-12:h||12;
-      const ampm=h>=12?'PM':'AM';
-      const chip=document.createElement('div');
-      chip.className='time-chip'+(selectedTime===t?' selected':'');
-      chip.innerHTML=`<div class="time-chip-hr">${hr}:${String(m).padStart(2,'0')}</div><div class="time-chip-ampm">${ampm}</div>`;
-      chip.onclick=()=>{
-        if(dateBlocked) return;
-        document.querySelectorAll('.time-chip').forEach(c=>c.classList.remove('selected'));
-        chip.classList.add('selected');
-        selectedTime=t;
-      };
-      grid.appendChild(chip);
+// ORDER GRID
+function rOG(){
+  var g=document.getElementById('oG');if(!g)return;g.innerHTML='';
+  ITEMS.forEach(function(item){
+    var qty=oQty[item.id]||0;
+    var card=document.createElement('div');card.className='oc'+(qty>0?' sel':'');
+    var top=document.createElement('div');top.className='oc-top';
+    var ico=document.createElement('div');ico.className='oc-ico';ico.innerHTML=item.icon;
+    var info=document.createElement('div');info.style.flex='1';
+    var nm=document.createElement('div');nm.className='oc-nm';nm.textContent=item.name;
+    var dc=document.createElement('div');dc.className='oc-dc';dc.textContent=item.desc;
+    var pr=document.createElement('div');pr.className='oc-pr';pr.textContent=item.priceLabel;
+    info.appendChild(nm);info.appendChild(dc);info.appendChild(pr);
+    top.appendChild(ico);top.appendChild(info);
+    var str=document.createElement('div');str.className='str';
+    var minus=document.createElement('button');minus.className='stb';minus.textContent='-';
+    var val=document.createElement('div');val.className='stv';
+    var num=document.createElement('div');num.className='stn';num.textContent=qty;
+    var wrd=document.createElement('div');wrd.className='stw';wrd.textContent='units';
+    val.appendChild(num);val.appendChild(wrd);
+    var plus=document.createElement('button');plus.className='stb';plus.textContent='+';
+    minus.addEventListener('click',function(){chgQ(item.id,-1);});
+    plus.addEventListener('click',function(){chgQ(item.id,1);});
+    str.appendChild(minus);str.appendChild(val);str.appendChild(plus);
+    card.appendChild(top);card.appendChild(str);g.appendChild(card);
+  });
+  rOS();
+}
+function chgQ(id,d){var cur=oQty[id]||0;var nxt=Math.max(0,cur+d);if(nxt===0)delete oQty[id];else oQty[id]=nxt;rOG();}
+function rOS(){
+  var sw=document.getElementById('oSW'),sr=document.getElementById('oSR'),tv=document.getElementById('oTV');
+  var sel=ITEMS.filter(function(m){return oQty[m.id]>0;});
+  if(!sw)return;
+  if(!sel.length){sw.style.display='none';return;}
+  sw.style.display='block';
+  if(sr){
+    sr.innerHTML='';
+    sel.forEach(function(m){
+      var row=document.createElement('div');row.className='rr';
+      var k=document.createElement('span');k.className='rk';k.textContent=m.name;
+      var v2=document.createElement('span');v2.className='rv';v2.textContent=oQty[m.id]+' unit'+(oQty[m.id]>1?'s':'')+' - '+m.priceLabel;
+      row.appendChild(k);row.appendChild(v2);sr.appendChild(row);
     });
   }
-  buildTimeGrid();
+  var total=ITEMS.reduce(function(s,m){return s+(oQty[m.id]||0)*m.price;},0);
+  if(tv)tv.textContent='PHP '+total.toLocaleString();
+}
 
-  //    Order Grid                                             
-  function buildOrderGrid() {
-    var grid=document.getElementById('orderGrid');
-    grid.innerHTML='';
-    CHICHARONILLO_ITEMS.forEach(function(item){
-      var qty=orderQty[item.id]||0;
-      var card=document.createElement('div');
-      card.className='order-card'+(qty>0?' selected':'');
+// NAVIGATION
+function updProg(){
+  for(var i=1;i<=4;i++){var d=document.getElementById('d'+i),l=document.getElementById('lb'+i);if(!d)continue;if(i<step){d.className='sd dn';d.innerHTML='&#10003;';}else if(i===step){d.className='sd on';d.textContent=i;}else{d.className='sd';d.textContent=i;}if(l)l.className='slb'+(i===step?' on':'');}
+  for(var i=1;i<=3;i++){var ln=document.getElementById('l'+i);if(ln)ln.className='sl'+(i<step?' dn':'');}
+  document.getElementById('btnBk').style.display=step>1?'block':'none';
+  document.getElementById('btnNx').textContent=step===4?'Submit Order':'Continue';
+}
+function showStep(n){document.querySelectorAll('.stp').forEach(function(p){p.classList.remove('on');});var el=document.getElementById('stp'+n);if(el)el.classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
+function validate(n){
+  if(n===1){if(!gv('fLN')||!gv('fFN')||!gv('fPH')){toast('Please fill in your name and phone number');return false;}}
+  if(n===2){if(!dpVal){toast('Please select a pickup date');return false;}if(dBlk){toast('This date is unavailable');return false;}if(!gv('fTime')){selTime='';toast('Please select a pickup time');return false;}selTime=gv('fTime');}
+  if(n===3){if(!Object.keys(oQty).length){toast('Please select at least one item');return false;}}
+  return true;
+}
+function goNext(){if(step===4){submitOrder();return;}if(!validate(step))return;step++;showStep(step);updProg();}
+function goBack(){if(step<=1)return;step--;showStep(step);updProg();}
 
-      var top=document.createElement('div');
-      top.style.cssText='display:flex;align-items:flex-start;gap:14px;margin-bottom:16px';
-      var iconEl=document.createElement('div');
-      iconEl.className='order-card-icon';
-      iconEl.textContent=item.icon;
-      var info=document.createElement('div');
-      info.style.flex='1';
-      var nm=document.createElement('div');nm.className='order-card-name';nm.textContent=item.name;
-      var dc=document.createElement('div');dc.className='order-card-desc';dc.textContent=item.desc;
-      var pr=document.createElement('div');pr.className='order-card-price';pr.textContent=item.priceLabel;
-      info.appendChild(nm);info.appendChild(dc);info.appendChild(pr);
-      top.appendChild(iconEl);top.appendChild(info);
+// REVIEW
+function fmtD(ds){if(!ds)return'';return new Date(ds+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});}
+function bldRev(){
+  var c=document.getElementById('rC');if(!c)return;
+  var ln=gv('fLN'),fn=gv('fFN'),ph=gv('fPH'),em=gv('fEM');
+  var rh='<div class="rb"><div class="rbt">Contact</div>';
+  rh+='<div class="rr"><span class="rk">Name</span><span class="rv">'+ln+', '+fn+'</span></div>';
+  rh+='<div class="rr"><span class="rk">Phone</span><span class="rv">'+ph+'</span></div>';
+  if(em) rh+='<div class="rr"><span class="rk">Email</span><span class="rv">'+em+'</span></div>';
+  rh+='</div>';
+  rh+='<div class="rb"><div class="rbt">Pickup</div>';
+  rh+='<div class="rr"><span class="rk">Date</span><span class="rv">'+fmtD(dpVal)+'</span></div>';
+  rh+='<div class="rr"><span class="rk">Time</span><span class="rv">'+fmtT(selTime)+'</span></div>';
+  rh+='</div>';
+  rh+='<div class="rb"><div class="rbt">Order</div>';
+  ITEMS.filter(function(m){return oQty[m.id]>0;}).forEach(function(m){
+    rh+='<div class="rr"><span class="rk">'+m.name+'</span><span class="rv">'+oQty[m.id]+' unit'+(oQty[m.id]>1?'s':'')+' - '+m.priceLabel+'</span></div>';
+  });
+  var total=ITEMS.reduce(function(s,m){return s+(oQty[m.id]||0)*m.price;},0);
+  rh+='<div class="rr" style="border-top:1px solid rgba(120,85,30,.2);margin-top:4px;padding-top:8px"><span class="rk" style="color:var(--gold);font-weight:700">Total</span><span class="rv" style="color:var(--gold);font-weight:700;font-family:Courier Prime,monospace">PHP '+total.toLocaleString()+'</span></div>';
+  rh+='</div>';
+  c.innerHTML=rh;
+}
 
-      var step=document.createElement('div');step.className='stepper';
-      var minus=document.createElement('button');minus.className='stepper-btn';minus.textContent='-';
-      var disp=document.createElement('div');disp.className='stepper-display';
-      var num=document.createElement('div');num.className='stepper-num';num.textContent=qty;
-      var wrd=document.createElement('div');wrd.className='stepper-word';wrd.textContent='units';
-      disp.appendChild(num);disp.appendChild(wrd);
-      var plus=document.createElement('button');plus.className='stepper-btn';plus.textContent='+';
+// SUBMIT
+function genCode(ln){var L=(ln||'').replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X');var dd=dpVal?dpVal.replace(/-/g,'').slice(4):'0000';var r=Math.random().toString(36).substring(2,5).toUpperCase();return 'OTC-'+L+dd+'-'+r;}
+function submitOrder(){
+  var btn=document.getElementById('btnNx');btn.textContent='Sending...';btn.disabled=true;
+  var ln=gv('fLN'),fn=gv('fFN'),ph=gv('fPH'),em=gv('fEM');
+  var code=genCode(ln);
+  var total=ITEMS.reduce(function(s,m){return s+(oQty[m.id]||0)*m.price;},0);
+  var down=Math.ceil(total/2);
+  var orderLines=ITEMS.filter(function(m){return oQty[m.id]>0;}).map(function(m){return m.name+' x'+oQty[m.id]+' ('+m.priceLabel+')';}).join(', ');
+  var fbData={code:code,lastName:ln,firstName:fn,phone:ph,email:em,date:dpVal,time:selTime,items:oQty,orderText:orderLines,total:total,downPayment:down,status:'pending',payment:'unpaid',created:Date.now()};
+  var msg='OT CHICHARONILLO PICKUP ORDER\n==============================\nOrder Code: '+code+'\n\nCUSTOMER\nName: '+ln+', '+fn+'\nPhone: '+ph+'\nEmail: '+(em||'-')+'\n\nPICKUP\nDate: '+fmtD(dpVal)+'\nTime: '+fmtT(selTime)+'\n\nORDER\n'+orderLines+'\n\nTotal: PHP '+total.toLocaleString()+'\nDown Payment (50%): PHP '+down.toLocaleString()+'\n==============================';
+  if(window._fbReady&&window._fbWriteOrder){window._fbWriteOrder(fbData.created,fbData).catch(function(){});}
+  else{window._fbQ=window._fbQ||[];window._fbQ.push([fbData.created,fbData]);}
+  emailjs.send('service_xo8aoro','template_yfe626s',{to_email:'obscuretableph@gmail.com',message:msg}).then(function(){showSuccess(code,fn);}).catch(function(){showSuccess(code,fn);}).finally?emailjs.send:'';
+  function showSuccess(code,fn){document.querySelectorAll('.stp').forEach(function(p){p.classList.remove('on');});document.getElementById('fBot').style.display='none';document.getElementById('scsN').textContent=fn;document.getElementById('scsC').textContent=code;document.getElementById('scs').style.display='block';window.scrollTo({top:0});}
+  setTimeout(function(){showSuccess(code,fn);},2000);
+}
 
-      minus.addEventListener('click',function(){changeQty(item.id,-1);});
-      plus.addEventListener('click',function(){changeQty(item.id,1);});
+// WIRE STATIC BUTTONS
+document.getElementById('btnBk').addEventListener('click',goBack);
+document.getElementById('btnNx').addEventListener('click',goNext);
+document.getElementById('dpPrev').addEventListener('click',function(){if(dpView==='days'){dpMo--;if(dpMo<0){dpMo=11;dpYr--;}}else if(dpView==='months'){dpYr--;}else{dpYr-=12;}dpRend();});
+document.getElementById('dpNext').addEventListener('click',function(){if(dpView==='days'){dpMo++;if(dpMo>11){dpMo=0;dpYr++;}}else if(dpView==='months'){dpYr++;}else{dpYr+=12;}dpRend();});
+document.getElementById('dpTD').addEventListener('click',function(){dpView='days';dpRend();});
+document.getElementById('dpTM').addEventListener('click',function(){dpView='months';dpRend();});
+document.getElementById('dpTY').addEventListener('click',function(){dpView='years';dpRend();});
+document.getElementById('dpF').addEventListener('click',function(e){e.stopPropagation();dpToggle();});
+document.getElementById('btnAS').addEventListener('click',addSlot);
+document.addEventListener('click',function(e){var w=document.getElementById('dpW');if(w&&!w.contains(e.target))dpClose();});
 
-      step.appendChild(minus);step.appendChild(disp);step.appendChild(plus);
-      card.appendChild(top);card.appendChild(step);
-      grid.appendChild(card);
-    });
-    updateOrderSummary();
-  }
-
-  function changeQty(id,delta) {
-    const current=orderQty[id]||0;
-    const next=Math.max(0,current+delta);
-    if(next===0) delete orderQty[id]; else orderQty[id]=next;
-    buildOrderGrid();
-  }
-
-  function getOrderTotal() { return CHICHARONILLO_ITEMS.reduce((s,m)=>s+(orderQty[m.id]||0)*m.price,0); }
-
-  function updateOrderSummary() {
-    const wrap=document.getElementById('orderSummaryWrap');
-    const rows=document.getElementById('orderSummaryRows');
-    const total=document.getElementById('orderTotalVal');
-    const selected=CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0);
-    if(!selected.length) { wrap.style.display='none'; return; }
-    wrap.style.display='block';
-    rows.innerHTML=selected.map(m=>`<div class="order-summary-row"><span style="font-size:15px;color:var(--ink)">${m.icon} ${m.name}</span><span style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--gold);font-weight:700"> ${orderQty[m.id]}</span></div>`).join('');
-    total.textContent='PHP '+getOrderTotal().toLocaleString('en-PH');
-  }
-
-  buildOrderGrid();
-
-  //    Navigation                                             
-  function updateProgress() {
-    for(let i=1;i<=TOTAL_STEPS;i++) {
-      const dot=document.getElementById(`dot${i}`);
-      const lbl=document.getElementById(`lbl${i}`);
-      dot.className='step-dot'+(i<currentStep?' done':i===currentStep?' active':'');
-      lbl.className='step-label'+(i===currentStep?' active':'');
-      if(i<TOTAL_STEPS) document.getElementById(`line${i}`).className='step-line'+(i<currentStep?' done':'');
-    }
-    document.getElementById('backBtn').style.display=currentStep>1?'block':'none';
-    document.getElementById('nextBtn').textContent=currentStep===TOTAL_STEPS?'Submit Order  ':'Continue  ';
-  }
-
-  function showStep(n) {
-    document.querySelectorAll('.step-panel').forEach(p=>p.classList.remove('active'));
-    document.getElementById(`step${n}`).classList.add('active');
-    window.scrollTo({top:0,behavior:'smooth'});
-  }
-
-  function validate() {
-    const v=id=>(document.getElementById(id)||{}).value?.trim();
-    if(currentStep===1) {
-      if(!v('fLastName')) { toast('Please enter your last name'); return false; }
-      if(!v('fFirstName')) { toast('Please enter your first name'); return false; }
-      if(!v('fPhone')) { toast('Please enter your phone number'); return false; }
-    }
-    if(currentStep===2) {
-      if(!v('fDate')) { toast('Please select a pickup date'); return false; }
-      if(dateBlocked) { toast('This date is unavailable   please choose another'); return false; }
-      if(!selectedTime) { toast('Please select a pickup time'); return false; }
-    }
-    if(currentStep===3) {
-      if(!CHICHARONILLO_ITEMS.some(m=>orderQty[m.id]>0)) { toast('Please add at least one item'); return false; }
-    }
-    return true;
-  }
-
-  function buildReview() {
-    const v=id=>document.getElementById(id).value.trim();
-    const total=getOrderTotal();
-    const down=Math.ceil(total/2);
-    document.getElementById('reviewContent').innerHTML=`
-      <div class="review-block"><div class="review-block-title">Contact</div>
-        <div class="review-row"><span class="review-key">Name</span><span class="review-val">${v('fLastName')}, ${v('fFirstName')}</span></div>
-        <div class="review-row"><span class="review-key">Phone</span><span class="review-val">${v('fPhone')}</span></div>
-        ${v('fEmail')? '<div class="review-row"><span class="review-key">Email</span><span class="review-val">'+v('fEmail')+'</span></div>' : ''}
-      </div>
-      <div class="review-block"><div class="review-block-title">Pickup</div>
-        <div class="review-row"><span class="review-key">Date</span><span class="review-val">${fmtDate(v('fDate'))}</span></div>
-        <div class="review-row"><span class="review-key">Time</span><span class="review-val">${fmtTime(selectedTime)}</span></div>
-      </div>
-      <div class="review-block"><div class="review-block-title">Order</div>
-        ${CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0).map(m=>`<div class="review-row"><span class="review-key">${m.icon} ${m.name}</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:15px;color:var(--gold)"> ${orderQty[m.id]}   PHP ${(m.price*orderQty[m.id]).toLocaleString()}</span></div>`).join('')}
-        <div class="review-row"><span class="review-key">Total</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:17px;color:var(--gold);font-weight:700">PHP ${total.toLocaleString()}</span></div>
-      </div>
-      <div class="review-block"><div class="review-block-title">Payment</div>
-        <div class="review-row"><span class="review-key">Down Payment Due</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:15px;color:var(--gold);font-weight:700">PHP ${down.toLocaleString()}</span></div>
-        <div class="review-row"><span class="review-key">Balance on Pickup</span><span class="review-val" style="font-family:'Courier Prime',monospace;font-size:15px">PHP ${(total-down).toLocaleString()}</span></div>
-      </div>
-      ${v('fNotes')?`<div class="review-block"><div class="review-block-title">Special Instructions</div><div class="review-row"><span class="review-val" style="font-style:italic;color:var(--muted);max-width:100%">${v('fNotes')}</span></div></div>`:''}`;
-  }
-
-  function goNext() {
-    if(!validate()) return;
-    if(currentStep===TOTAL_STEPS) { submitOrder(); return; }
-    if(currentStep===3) buildReview();
-    currentStep++;
-    showStep(currentStep);
-    updateProgress();
-  }
-
-  function goBack() {
-    if(currentStep<=1) return;
-    currentStep--;
-    showStep(currentStep);
-    updateProgress();
-  }
-
-  function resetForm() {
-    currentStep=1; selectedTime=''; orderQty={}; generatedCode=''; dateBlocked=false;
-    ['fLastName','fFirstName','fPhone','fEmail','fDate','fNotes'].forEach(id=>document.getElementById(id).value='');
-    buildTimeGrid(); buildOrderGrid();
-    document.getElementById('successScreen').classList.remove('show');
-    document.getElementById('mainForm').style.display='block';
-    document.getElementById('footerNav').style.display='flex';
-    showStep(1); updateProgress();
-  }
-
-  function copySuccess() { navigator.clipboard.writeText(generatedCode).catch(()=>{}); toast('Code copied  '); }
-
-  //    Submit                                                 
-  async function submitOrder() {
-    const lastName=document.getElementById('fLastName').value.trim();
-    const firstName=document.getElementById('fFirstName').value.trim();
-    const phone=document.getElementById('fPhone').value.trim();
-    const email=document.getElementById('fEmail').value.trim();
-    const date=document.getElementById('fDate').value;
-    const notes=document.getElementById('fNotes').value.trim();
-    const total=getOrderTotal();
-    const downPmt=Math.ceil(total/2);
-
-    generatedCode=generateCode(lastName,date);
-    const btn=document.getElementById('nextBtn');
-    btn.textContent='Sending '; btn.disabled=true;
-
-    const orderLines=CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0)
-      .map(m=>`  ${m.icon} ${m.name} x${orderQty[m.id]}   PHP ${(m.price*orderQty[m.id]).toLocaleString()}`)
-      .join('\n');
-
-    const message=`OBSCURE TABLE   CHICHARONILLO PICKUP ORDER
-==========================================
-ORDER CODE: ${generatedCode}
-
-CONTACT
-Name:   ${lastName}, ${firstName}
-Phone:  ${phone}
-Email:  ${email||' '}
-
-PICKUP
-Date:   ${fmtDate(date)}
-Time:   ${fmtTime(selectedTime)}
-
-ORDER
-${orderLines}
-
-Total:         PHP ${total.toLocaleString()}
-Down Payment:  PHP ${downPmt.toLocaleString()}
-Balance:       PHP ${(total-downPmt).toLocaleString()}
-
-NOTES: ${notes||' '}
-==========================================`.trim();
-
-    try {
-      await emailjs.send(EJS_SERVICE,EJS_TEMPLATE,{
-        to_email:'obscuretableph@gmail.com',
-        subject:`  Chicharonillo Order   ${generatedCode}   ${lastName}, ${firstName}`,
-        message, reply_to:email||phone,
-      });
-    } catch(err) { console.error('EmailJS:',err); }
-
-    const fbId=Date.now();
-    const fbData={
-      id:fbId, code:generatedCode, type:'chicharonillo',
-      name:lastName, first:firstName, phone, email, date,
-      time:selectedTime,
-      order:Object.fromEntries(CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0).map(m=>[m.id,orderQty[m.id]])),
-      orderText:CHICHARONILLO_ITEMS.filter(m=>orderQty[m.id]>0).map(m=>`${m.name} x${orderQty[m.id]}`).join(', '),
-      total, downPayment:downPmt, notes, status:'pending', payment:'unpaid', created:fbId,
-    };
-    if(window._fbReady&&window._fbWriteOrder) {
-      window._fbWriteOrder(fbId,fbData).catch(e=>console.warn(e));
-    } else {
-      window._fbQueue=window._fbQueue||[];
-      window._fbQueue.push([fbId,fbData]);
-    }
-
-    document.getElementById('successCode').textContent=generatedCode;
-    document.getElementById('mainForm').style.display='none';
-    document.getElementById('footerNav').style.display='none';
-    document.getElementById('successScreen').classList.add('show');
-    window.scrollTo({top:0});
-    btn.textContent='Submit Order  '; btn.disabled=false;
-  }
-
-  updateProgress();
+// INIT
+dpRend();rTSel();rOG();updProg();
 </script>
 </body>
 </html>
