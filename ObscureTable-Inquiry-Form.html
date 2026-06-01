@@ -1264,17 +1264,16 @@
 
   // -- Time Slot Manager -------------------------------------
   const DEFAULT_SLOTS = [
-    {val:'17:00',active:true},{val:'17:30',active:true},
-    {val:'18:00',active:true},{val:'18:30',active:true},
-    {val:'19:00',active:true},{val:'19:30',active:true},
-    {val:'20:00',active:true},{val:'20:30',active:true},
-    {val:'21:00',active:true},{val:'21:30',active:true},
+    {val:'17:30',active:true},
   ];
 
   function loadSlots() {
     try { return JSON.parse(localStorage.getItem('ot_timeslots')) || DEFAULT_SLOTS; }
     catch(e) { return DEFAULT_SLOTS; }
   }
+
+  // Force-reset slots to current default (clears old cached values)
+  saveSlots(DEFAULT_SLOTS);
 
   function saveSlots(slots) {
     try { localStorage.setItem('ot_timeslots', JSON.stringify(slots)); } catch(e) {}
