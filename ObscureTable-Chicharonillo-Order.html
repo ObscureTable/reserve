@@ -573,7 +573,7 @@ function submitOrder(){
   var msg='OT CHICHARONILLO PICKUP ORDER\n==============================\nOrder Code: '+code+'\n\nCUSTOMER\nName: '+ln+', '+fn+'\nPhone: '+ph+'\nEmail: '+(em||'-')+'\n\nPICKUP\nDate: '+fmtD(dpVal)+'\nTime: '+fmtT(selTime)+'\n\nORDER\n'+orderLines+'\n\nTotal: PHP '+total.toLocaleString()+'\nDown Payment (50%): PHP '+down.toLocaleString()+'\n==============================';
   if(window._fbReady&&window._fbWriteOrder){window._fbWriteOrder(fbData.created,fbData).catch(function(){});}
   else{window._fbQ=window._fbQ||[];window._fbQ.push([fbData.created,fbData]);}
-  emailjs.send('service_xo8aoro','template_yfe626s',{to_email:'obscuretableph@gmail.com',message:msg}).then(function(){showSuccess(code,fn);}).catch(function(){showSuccess(code,fn);}).finally?emailjs.send:'';
+  emailjs.send('service_xo8aoro','template_yfe626s',{to_email:'reservation.obscuretableph@outlook.com',message:msg}).then(function(){showSuccess(code,fn);}).catch(function(){showSuccess(code,fn);}).finally?emailjs.send:'';
   function showSuccess(code,fn){document.querySelectorAll('.stp').forEach(function(p){p.classList.remove('on');});document.getElementById('fBot').style.display='none';document.getElementById('scsN').textContent=fn;document.getElementById('scsC').textContent=code;document.getElementById('scs').style.display='block';window.scrollTo({top:0});}
   setTimeout(function(){showSuccess(code,fn);},2000);
 }
