@@ -386,21 +386,7 @@
     </div>
     <div style="margin-bottom:30px"></div>
 
-    <!-- Food Allergies -->
-    <div class="section-label">Food Allergies</div>
-    <div class="check-grid" style="margin-bottom:8px">
-      <label class="check-item"><input type="checkbox" name="dietary" value="Vegetarian"> <span>Vegetarian</span></label>
-      <label class="check-item"><input type="checkbox" name="dietary" value="Vegan"> <span>Vegan</span></label>
-      <label class="check-item"><input type="checkbox" name="dietary" value="Gluten-Free"> <span>Gluten-Free</span></label>
-      <label class="check-item"><input type="checkbox" name="dietary" value="Nut Allergy"> <span>Nut Allergy</span></label>
-      <label class="check-item"><input type="checkbox" name="dietary" value="Shellfish Allergy"> <span>Shellfish Allergy</span></label>
-      <label class="check-item"><input type="checkbox" name="dietary" value="Dairy-Free"> <span>Dairy-Free</span></label>
-      <label class="check-item"><input type="checkbox" name="dietary" value="Other" id="dietaryOtherCheck" onchange="toggleOtherReveal('dietaryOtherCheck','allergyOtherReveal')"> <span>Other</span></label>
-    </div>
-    <div class="others-reveal" id="allergyOtherReveal">
-      <input type="text" id="allergyOtherText" placeholder="Please describe your food allergies…">
-    </div>
-    <div style="margin-bottom:30px"></div>
+
 
     <!-- Special Requests -->
     <div class="section-label">Special Requests</div>
@@ -1254,9 +1240,7 @@
     const vals = checked.filter(el=>el.value!=='Other').map(el=>el.value);
     const otherCheck = checked.find(el=>el.value==='Other');
     if (otherCheck) {
-      const txt = name==='occasion'
-        ? document.getElementById('occasionOtherText').value.trim()
-        : document.getElementById('allergyOtherText').value.trim();
+      const txt = document.getElementById('occasionOtherText').value.trim();
       if (txt) vals.push(txt);
     }
     return vals.join(', ');
@@ -1402,7 +1386,6 @@
     const notes     = document.getElementById('notes').value.trim();
     const source    = document.getElementById('source').value;
     const occasions = getCheckedVals('occasion');
-    const dietary   = getCheckedVals('dietary');
 
     if (!lastName||!firstName||!phone||!date||!time||!party) { alert('Please complete all required fields (marked *) before submitting.'); return; }
     if (dateBlocked) { alert('The selected date is unavailable. Please choose another date.'); return; }
@@ -1435,7 +1418,6 @@ Menu:       ${(getMenuOrder()||' ')}
 DETAILS
 -------
 Occasion:    ${occasions || ' '}
-Food Allergy:     ${dietary || ' '}
 Requests:    ${notes || ' '}
 Heard via:   ${source || ' '}
 
@@ -1477,9 +1459,9 @@ dashboard using the code above.
       date, time, party: party.replace(/[^0-9]/g,'') * 1 || 1,
       menu: (getMenuOrder()||' '),
       section: '', occasion: occasions || '',
-      dietary: dietary || '', notes, source,
+      dietary: '', notes, source,
       status: 'confirmed',
-      tags: dietary ? ['Allergy'] : [],
+      tags: [],
       created: fbId,
     };
     if (window._fbReady && window._fbWriteReservation) {

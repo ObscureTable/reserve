@@ -311,20 +311,6 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     <textarea id="occasionOtherText" placeholder="Please tell us about your occasion..." class="inp" rows="2"></textarea>
   </div>
 
-  <div class="sec-lbl" style="margin-top:6px">Food Allergies</div>
-  <div class="check-grid" style="margin-bottom:8px">
-    <label class="check-item"><input type="checkbox" name="dietary" value="Vegetarian"> <span>Vegetarian</span></label>
-    <label class="check-item"><input type="checkbox" name="dietary" value="Vegan"> <span>Vegan</span></label>
-    <label class="check-item"><input type="checkbox" name="dietary" value="Gluten-Free"> <span>Gluten-Free</span></label>
-    <label class="check-item"><input type="checkbox" name="dietary" value="Nut Allergy"> <span>Nut Allergy</span></label>
-    <label class="check-item"><input type="checkbox" name="dietary" value="Shellfish Allergy"> <span>Shellfish</span></label>
-    <label class="check-item"><input type="checkbox" name="dietary" value="Dairy-Free"> <span>Dairy-Free</span></label>
-    <label class="check-item"><input type="checkbox" name="dietary" value="Other" id="dietaryOtherCheck" onchange="toggleOtherReveal('dietaryOtherCheck','allergyOtherReveal')"> <span>Other</span></label>
-  </div>
-  <div class="others-reveal" id="allergyOtherReveal">
-    <input type="text" id="allergyOtherText" placeholder="Please describe your food allergies..." class="inp">
-  </div>
-
   <div style="margin-top:16px">
     <div class="fld"><label class="lbl">Special Requests</label><textarea class="inp" id="fNotes" placeholder="Seating preferences, celebrations, accessibility needs..." rows="3" style="height:80px"></textarea></div>
     <div class="fld"><label class="lbl">How did you hear about us?</label>
@@ -1182,9 +1168,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     const vals = checked.filter(el=>el.value!=='Other').map(el=>el.value);
     const otherCheck = checked.find(el=>el.value==='Other');
     if (otherCheck) {
-      const txt = name==='occasion'
-        ? document.getElementById('occasionOtherText').value.trim()
-        : document.getElementById('allergyOtherText').value.trim();
+      const txt = document.getElementById('occasionOtherText').value.trim();
       if (txt) vals.push(txt);
     }
     return vals.join(', ');
@@ -1406,7 +1390,6 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     var time  = document.getElementById('fTime').value;
     var party = document.getElementById('fParty').value;
     var occ   = getCheckedVals('occasion');
-    var diet  = getCheckedVals('dietary');
     var notes = document.getElementById('fNotes').value.trim();
     var src   = document.getElementById('fSource').value;
     var menu  = getMenuOrder();
@@ -1425,7 +1408,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     el.innerHTML =
       section('Guest', row('Name', ln + ', ' + fn) + row('Phone', ph) + row('Email', em || '-')) +
       section('Reservation', row('Date', dateStr) + row('Time', timeStr) + row('Party', party) + row('Menu', menu)) +
-      ((occ || diet || notes || src) ? section('Details', row('Occasion', occ) + row('Food Allergies', diet) + row('Notes', notes) + row('Heard via', src)) : '');
+      ((occ || notes || src) ? section('Details', row('Occasion', occ) + row('Notes', notes) + row('Heard via', src)) : '');
   }
 
   // -- Submit (mobile) --------------------------------------
@@ -1444,7 +1427,6 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     var notes     = document.getElementById('fNotes').value.trim();
     var source    = document.getElementById('fSource').value;
     var occasions = getCheckedVals('occasion');
-    var dietary   = getCheckedVals('dietary');
     var menuStr   = getMenuOrder();
     var code      = generateCode(lastName, date, time);
 
@@ -1470,7 +1452,6 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       'DETAILS',
       '-------',
       'Occasion:     ' + (occasions || '-'),
-      'Food Allergy: ' + (dietary || '-'),
       'Requests:     ' + (notes || '-'),
       'Heard via:    ' + (source || '-'),
       '',
@@ -1487,9 +1468,9 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       party: (party.replace(/[^0-9]/g,'') * 1) || 1,
       menu: menuStr || '',
       section: '', occasion: occasions || '',
-      dietary: dietary || '', notes: notes, source: source,
+      dietary: '', notes: notes, source: source,
       status: 'confirmed', payment: 'unpaid',
-      tags: dietary ? ['Allergy'] : [],
+      tags: [],
       created: fbId
     };
 
