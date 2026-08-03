@@ -907,6 +907,7 @@
     })();
     let estRevenue = 0;
     data.filter(r=>r.status==='completed').forEach(r => {
+      if (r.menuTotal) { estRevenue += Number(r.menuTotal) || 0; return; }
       if (r.menu && r.menu !== '—') {
         r.menu.split(',').forEach(entry => {
           const match = entry.match(/(.+)\s+x(\d+)/);
@@ -1031,10 +1032,10 @@
   // ── CSV Export ────────────────────────────────────────────
   function exportCSV() {
     const data = getFilteredByRange();
-    const headers = ['Booking Code','Last Name','First Name','Phone','Email','Date','Time','Party','Menu','Occasion','Dietary','Notes','Status','Created'];
+    const headers = ['Booking Code','Last Name','First Name','Phone','Email','Date','Time','Party','Menu','Booking Total','Occasion','Dietary','Notes','Status','Created'];
     const rows = data.map(r => [
       r.code||'', r.name||'', r.first||'', r.phone||'', r.email||'',
-      r.date||'', r.time||'', r.party||'', (r.menu||'').replace(/,/g,';'),
+      r.date||'', r.time||'', r.party||'', (r.menu||'').replace(/,/g,';'), r.menuTotal||'',
       r.occasion||'', r.dietary||'', (r.notes||'').replace(/,/g,';'),
       r.status||'', r.created?new Date(r.created).toLocaleDateString():'',
     ].map(v=>`"${v}"`).join(','));
@@ -1068,13 +1069,14 @@
       const pm=PAYMENT_META[r.payment||'unpaid']||PAYMENT_META.unpaid;
       const{hr,ampm}=fmtTime(r.time);
       const tagHtml=(r.tags||[]).map(t=>{const cls=t==='VIP'?'vip':t==='Allergy'?'allergy':t==='Dietary'?'dietary':'note';return`<span class="res-tag ${cls}">${t}</span>`;}).join('');
+      const emailSentTag=r.emailSent?'<span class="res-tag" style="color:#2a7a5a;border-color:rgba(42,122,90,0.35);background:rgba(42,122,90,0.08)">✉ Sent</span>':'';
       html+=`<div class="res-card" onclick="openDetail('${r.id}')">
         <div class="res-time-col"><div class="res-time">${hr}</div><div class="res-ampm">${ampm}</div><div class="res-dot" style="background:${sm.color}"></div></div>
         <div class="res-body">
           <div class="res-name">${r.name||''}, ${r.first||''}</div>
           <div class="res-meta"><span class="res-meta-item">${r.party||0}x</span>${r.section?`<span class="res-meta-item">· ${r.section}</span>`:''} ${r.occasion?`<span class="res-meta-item" style="font-style:italic">· ${r.occasion}</span>`:''}</div>
           <div style="margin-top:4px"><span style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:${pm.color};background:${pm.bg};border-radius:4px;padding:2px 7px;font-weight:700">${pm.label}</span></div>
-          ${tagHtml||r.notes?`<div class="res-tags">${tagHtml}${r.notes?'<span class="res-tag note">Note</span>':''}</div>`:''}
+          ${tagHtml||r.notes||r.emailSent?`<div class="res-tags">${tagHtml}${emailSentTag}${r.notes?'<span class="res-tag note">Note</span>':''}</div>`:''}
         </div>
         <div class="res-right"><div class="res-party">${r.party||0}✦</div><div class="res-status" style="color:${sm.color}">${sm.label}</div><div class="res-chevron">›</div></div>
       </div>`;
@@ -1136,8 +1138,17 @@
     const tagHtml=(r.tags||[]).map(t=>{const cls=t==='VIP'?'vip':t==='Allergy'?'allergy':t==='Dietary'?'dietary':'note';return`<span class="res-tag ${cls}" style="padding:4px 10px;font-size:11px">${t}</span>`;}).join('');
     const dateStr=new Date(r.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
     const pm=PAYMENT_META[r.payment||'unpaid']||PAYMENT_META.unpaid;
+    const emailSentStyle = r.emailSent
+      ? 'background:rgba(42,122,90,0.12);border:1.5px solid #2a7a5a;color:#2a7a5a;'
+      : 'background:rgba(42,90,154,0.08);border:1.5px solid #2a5a9a;color:#2a5a9a;';
+    const emailSentLabel = r.emailSent ? '✉ Email Sent to Guest' : '✉ Mark Email as Sent';
+    const emailSentNote = r.emailSent ? '<div style="font-family:\'Courier Prime\',monospace;font-size:9px;color:var(--muted);text-align:center;margin-top:-4px;margin-bottom:10px;letter-spacing:0.08em">Tap to undo</div>' : '';
     document.getElementById('detailBody').innerHTML=`
       <div style="margin-bottom:14px"><div class="action-grid">${actions.join('')}</div></div>
+      <div style="margin-bottom:8px">
+        <div onclick="toggleEmailSent('${id}')" style="${emailSentStyle}border-radius:12px;padding:14px;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;text-align:center;font-weight:700">${emailSentLabel}</div>
+      </div>
+      ${emailSentNote}
       <div style="margin-bottom:10px;display:flex;flex-direction:column;gap:8px">${paymentActions.join('')}</div>
       <div style="margin-bottom:14px"><div class="action-btn action-delete" style="width:100%;background:rgba(154,42,26,0.07);border:1.5px solid rgba(154,42,26,0.35);border-radius:12px;padding:14px;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;text-align:center;color:#9a2a1a;font-weight:700" onclick="deleteReservation('${id}')">🗑 Delete Reservation</div></div>
       <div class="detail-block">
@@ -1147,6 +1158,8 @@
         <div class="detail-row"><span class="detail-key">Time</span><span class="detail-val">${hr} ${ampm}</span></div>
         <div class="detail-row"><span class="detail-key">Party</span><span class="detail-val">${r.party} Guest${r.party>1?'s':''}</span></div>
         <div class="detail-row"><span class="detail-key">Menu</span><span class="detail-val">${r.menu||r.section||'—'}</span></div>
+        ${r.menuTotal?`<div class="detail-row"><span class="detail-key">Booking Total</span><span class="detail-val" style="color:var(--gold);font-weight:700;font-family:'Courier Prime',monospace">PHP ${Number(r.menuTotal).toLocaleString()}</span></div>
+        <div class="detail-row"><span class="detail-key">50% Deposit</span><span class="detail-val" style="font-family:'Courier Prime',monospace">PHP ${Math.round(Number(r.menuTotal)/2).toLocaleString()}</span></div>`:''}
         ${r.occasion?`<div class="detail-row"><span class="detail-key">Occasion</span><span class="detail-val">${r.occasion}</span></div>`:''}
       </div>
       <div class="detail-block">
@@ -1191,7 +1204,7 @@
       fmtDate(r.date),
       fmtTime(r.time),
       r.party ? `${r.party}` : '',
-      '',
+      r.menuTotal ? `${Math.round(Number(r.menuTotal)/2)}` : '',
     ].join('\t');
 
     navigator.clipboard.writeText(text).then(() => {
@@ -1216,6 +1229,16 @@
       closeDetail();
     }
     catch(e){toast('Update failed — check connection');}
+  }
+
+  async function toggleEmailSent(id){
+    const r=window.reservations.find(x=>String(x.id)===String(id));if(!r)return;
+    const newVal=!r.emailSent;
+    try{
+      await window._fbUpdate(id,{emailSent:newVal});
+      toast(newVal?'Email marked as sent ✓':'Email mark removed');
+      closeDetail();
+    }catch(e){toast('Update failed — check connection');}
   }
 
   function setPaymentFilter(f, el) {

@@ -918,15 +918,42 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     return { hasGrand, hasPlain, hasIndiv, grandItem, plainItem, indivItems };
   }
 
+  function priceOf(item) {
+    var n = parseFloat(String(item && item.price ? item.price : '').replace(/[^0-9.]/g, ''));
+    return isNaN(n) ? 0 : n;
+  }
+
+  function fmtPHP(n) {
+    return 'PHP ' + Number(n).toLocaleString('en-US');
+  }
+
+  function getMenuTotal() {
+    const items = loadMenuItems();
+    let total = 0;
+    Object.keys(menuOrder).forEach(function(id){
+      const qty = menuOrder[id] || 0;
+      const item = items.find(m=>String(m.id)===String(id));
+      if (item && qty > 0) total += priceOf(item) * qty;
+    });
+    return total;
+  }
+
+  function hasMenuChoice() {
+    const { hasGrand, hasPlain } = getConflict();
+    return !!(hasGrand || hasPlain);
+  }
+
   function isLocked(item) {
     const { hasGrand, hasPlain } = getConflict();
     const qty = menuOrder[item.id] || 0;
     if (qty > 0) return false;
     const isGrand = item.name === GRAND_MENU_NAME;
-    const isWhole = item.name === WHOLE_NAME;
-    // Grand Menu selected: lock everything except Whole Chicharonillo
-    if (hasGrand && !isGrand && !isWhole) return true;
-    // Plain Menu selected: lock Grand Menu only
+    const isIndiv = INDIVIDUAL_NAMES.includes(item.name);
+    // Chicharonillo add-ons only unlock alongside the smaller menu
+    if (isIndiv && !hasPlain) return true;
+    // Grand Menu selected: lock the smaller menu and every Chicharonillo add-on
+    if (hasGrand && !isGrand) return true;
+    // Smaller menu selected: lock the Grand Menu
     if (hasPlain && isGrand) return true;
     return false;
   }
@@ -972,28 +999,37 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     const current = menuOrder[id] || 0;
     const next = Math.max(0, current + delta);
     if (delta > 0) {
-      const { hasGrand, hasPlain, hasIndiv } = getConflict();
+      const { hasGrand, hasPlain } = getConflict();
       const isGrand = item.name === GRAND_MENU_NAME;
-      const isPlain = item.name === PLAIN_MENU_NAME;
       const isIndiv = INDIVIDUAL_NAMES.includes(item.name);
-      if (isGrand && (hasPlain || hasIndiv)) {
-        alert('Please remove other selections first before choosing the Grand Menu.');
+      // Grand Menu blocks the smaller menu and every Chicharonillo add-on
+      if (hasGrand && !isGrand) {
+        alert('The Grand Menu already includes the Chicharonillo. Please remove the Grand Menu first.');
         return;
       }
-      if (hasGrand && !isGrand && item.name !== WHOLE_NAME) {
-        alert('Please remove the Grand Menu first before adding other items.');
-        return;
-      }
-      if (isPlain && hasIndiv) {
-        alert('Please remove individual Chicharonillo items first before adding the set menu.');
-        return;
-      }
+      // Smaller menu blocks the Grand Menu
       if (isGrand && hasPlain) {
-        alert('Please remove the set menu first before adding the Grand Menu.');
+        alert('Please remove the Obscure Table Menu first before choosing the Grand Menu.');
+        return;
+      }
+      // Chicharonillo add-ons cannot be ordered on their own
+      if (isIndiv && !hasPlain) {
+        alert('Chicharonillo (whole / half / quarter) can only be added together with the Obscure Table Menu without the Chicharonillo. Please select that menu first.');
         return;
       }
     }
-    if (next === 0) delete menuOrder[id]; else menuOrder[id] = next;
+    if (next === 0) {
+      delete menuOrder[id];
+      // Removing the smaller menu also clears any Chicharonillo add-ons
+      if (item.name === PLAIN_MENU_NAME) {
+        const all = loadMenuItems();
+        all.forEach(function(m){
+          if (INDIVIDUAL_NAMES.includes(m.name)) delete menuOrder[m.id];
+        });
+      }
+    } else {
+      menuOrder[id] = next;
+    }
     renderMenuGrid();
   }
 
@@ -1008,11 +1044,16 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     summaryItems.innerHTML = selected.map(([id,qty]) => {
       const item = items.find(m=>String(m.id)===String(id));
       if (!item) return '';
+      const lineTotal = priceOf(item) * qty;
       return `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:8px 0;border-bottom:1px solid rgba(110,78,22,0.1)">
-        <span style="font-size:16px;color:var(--ink)">${item.icon} ${item.name}</span>
-        <span style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--gold);font-weight:700;margin-left:16px"> ${qty}</span>
+        <span style="font-size:16px;color:var(--ink)">${item.icon} ${item.name} <span style="font-family:'Courier Prime',monospace;font-size:12px;color:var(--muted)">x${qty}</span></span>
+        <span style="font-family:'Courier Prime',monospace;font-size:13px;color:var(--gold);font-weight:700;margin-left:16px">${fmtPHP(lineTotal)}</span>
       </div>`;
-    }).join('');
+    }).join('') +
+      `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:12px 0 2px">
+        <span style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:var(--gold);font-weight:700">Estimated Total</span>
+        <span style="font-family:'Courier Prime',monospace;font-size:16px;color:var(--gold);font-weight:700;margin-left:16px">${fmtPHP(getMenuTotal())}</span>
+      </div>`;
   }
 
   function getMenuOrder() {
@@ -1357,8 +1398,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       if (!party) { toast('Please select party size'); return false; }
     }
     if (n === 3) {
-      var hasMenu = Object.values(menuOrder).some(function(q){ return q > 0; });
-      if (!hasMenu) { toast('Please select at least one menu item'); return false; }
+      if (!hasMenuChoice()) { toast('Please choose a menu before continuing'); return false; }
     }
     return true;
   }
@@ -1428,6 +1468,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     var source    = document.getElementById('fSource').value;
     var occasions = getCheckedVals('occasion');
     var menuStr   = getMenuOrder();
+    var menuTotal = getMenuTotal();
     var code      = generateCode(lastName, date, time);
 
     var message = [
@@ -1448,6 +1489,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       'Time:       ' + (time ? fmt12(time) : '-'),
       'Party Size: ' + party,
       'Menu:       ' + (menuStr || '-'),
+      'Est. Total: ' + fmtPHP(menuTotal),
       '',
       'DETAILS',
       '-------',
@@ -1466,7 +1508,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       name: lastName, first: firstName, phone: phone, email: email,
       date: date, time: time,
       party: (party.replace(/[^0-9]/g,'') * 1) || 1,
-      menu: menuStr || '',
+      menu: menuStr || '', menuTotal: menuTotal,
       section: '', occasion: occasions || '',
       dietary: '', notes: notes, source: source,
       status: 'confirmed', payment: 'unpaid',

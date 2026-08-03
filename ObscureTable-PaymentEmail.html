@@ -269,7 +269,8 @@
       document.getElementById('f_date').value  = parts[2] || '';
       document.getElementById('f_time').value  = parts[3] || '';
       document.getElementById('f_party').value = parts[4] || '';
-      document.getElementById('f_amount').value = '';
+      // FOH sends the 50% deposit as the 6th field
+      document.getElementById('f_amount').value = parts[5] || '';
 
       // Auto-detect type from code prefix
       if((parts[1]||'').startsWith('OTC-')) setType('chicharonillo');
