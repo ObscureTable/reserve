@@ -52,7 +52,8 @@
     <div class="field-wrap"><label id="lbl_date">Reservation Date</label><input id="f_date" type="text" placeholder="e.g. Friday, May 23, 2025" oninput="update()"></div>
     <div class="field-wrap"><label>Time</label><input id="f_time" type="text" placeholder="e.g. 7:00 PM" oninput="update()"></div>
     <div class="field-wrap"><label id="lbl_party">Party Size</label><input id="f_party" type="number" min="1" placeholder="e.g. 4" oninput="update()"></div>
-    <div class="field-wrap"><label>Down Payment (PHP)</label><input id="f_amount" type="number" placeholder="e.g. 17000" oninput="update()"></div>
+    <div class="field-wrap"><label>Booking Total (PHP)</label><input id="f_total" type="number" placeholder="e.g. 34000" oninput="autoCompute()"></div>
+    <div class="field-wrap"><label>Downpayment (PHP) &mdash; auto 50%</label><input id="f_amount" type="number" placeholder="auto-computed" oninput="update()"></div>
   </div>
   <div class="btn-row">
     <button class="btn" onclick="copyEmail()">⎘ Copy Email to Clipboard</button>
@@ -89,8 +90,8 @@
     <tr>
       <td style="padding:24px 40px 0;">
         <p style="font-size:17px;color:#1a1208;line-height:1.7;margin:0 0 12px;">Dear <strong id="p_name">—</strong>,</p>
-        <p id="p_intro_reservation" style="font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your reservation inquiry at Obscure Table. To secure your booking, kindly settle the <strong style="color:#8a6020;">50% down payment</strong> on or before <strong style="color:#8a6020;" id="p_deadline">3 days prior to your booking date</strong> at your earliest convenience to confirm your booking.</p>
-        <p id="p_intro_chicharonillo" style="display:none;font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your Chicharonillo pickup order. To confirm your order, kindly settle the <strong style="color:#b84a08;">50% down payment</strong> at your earliest convenience.</p>
+        <p id="p_intro_reservation" style="font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your reservation inquiry at Obscure Table. To secure your booking, kindly settle the <strong style="color:#8a6020;">50% downpayment</strong> on or before <strong style="color:#8a6020;" id="p_deadline">3 days prior to your booking date</strong> at your earliest convenience to confirm your booking.</p>
+        <p id="p_intro_chicharonillo" style="display:none;font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your Chicharonillo pickup order. To confirm your order, kindly settle the <strong style="color:#b84a08;">50% downpayment</strong> at your earliest convenience.</p>
       </td>
     </tr>
 
@@ -118,7 +119,7 @@
             <td style="padding:11px 18px;font-size:16px;color:#1a1208;text-align:right;" id="p_party">—</td>
           </tr>
           <tr>
-            <td style="padding:11px 18px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#7a6040;">Down Payment Due</td>
+            <td style="padding:11px 18px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#7a6040;">Downpayment Due</td>
             <td style="padding:11px 18px;font-size:17px;color:#8a6020;font-weight:bold;text-align:right;" id="p_amount">—</td>
           </tr>
         </table>
@@ -168,8 +169,8 @@
         <table width="100%" style="background:rgba(154,42,26,0.05);border:1px solid rgba(154,42,26,0.2);">
           <tr><td style="padding:14px 18px;">
             <div style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#9a2a1a;font-weight:700;margin-bottom:8px;">⚠ Important</div>
-            <p id="p_policy_confirm" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your reservation is only confirmed upon receipt of the down payment. The remaining 50% balance is due on the day of your visit.</p>
-            <p id="p_policy_confirm_chicha" style="display:none;font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your order is only confirmed upon receipt of the down payment. The remaining 50% balance is due upon pickup.</p>
+            <p id="p_policy_confirm" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your reservation is only confirmed upon receipt of the downpayment. The remaining 50% balance is due on the day of your visit.</p>
+            <p id="p_policy_confirm_chicha" style="display:none;font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your order is only confirmed upon receipt of the downpayment. The remaining 50% balance is due upon pickup.</p>
             <p style="font-size:14px;color:#5a4828;line-height:1.7;margin:0;font-style:italic;">Cancellations made <strong style="font-style:normal;color:#9a2a1a;">less than 48 hours</strong> before your reservation are non-refundable.</p>
           </td></tr>
         </table>
@@ -270,6 +271,19 @@
     }
   }
 
+  // Booking Total -> 50% downpayment
+  function autoCompute() {
+    const totalEl = document.getElementById('f_total');
+    const amtEl   = document.getElementById('f_amount');
+    const total   = parseFloat(totalEl.value);
+    if (!isNaN(total) && total > 0) {
+      amtEl.value = Math.round(total / 2);
+    } else {
+      amtEl.value = '';
+    }
+    update();
+  }
+
   // Auto-fill from FOH dashboard paste
   function handlePaste(e) {
     const text = (e.clipboardData || window.clipboardData).getData('text');
@@ -281,8 +295,9 @@
       document.getElementById('f_date').value  = parts[2] || '';
       document.getElementById('f_time').value  = parts[3] || '';
       document.getElementById('f_party').value = parts[4] || '';
-      // FOH sends the 50% deposit as the 6th field
-      document.getElementById('f_amount').value = parts[5] || '';
+      // FOH sends the booking total as the 6th field; downpayment auto-computes
+      document.getElementById('f_total').value = parts[5] || '';
+      autoCompute();
 
       // Auto-detect type from code prefix
       if((parts[1]||'').startsWith('OTC-')) setType('chicharonillo');
@@ -296,7 +311,7 @@
   }
 
   function clearAll() {
-    ['f_name','f_code','f_date','f_time','f_party','f_amount'].forEach(id=>document.getElementById(id).value='');
+    ['f_name','f_code','f_date','f_time','f_party','f_total','f_amount'].forEach(id=>document.getElementById(id).value='');
     update();
   }
 

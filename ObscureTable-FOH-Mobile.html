@@ -646,7 +646,7 @@
       </div>
       <div style="background:#f0e8d8;border:1.5px solid rgba(180,74,8,0.18);border-radius:12px;overflow:hidden;margin-bottom:12px">
         <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#b84a08;padding:10px 16px;border-bottom:1px solid rgba(180,74,8,0.12);background:rgba(180,74,8,0.06);font-weight:700">Contact & Pickup</div>
-        ${[['Status',`<span style="color:${sm.color};font-weight:700">${sm.label}</span>`],['Payment',`<span style="color:${pm.color};font-weight:700">${pm.label}</span>`],['Pickup Date',fmtDate(o.date)],['Pickup Time',fmtTime(o.time)],['Phone',`<a href="tel:${o.phone}" style="color:#c85a10;text-decoration:none;font-weight:700">${o.phone||'—'}</a>`],['Email',o.email||'—'],['Down Payment',`PHP ${(o.downPayment||0).toLocaleString()}`],['Balance',`PHP ${((o.total||0)-(o.downPayment||0)).toLocaleString()}`],['Notes',o.notes||'—']].map(([k,v])=>`
+        ${[['Status',`<span style="color:${sm.color};font-weight:700">${sm.label}</span>`],['Payment',`<span style="color:${pm.color};font-weight:700">${pm.label}</span>`],['Pickup Date',fmtDate(o.date)],['Pickup Time',fmtTime(o.time)],['Phone',`<a href="tel:${o.phone}" style="color:#c85a10;text-decoration:none;font-weight:700">${o.phone||'—'}</a>`],['Email',o.email||'—'],['Downpayment',`PHP ${(o.downPayment||0).toLocaleString()}`],['Balance',`PHP ${((o.total||0)-(o.downPayment||0)).toLocaleString()}`],['Notes',o.notes||'—']].map(([k,v])=>`
           <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid rgba(200,90,16,0.07)">
             <span style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#b08050">${k}</span>
             <span style="font-size:15px;color:#1a0e04;text-align:right;max-width:60%">${v}</span>
@@ -1204,7 +1204,7 @@
       fmtDate(r.date),
       fmtTime(r.time),
       r.party ? `${r.party}` : '',
-      r.menuTotal ? `${Math.round(Number(r.menuTotal)/2)}` : '',
+      r.menuTotal ? `${Number(r.menuTotal)}` : '',
     ].join('\t');
 
     navigator.clipboard.writeText(text).then(() => {

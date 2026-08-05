@@ -220,7 +220,7 @@ select.inp{cursor:pointer;background:#fff;}
         <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)">Total</div>
         <div style="font-family:'Courier Prime',monospace;font-size:17px;color:var(--gold);font-weight:700" id="oTV">PHP 0</div>
       </div>
-      <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--mu);margin-top:8px;font-style:italic">50% down payment required to confirm order</div>
+      <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--mu);margin-top:8px;font-style:italic">50% downpayment required to confirm order</div>
     </div>
   </div>
 </div>
@@ -229,7 +229,7 @@ select.inp{cursor:pointer;background:#fff;}
 <div class="stp" id="stp4">
   <div class="si"><div class="sit">Review</div><div class="sis">Confirm your order</div></div>
   <div id="rC"></div>
-  <div class="pol">A <strong style="color:var(--gold);font-style:normal">50% down payment</strong> is required to confirm your pickup order. Cancellations less than <strong style="color:#9a2a1a;font-style:normal">48 hours</strong> before pickup are non-refundable.</div>
+  <div class="pol">A <strong style="color:var(--gold);font-style:normal">50% downpayment</strong> is required to confirm your pickup order. Cancellations less than <strong style="color:#9a2a1a;font-style:normal">48 hours</strong> before pickup are non-refundable.</div>
 </div>
 
 <!-- Success -->
@@ -244,7 +244,7 @@ select.inp{cursor:pointer;background:#fff;}
   </div>
   <div class="scs-imp">
     <div class="scs-it">Important</div>
-    <div class="scs-ib">Please screenshot this screen and save your order code. Your order is only confirmed once the 50% down payment has been settled. Our team will be in touch with payment details.</div>
+    <div class="scs-ib">Please screenshot this screen and save your order code. Your order is only confirmed once the 50% downpayment has been settled. Our team will be in touch with payment details.</div>
   </div>
   <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--gold);letter-spacing:.12em;margin-top:12px">@chicharonillo</div>
 </div>
@@ -570,10 +570,10 @@ function submitOrder(){
   var down=Math.ceil(total/2);
   var orderLines=ITEMS.filter(function(m){return oQty[m.id]>0;}).map(function(m){return m.name+' x'+oQty[m.id]+' ('+m.priceLabel+')';}).join(', ');
   var fbData={code:code,lastName:ln,firstName:fn,phone:ph,email:em,date:dpVal,time:selTime,items:oQty,orderText:orderLines,total:total,downPayment:down,status:'pending',payment:'unpaid',created:Date.now()};
-  var msg='OT CHICHARONILLO PICKUP ORDER\n==============================\nOrder Code: '+code+'\n\nCUSTOMER\nName: '+ln+', '+fn+'\nPhone: '+ph+'\nEmail: '+(em||'-')+'\n\nPICKUP\nDate: '+fmtD(dpVal)+'\nTime: '+fmtT(selTime)+'\n\nORDER\n'+orderLines+'\n\nTotal: PHP '+total.toLocaleString()+'\nDown Payment (50%): PHP '+down.toLocaleString()+'\n==============================';
+  var msg='OT CHICHARONILLO PICKUP ORDER\n==============================\nOrder Code: '+code+'\n\nCUSTOMER\nName: '+ln+', '+fn+'\nPhone: '+ph+'\nEmail: '+(em||'-')+'\n\nPICKUP\nDate: '+fmtD(dpVal)+'\nTime: '+fmtT(selTime)+'\n\nORDER\n'+orderLines+'\n\nTotal: PHP '+total.toLocaleString()+'\nDownpayment (50%): PHP '+down.toLocaleString()+'\n==============================';
   if(window._fbReady&&window._fbWriteOrder){window._fbWriteOrder(fbData.created,fbData).catch(function(){});}
   else{window._fbQ=window._fbQ||[];window._fbQ.push([fbData.created,fbData]);}
-  emailjs.send('service_xo8aoro','template_yfe626s',{to_email:'obscuretableph@gmail.com',message:msg}).then(function(){showSuccess(code,fn);}).catch(function(){showSuccess(code,fn);}).finally?emailjs.send:'';
+  emailjs.send('service_51rt6nq','template_yfe626s',{to_email:'reservation.obscuretableph@outlook.com',message:msg}).then(function(){showSuccess(code,fn);}).catch(function(){showSuccess(code,fn);}).finally?emailjs.send:'';
   function showSuccess(code,fn){document.querySelectorAll('.stp').forEach(function(p){p.classList.remove('on');});document.getElementById('fBot').style.display='none';document.getElementById('scsN').textContent=fn;document.getElementById('scsC').textContent=code;document.getElementById('scs').style.display='block';window.scrollTo({top:0});}
   setTimeout(function(){showSuccess(code,fn);},2000);
 }
