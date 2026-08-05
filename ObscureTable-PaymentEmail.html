@@ -295,9 +295,16 @@
       document.getElementById('f_date').value  = parts[2] || '';
       document.getElementById('f_time').value  = parts[3] || '';
       document.getElementById('f_party').value = parts[4] || '';
-      // FOH sends the booking total as the 6th field; downpayment auto-computes
+      // FOH sends the booking total (field 6) and the exact downpayment (field 7).
+      // The downpayment is pasted verbatim - never re-divided here.
       document.getElementById('f_total').value = parts[5] || '';
-      autoCompute();
+      if (parts.length >= 7 && parts[6]) {
+        document.getElementById('f_amount').value = parts[6];
+      } else if (parts[5]) {
+        document.getElementById('f_amount').value = Math.round(parseFloat(parts[5]) / 2) || '';
+      } else {
+        document.getElementById('f_amount').value = '';
+      }
 
       // Auto-detect type from code prefix
       if((parts[1]||'').startsWith('OTC-')) setType('chicharonillo');

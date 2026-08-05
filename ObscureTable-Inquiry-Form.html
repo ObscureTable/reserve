@@ -1453,6 +1453,7 @@ Time:       ${fmtTimeDesk(time)}
 Party Size: ${party}
 Menu:       ${(getMenuOrder()||' ')}
 Est. Total: ${fmtPHP(getMenuTotal())}
+50% Downpayment: ${fmtPHP(Math.round(getMenuTotal()/2))}
 
 DETAILS
 -------
@@ -1496,7 +1497,7 @@ dashboard using the code above.
       id: fbId, code,
       name: lastName, first: firstName, phone, email,
       date, time, party: party.replace(/[^0-9]/g,'') * 1 || 1,
-      menu: (getMenuOrder()||' '), menuTotal: getMenuTotal(),
+      menu: (getMenuOrder()||' '), menuTotal: getMenuTotal(), menuDeposit: Math.round(getMenuTotal()/2),
       section: '', occasion: occasions || '',
       dietary: '', notes, source,
       status: 'confirmed',

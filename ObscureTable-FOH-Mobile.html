@@ -1159,7 +1159,7 @@
         <div class="detail-row"><span class="detail-key">Party</span><span class="detail-val">${r.party} Guest${r.party>1?'s':''}</span></div>
         <div class="detail-row"><span class="detail-key">Menu</span><span class="detail-val">${r.menu||r.section||'—'}</span></div>
         ${r.menuTotal?`<div class="detail-row"><span class="detail-key">Booking Total</span><span class="detail-val" style="color:var(--gold);font-weight:700;font-family:'Courier Prime',monospace">PHP ${Number(r.menuTotal).toLocaleString()}</span></div>
-        <div class="detail-row"><span class="detail-key">50% Deposit</span><span class="detail-val" style="font-family:'Courier Prime',monospace">PHP ${Math.round(Number(r.menuTotal)/2).toLocaleString()}</span></div>`:''}
+        <div class="detail-row"><span class="detail-key">50% Downpayment</span><span class="detail-val" style="font-family:'Courier Prime',monospace">PHP ${Number(r.menuDeposit || Math.round(Number(r.menuTotal)/2)).toLocaleString()}</span></div>`:''}
         ${r.occasion?`<div class="detail-row"><span class="detail-key">Occasion</span><span class="detail-val">${r.occasion}</span></div>`:''}
       </div>
       <div class="detail-block">
@@ -1205,6 +1205,7 @@
       fmtTime(r.time),
       r.party ? `${r.party}` : '',
       r.menuTotal ? `${Number(r.menuTotal)}` : '',
+      r.menuDeposit ? `${Number(r.menuDeposit)}` : (r.menuTotal ? `${Math.round(Number(r.menuTotal)/2)}` : ''),
     ].join('\t');
 
     navigator.clipboard.writeText(text).then(() => {

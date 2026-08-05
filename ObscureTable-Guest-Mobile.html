@@ -1469,6 +1469,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     var occasions = getCheckedVals('occasion');
     var menuStr   = getMenuOrder();
     var menuTotal = getMenuTotal();
+    var menuDeposit = Math.round(menuTotal / 2);
     var code      = generateCode(lastName, date, time);
 
     var message = [
@@ -1490,6 +1491,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       'Party Size: ' + party,
       'Menu:       ' + (menuStr || '-'),
       'Est. Total: ' + fmtPHP(menuTotal),
+      '50% Downpayment: ' + fmtPHP(menuDeposit),
       '',
       'DETAILS',
       '-------',
@@ -1508,7 +1510,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       name: lastName, first: firstName, phone: phone, email: email,
       date: date, time: time,
       party: (party.replace(/[^0-9]/g,'') * 1) || 1,
-      menu: menuStr || '', menuTotal: menuTotal,
+      menu: menuStr || '', menuTotal: menuTotal, menuDeposit: menuDeposit,
       section: '', occasion: occasions || '',
       dietary: '', notes: notes, source: source,
       status: 'confirmed', payment: 'unpaid',
