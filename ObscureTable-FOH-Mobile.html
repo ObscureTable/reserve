@@ -1032,11 +1032,11 @@
   // ── CSV Export ────────────────────────────────────────────
   function exportCSV() {
     const data = getFilteredByRange();
-    const headers = ['Booking Code','Last Name','First Name','Phone','Email','Date','Time','Party','Menu','Booking Total','Occasion','Dietary','Notes','Status','Created'];
+    const headers = ['Booking Code','Last Name','First Name','Phone','Email','Date','Time','Party','Menu','Booking Total','Occasion','Dietary','Notes','Reservation Notes','Status','Created'];
     const rows = data.map(r => [
       r.code||'', r.name||'', r.first||'', r.phone||'', r.email||'',
       r.date||'', r.time||'', r.party||'', (r.menu||'').replace(/,/g,';'), r.menuTotal||'',
-      r.occasion||'', r.dietary||'', (r.notes||'').replace(/,/g,';'),
+      r.occasion||'', r.dietary||'', (r.notes||'').replace(/,/g,';'), (r.staffNotes||'').replace(/,/g,';').replace(/"/g,"'"),
       r.status||'', r.created?new Date(r.created).toLocaleDateString():'',
     ].map(v=>`"${v}"`).join(','));
 
@@ -1058,7 +1058,7 @@
       if(currentView==='today'&&r.date!==todayStr())return false;
       if(currentFilter!=='all'&&r.status!==currentFilter)return false;
       if(currentPaymentFilter!=='all'&&(r.payment||'unpaid')!==currentPaymentFilter)return false;
-      if(q&&!`${r.name||''} ${r.first||''} ${r.code||''} ${r.phone||''}`.toLowerCase().includes(q))return false;
+      if(q&&!`${r.name||''} ${r.first||''} ${r.code||''} ${r.phone||''} ${r.staffNotes||''}`.toLowerCase().includes(q))return false;
       return true;
     }).sort((a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
     if(!data.length){list.innerHTML=`<div class="list-empty"><span>✦</span><span>No reservations found</span></div>`;updateStats();return;}
@@ -1076,7 +1076,7 @@
           <div class="res-name">${r.name||''}, ${r.first||''}</div>
           <div class="res-meta"><span class="res-meta-item">${r.party||0}x</span>${r.section?`<span class="res-meta-item">· ${r.section}</span>`:''} ${r.occasion?`<span class="res-meta-item" style="font-style:italic">· ${r.occasion}</span>`:''}</div>
           <div style="margin-top:4px"><span style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:${pm.color};background:${pm.bg};border-radius:4px;padding:2px 7px;font-weight:700">${pm.label}</span></div>
-          ${tagHtml||r.notes||r.emailSent?`<div class="res-tags">${tagHtml}${emailSentTag}${r.notes?'<span class="res-tag note">Note</span>':''}</div>`:''}
+          ${tagHtml||r.notes||r.emailSent||r.staffNotes?`<div class="res-tags">${tagHtml}${emailSentTag}${r.notes?'<span class="res-tag note">Note</span>':''}${r.staffNotes?'<span class="res-tag" style="color:#6a3a9a;border-color:rgba(106,58,154,0.35);background:rgba(106,58,154,0.07)">✎ Res Note</span>':''}</div>`:''}
         </div>
         <div class="res-right"><div class="res-party">${r.party||0}✦</div><div class="res-status" style="color:${sm.color}">${sm.label}</div><div class="res-chevron">›</div></div>
       </div>`;
@@ -1167,11 +1167,32 @@
         ${r.email?`<div class="detail-row"><span class="detail-key">Email</span><span class="detail-val" style="font-size:14px">${r.email}</span></div>`:''}
       </div>
       ${r.dietary?`<div class="detail-block"><div class="detail-row"><span class="detail-key">Dietary</span><span class="detail-val">${r.dietary}</span></div></div>`:''}
-      ${r.notes?`<div class="notes-block">"${r.notes}"</div>`:''}
+      ${r.notes?`<div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:6px">Guest's Note</div><div class="notes-block">"${r.notes}"</div>`:''}
+
+      <!-- Reservation team annotation -->
+      <div style="margin-bottom:16px">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px">Reservation Notes <span style="color:var(--muted);font-size:9px;letter-spacing:0.08em">(internal &mdash; not seen by guest)</span></div>
+        <textarea id="staffNoteInput" placeholder="Add notes about this booking &mdash; special requests, call history, table preference, follow-ups&hellip;" style="width:100%;background:#fff;border:1.5px solid var(--border);border-radius:12px;color:var(--ink);padding:14px 16px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none;resize:none;height:104px;line-height:1.6;box-sizing:border-box">${(r.staffNotes||'').replace(/</g,'&lt;')}</textarea>
+        <button onclick="saveStaffNote('${id}')" style="width:100%;background:var(--gold-btn);border:none;border-radius:12px;color:#fff;padding:14px;font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;cursor:pointer;margin-top:8px;box-shadow:0 4px 16px rgba(139,100,40,0.25)">Save Reservation Note</button>
+        ${r.staffNoteBy?`<div style="font-family:'Courier Prime',monospace;font-size:9px;color:var(--muted);text-align:center;margin-top:8px;letter-spacing:0.08em">Last updated ${r.staffNoteBy}</div>`:''}
+      </div>
+
       ${tagHtml?`<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px">${tagHtml}</div>`:''}
       <div style="text-align:center;margin-top:8px"><span style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--muted)">Created ${new Date(r.created||Date.now()).toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'})}</span></div>`;
     document.getElementById('detailOverlay').classList.add('open');
     document.getElementById('detailSheet').classList.add('open');
+  }
+
+  async function saveStaffNote(id){
+    const el = document.getElementById('staffNoteInput');
+    if (!el) return;
+    const text = el.value.trim();
+    const stamp = text ? new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}) : '';
+    try{
+      await window._fbUpdate(id,{staffNotes:text, staffNoteBy:stamp});
+      toast(text?'Reservation note saved ✓':'Reservation note cleared');
+      closeDetail();
+    }catch(e){toast('Save failed — check connection');}
   }
 
   function closeDetail(){document.getElementById('detailOverlay').classList.remove('open');document.getElementById('detailSheet').classList.remove('open');}
