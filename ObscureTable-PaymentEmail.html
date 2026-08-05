@@ -89,7 +89,7 @@
     <tr>
       <td style="padding:24px 40px 0;">
         <p style="font-size:17px;color:#1a1208;line-height:1.7;margin:0 0 12px;">Dear <strong id="p_name">—</strong>,</p>
-        <p id="p_intro_reservation" style="font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your reservation inquiry at Obscure Table. To secure your booking, kindly settle the <strong style="color:#8a6020;">50% down payment</strong> at your earliest convenience.</p>
+        <p id="p_intro_reservation" style="font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your reservation inquiry at Obscure Table. To secure your booking, kindly settle the <strong style="color:#8a6020;">50% down payment</strong> on or before <strong style="color:#8a6020;" id="p_deadline">3 days prior to your booking date</strong> at your earliest convenience to confirm your booking.</p>
         <p id="p_intro_chicharonillo" style="display:none;font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your Chicharonillo pickup order. To confirm your order, kindly settle the <strong style="color:#b84a08;">50% down payment</strong> at your earliest convenience.</p>
       </td>
     </tr>
@@ -256,6 +256,18 @@
     document.getElementById('p_time').textContent   = time;
     document.getElementById('p_party').textContent  = party ? (currentType==='reservation' ? party + ' Guest' + (party>1?'s':'') : party) : '—';
     document.getElementById('p_amount').textContent = fmtAmount(amount);
+
+    // Payment deadline: 3 days before the booking date
+    const dl = document.getElementById('p_deadline');
+    if (dl) {
+      const parsed = (date && date !== '—') ? new Date(date) : null;
+      if (parsed && !isNaN(parsed.getTime())) {
+        parsed.setDate(parsed.getDate() - 3);
+        dl.textContent = parsed.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+      } else {
+        dl.textContent = '3 days prior to your booking date';
+      }
+    }
   }
 
   // Auto-fill from FOH dashboard paste
