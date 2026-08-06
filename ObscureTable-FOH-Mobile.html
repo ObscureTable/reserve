@@ -259,6 +259,7 @@
   <!-- Pills -->
   <div class="filter-pills">
     <div class="pill active" onclick="setFilter('all',this)">All</div>
+    <div class="pill" style="border-color:rgba(154,90,24,0.35);color:#9a5a18" onclick="setFilter('pending',this)">⏳ Pending</div>
     <div class="pill" onclick="setFilter('confirmed',this)">Confirmed</div>
     <div class="pill" onclick="setFilter('seated',this)">Seated</div>
     <div class="pill" onclick="setFilter('waitlist',this)">Waitlist</div>
@@ -442,7 +443,7 @@
     </div>
     <div class="field-group"><label class="field-label">Section</label><select class="field-input" id="fSection"><option value="">No preference</option><option>Main Dining</option><option>Chef's Counter</option><option>Cellar Room</option><option>Terrace</option><option>Bar Lounge</option></select></div>
     <div class="field-group"><label class="field-label">Occasion</label><select class="field-input" id="fOccasion"><option value="">—</option><option>Anniversary</option><option>Birthday</option><option>Business Dinner</option><option>Date Night</option><option>Celebration</option><option>Tasting Menu</option></select></div>
-    <div class="field-group"><label class="field-label">Status</label><select class="field-input" id="fStatus"><option value="confirmed">Confirmed</option><option value="waitlist">Waitlist</option><option value="seated">Seated</option></select></div>
+    <div class="field-group"><label class="field-label">Status</label><select class="field-input" id="fStatus"><option value="pending">Pending</option><option value="confirmed">Confirmed</option><option value="waitlist">Waitlist</option><option value="seated">Seated</option></select></div>
     <div class="field-group"><label class="field-label">Tags</label><div class="tag-grid"><div class="tag-toggle" data-tag="VIP" onclick="toggleTag(this)">VIP</div><div class="tag-toggle" data-tag="Allergy" onclick="toggleTag(this)">Allergy</div><div class="tag-toggle" data-tag="Dietary" onclick="toggleTag(this)">Dietary</div><div class="tag-toggle" data-tag="Regular" onclick="toggleTag(this)">Regular</div><div class="tag-toggle" data-tag="First Visit" onclick="toggleTag(this)">First Visit</div></div></div>
     <div class="field-group"><label class="field-label">Notes</label><textarea class="field-input" id="fNotes" placeholder="Dietary needs, seating preferences, requests…"></textarea></div>
     <div id="editCodeWrap" style="display:none"><label class="field-label">Booking Code</label><div class="code-display"><div class="code-display-val" id="editCodeVal">—</div><button class="copy-btn" onclick="copyCode()">Copy</button></div></div>
@@ -470,6 +471,7 @@
 <script>
   const todayStr=()=>new Date().toISOString().split('T')[0];
   const STATUS_META={
+    pending:     {label:'Pending',      color:'#9a5a18'},
     confirmed:   {label:'Confirmed',    color:'#8b6428'},
     seated:      {label:'Seated',       color:'#2a7a5a'},
     completed:   {label:'Completed',    color:'#5a4828'},
@@ -803,7 +805,7 @@
     const tagHtml = tags.map(t=>{const cls=t==='VIP'?'vip':t==='Allergy'?'allergy':t==='Dietary'?'dietary':'note';return`<span class="res-tag ${cls}" style="padding:4px 10px;font-size:11px">${t}</span>`;}).join('');
 
     const bookingsHtml = [...g.bookings].sort((a,b)=>b.date.localeCompare(a.date)).map(r=>{
-      const sm = STATUS_META[r.status]||STATUS_META.confirmed;
+      const sm = STATUS_META[r.status]||STATUS_META.pending;
       const pm = PAYMENT_META[r.payment||'unpaid']||PAYMENT_META.unpaid;
       return `<div style="background:#fff;border:1.5px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:8px">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
@@ -1065,7 +1067,7 @@
     let html='<div class="list-inner">',lastDate='';
     data.forEach(r=>{
       if(currentView==='all'&&r.date!==lastDate){const d=new Date(r.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});html+=`<div class="list-section-head">${d}</div>`;lastDate=r.date;}
-      const sm=STATUS_META[r.status]||STATUS_META.confirmed;
+      const sm=STATUS_META[r.status]||STATUS_META.pending;
       const pm=PAYMENT_META[r.payment||'unpaid']||PAYMENT_META.unpaid;
       const{hr,ampm}=fmtTime(r.time);
       const tagHtml=(r.tags||[]).map(t=>{const cls=t==='VIP'?'vip':t==='Allergy'?'allergy':t==='Dietary'?'dietary':'note';return`<span class="res-tag ${cls}">${t}</span>`;}).join('');
@@ -1086,7 +1088,7 @@
     updateStats();
   };
 
-  function openAddSheet(){editingId=null;partySize=2;document.getElementById('addSheetTitle').textContent='New Booking';['fLastName','fFirstName','fPhone','fEmail','fNotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('fDate').value=todayStr();document.getElementById('fTime').value='19:00';document.getElementById('fSection').value='';document.getElementById('fOccasion').value='';document.getElementById('fStatus').value='confirmed';document.getElementById('partyVal').textContent=2;document.getElementById('editCodeWrap').style.display='none';document.getElementById('confirmBtn').textContent='Confirm Booking';document.querySelectorAll('.tag-toggle').forEach(t=>t.classList.remove('on'));document.getElementById('addOverlay').classList.add('open');document.getElementById('addSheet').classList.add('open');}
+  function openAddSheet(){editingId=null;partySize=2;document.getElementById('addSheetTitle').textContent='New Booking';['fLastName','fFirstName','fPhone','fEmail','fNotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('fDate').value=todayStr();document.getElementById('fTime').value='19:00';document.getElementById('fSection').value='';document.getElementById('fOccasion').value='';document.getElementById('fStatus').value='pending';document.getElementById('partyVal').textContent=2;document.getElementById('editCodeWrap').style.display='none';document.getElementById('confirmBtn').textContent='Confirm Booking';document.querySelectorAll('.tag-toggle').forEach(t=>t.classList.remove('on'));document.getElementById('addOverlay').classList.add('open');document.getElementById('addSheet').classList.add('open');}
   function closeAddSheet(){document.getElementById('addOverlay').classList.remove('open');document.getElementById('addSheet').classList.remove('open');}
   function changeParty(d){partySize=Math.max(1,Math.min(20,partySize+d));document.getElementById('partyVal').textContent=partySize;}
   function toggleTag(el){el.classList.toggle('on');}
@@ -1113,11 +1115,12 @@
   function openDetail(id){
     _currentDetailId = id;
     const r=window.reservations.find(x=>String(x.id)===String(id));if(!r)return;
-    const sm=STATUS_META[r.status]||STATUS_META.confirmed;
+    const sm=STATUS_META[r.status]||STATUS_META.pending;
     const{hr,ampm}=fmtTime(r.time);
     document.getElementById('detailName').textContent=`${r.name}, ${r.first}`;
     document.getElementById('detailCode').textContent=(r.code||'—')+' · tap to copy';
     const actions=[];
+    if(['pending','waitlist'].includes(r.status))actions.push(`<div class="action-btn" style="background:rgba(139,100,40,0.1);border:1.5px solid var(--gold);color:var(--gold);border-radius:12px;padding:14px 10px;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;cursor:pointer;text-align:center;font-weight:700" onclick="updateStatus('${id}','confirmed')">✓ Confirm Booking</div>`);
     if(['confirmed','waitlist'].includes(r.status))actions.push(`<div class="action-btn action-seated" onclick="updateStatus('${id}','seated')">Mark Seated</div>`);
     if(r.status==='seated')actions.push(`<div class="action-btn action-complete" onclick="updateStatus('${id}','completed')">Complete</div>`);
     if(!['cancelled','completed','noshow'].includes(r.status)){actions.push(`<div class="action-btn action-noshow" onclick="updateStatus('${id}','noshow')">No-Show</div>`);actions.push(`<div class="action-btn action-cancel" onclick="updateStatus('${id}','cancelled')">Cancel</div>`);}
@@ -1308,7 +1311,7 @@
       document.getElementById('fPhone').value=r.phone||'';document.getElementById('fEmail').value=r.email||'';
       document.getElementById('fDate').value=r.date||'';document.getElementById('fTime').value=r.time||'';
       document.getElementById('fSection').value=r.section||'';document.getElementById('fOccasion').value=r.occasion||'';
-      document.getElementById('fStatus').value=r.status||'confirmed';document.getElementById('fNotes').value=r.notes||'';
+      document.getElementById('fStatus').value=r.status||'pending';document.getElementById('fNotes').value=r.notes||'';
       document.getElementById('partyVal').textContent=r.party||2;
       document.getElementById('editCodeWrap').style.display='block';document.getElementById('editCodeVal').textContent=r.code||'';
       document.getElementById('confirmBtn').textContent='Save Changes';
