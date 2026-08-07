@@ -32,6 +32,26 @@
   #pasteHint { font-size: 11px; color: #2a6a4a; display: none; align-self: center; }
   #emailWrap { padding: 24px 16px; }
   #emailPreview { max-width: 580px; margin: 0 auto; background: #faf6ee; border: 1px solid rgba(110,78,22,0.15); box-shadow: 0 8px 40px rgba(0,0,0,0.08); }
+
+  /* ---- Print / Save as PDF ---------------------------------- */
+  @media print {
+    @page { margin: 12mm; }
+    html, body {
+      background: #fff !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+    /* Hide the builder controls - print the email only */
+    #builder { display: none !important; }
+    #emailWrap {
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+      max-width: 100% !important;
+    }
+    /* Avoid awkward breaks mid-block */
+    table, tr, td, .panel, .detail-block { page-break-inside: avoid; }
+  }
 </style>
 </head>
 <body>
@@ -57,6 +77,7 @@
   </div>
   <div class="btn-row">
     <button class="btn" onclick="copyEmail()">⎘ Copy Email to Clipboard</button>
+    <button class="btn" onclick="savePDF()">⤓ Save as PDF</button>
     <button class="btn btn-clear" onclick="clearAll()">↺ Clear</button>
     <span id="copyMsg">✓ Copied — paste into Gmail</span>
     <span id="pasteHint">✓ Auto-filled from FOH dashboard</span>
@@ -320,6 +341,16 @@
   function clearAll() {
     ['f_name','f_code','f_date','f_time','f_party','f_total','f_amount'].forEach(id=>document.getElementById(id).value='');
     update();
+  }
+
+  function savePDF() {
+    const code = (document.getElementById('f_code').value || '').trim();
+    const name = (document.getElementById('f_name').value || '').trim().replace(/[^A-Za-z0-9]+/g, '-');
+    const original = document.title;
+    // The browser uses document.title as the default PDF filename
+    document.title = 'ObscureTable-Payment' + (code ? '-' + code : '') + (name ? '-' + name : '');
+    window.print();
+    setTimeout(function(){ document.title = original; }, 1000);
   }
 
   function copyEmail() {
