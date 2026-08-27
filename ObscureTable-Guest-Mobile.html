@@ -215,7 +215,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
     <div class="fld"><label class="lbl">First Name <span class="req">*</span></label><input class="inp" id="fFN" type="text" placeholder="Given" autocomplete="given-name" autocapitalize="words"></div>
   </div>
   <div class="fld"><label class="lbl">Phone <span class="req">*</span></label><input class="inp" id="fPH" type="tel" placeholder="+63 917 000 0000" autocomplete="tel"></div>
-  <div class="fld"><label class="lbl">Email</label><input class="inp" id="fEM" type="email" placeholder="For your confirmation" autocomplete="email"></div>
+  <div class="fld"><label class="lbl">Email <span class="req">*</span></label><input class="inp" id="fEM" type="email" placeholder="For your confirmation" autocomplete="email"><div style="font-size:13px;color:var(--gold);font-style:italic;margin-top:6px;line-height:1.5">Our replies often land in spam — please check that folder too.</div></div>
 </div>
 
 <!-- STEP 2: When -->
@@ -347,6 +347,10 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
   <div class="success-important">
     <div class="si-title">Important</div>
     <div class="si-body">Please screenshot this screen and save your booking code. Your reservation is only confirmed once the 50% downpayment has been settled. Our team will be in touch with payment details.</div>
+  </div>
+  <div style="background:rgba(139,100,40,.07);border:1px solid rgba(139,100,40,.25);border-radius:10px;padding:14px 16px;margin-bottom:16px;text-align:left">
+    <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px">📩 Check Your Spam Folder</div>
+    <div style="font-size:15px;color:var(--stone);line-height:1.7;font-style:italic">Our emails often land in the spam or junk folder. Please check there if you don't hear from us, and mark us as "Not Spam" so you receive your payment details.</div>
   </div>
   <div class="success-ig">@obscuretableph</div>
 </div>
@@ -881,17 +885,68 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
   // -- Menu Manager ------------------------------------------
   let menuOrder = {}; // { itemId: quantity }
 
+  // -- Menu name migration --------------------------------------
+  // Renames legacy menu labels in place (old name -> new name/desc)
+  // without disturbing any custom items staff have added via the editor.
+  var MENU_TEXT_BY_ID = {
+    1: { name: 'The Salo-Salo Menu', desc: 'The same three spaces, three acts experience, with a scaled-down menu. Beverage pairing and our Chicharonillo are available as add-ons at an extra charge.' },
+    2: { name: 'The Grand Menu',     desc: 'All three acts, three spaces on the farm, and a full salo-salo spread. Includes non-alcoholic beverage pairing and our Chicharonillo (cochinillo with chicharon skin).' }
+  };
+  // Legacy name-based fallback: catches copies cached before the ID scheme
+  // and copies already renamed once but still carrying an outdated description.
+  var MENU_RENAMES = {
+    'Obscure Table Menu without the Chicharonillo': MENU_TEXT_BY_ID[1],
+    'Obscure Table Grand Menu with Chicharonillo':  MENU_TEXT_BY_ID[2],
+    'The Salo-Salo Menu': MENU_TEXT_BY_ID[1],
+    'The Grand Menu':     MENU_TEXT_BY_ID[2]
+  };
+  function migrateMenuNames(items) {
+    var changed = false;
+    items.forEach(function(it){
+      var target = (it.id === 1 || it.id === 2) ? MENU_TEXT_BY_ID[it.id] : MENU_RENAMES[it.name];
+      if (target && (it.name !== target.name || it.desc !== target.desc)) {
+        it.name = target.name; it.desc = target.desc; changed = true;
+      }
+    });
+    if (changed) {
+      try { localStorage.setItem('ot_menu_items', JSON.stringify(items)); } catch(e) {}
+    }
+    return items;
+  }
+
+
+  // -- Ensure newly-added default items reach devices with a cached menu --
+  var NEW_DEFAULT_ITEMS = [
+    { id:6, icon:"  ", name:"Non Alcoholic Treats", desc:"Katmon Shandy, Coffee Iced Tea or Coffee Cola, or Digestif.", price:"PHP 450 per person" },
+    { id:7, icon:"  ", name:"Curated Wine", desc:"Red or white wine, with two pours.", price:"PHP 459 per person" },
+    { id:8, icon:"  ", name:"Other Options", desc:"Coke, Coke Zero, Sprite, or House Tea.", price:"PHP 150 per person" }
+  ];
+  function ensureDefaultItems(items) {
+    var existingIds = items.map(function(it){ return it.id; });
+    var changed = false;
+    NEW_DEFAULT_ITEMS.forEach(function(def){
+      if (existingIds.indexOf(def.id) === -1) { items.push(def); changed = true; }
+    });
+    if (changed) {
+      try { localStorage.setItem('ot_menu_items', JSON.stringify(items)); } catch(e) {}
+    }
+    return items;
+  }
+
   function loadMenuItems() {
     try {
       const stored = localStorage.getItem('ot_menu_items');
-      if (stored) return JSON.parse(stored);
+      if (stored) return ensureDefaultItems(migrateMenuNames(JSON.parse(stored)));
     } catch(e) {}
     return [
-      { id:1, icon:"  ", name:"Obscure Table Menu without the Chicharonillo", desc:"Our signature tasting menu, served without the Chicharonillo.", price:"PHP 4,850 per person" },
-      { id:2, icon:"  ", name:"Obscure Table Grand Menu with Chicharonillo", desc:"The full Obscure Table experience featuring the celebrated Chicharonillo.", price:"PHP 8,500 per person" },
+      { id:1, icon:"  ", name:"The Salo-Salo Menu", desc:"The same three spaces, three acts experience, with a scaled-down menu. Beverage pairing and our Chicharonillo are available as add-ons at an extra charge.", price:"PHP 4,850 per person" },
+      { id:2, icon:"  ", name:"The Grand Menu", desc:"All three acts, three spaces on the farm, and a full salo-salo spread. Includes non-alcoholic beverage pairing and our Chicharonillo (cochinillo with chicharon skin).", price:"PHP 8,500 per person" },
       { id:3, icon:"  ", name:"Whole Chicharonillo with Accoutrements", desc:"A whole Chicharonillo served with its full accompaniments.", price:"PHP 14,950" },
       { id:4, icon:"  ", name:"Half Chicharonillo with Accoutrements", desc:"Half a Chicharonillo served with its full accompaniments.", price:"PHP 7,475" },
       { id:5, icon:"  ", name:"Quarter Chicharonillo with Accoutrements", desc:"A quarter Chicharonillo served with its full accompaniments.", price:"PHP 3,750" },
+      { id:6, icon:"  ", name:"Non Alcoholic Treats", desc:"Katmon Shandy, Coffee Iced Tea or Coffee Cola, or Digestif.", price:"PHP 450 per person" },
+      { id:7, icon:"  ", name:"Curated Wine", desc:"Red or white wine, with two pours.", price:"PHP 459 per person" },
+      { id:8, icon:"  ", name:"Other Options", desc:"Coke, Coke Zero, Sprite, or House Tea.", price:"PHP 150 per person" },
     ];
   }
 
@@ -902,9 +957,9 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
   // -- Menu Exclusivity Rules --------------------------------
   // Grand Menu (PHP 8,500): locks everything EXCEPT Whole Chicharonillo
   // Plain Menu (PHP 4,850): locks Grand Menu only   allows all Chicharonillo sizes
-  var GRAND_MENU_NAME = 'Obscure Table Grand Menu with Chicharonillo';
-  var PLAIN_MENU_NAME = 'Obscure Table Menu without the Chicharonillo';
-  var INDIVIDUAL_NAMES = ['Whole Chicharonillo with Accoutrements', 'Half Chicharonillo with Accoutrements', 'Quarter Chicharonillo with Accoutrements'];
+  var GRAND_MENU_NAME = 'The Grand Menu';
+  var PLAIN_MENU_NAME = 'The Salo-Salo Menu';
+  var INDIVIDUAL_NAMES = ['Whole Chicharonillo with Accoutrements', 'Half Chicharonillo with Accoutrements', 'Quarter Chicharonillo with Accoutrements', 'Non Alcoholic Treats', 'Curated Wine', 'Other Options'];
   var WHOLE_NAME = 'Whole Chicharonillo with Accoutrements';
 
   function getConflict() {
@@ -1014,7 +1069,7 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       }
       // Chicharonillo add-ons cannot be ordered on their own
       if (isIndiv && !hasPlain) {
-        alert('Chicharonillo (whole / half / quarter) can only be added together with the Obscure Table Menu without the Chicharonillo. Please select that menu first.');
+        alert('Chicharonillo (whole / half / quarter) can only be added together with the The Salo-Salo Menu. Please select that menu first.');
         return;
       }
     }
@@ -1330,6 +1385,9 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
   // -- EmailJS Configuration ---------------------------------
   var EJS_SERVICE  = 'service_51rt6nq';
   var EJS_TEMPLATE = 'template_yfe626s';
+  // Guest acknowledgement template - paste your EmailJS template ID below.
+  // Leave blank to disable the acknowledgement email.
+  var EJS_TEMPLATE_GUEST = '';
   var EJS_KEY      = 'rIleGjrFVUgM57KYZ';
 
   // EmailJS v4 correct initialization
@@ -1386,7 +1444,10 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       var ln = document.getElementById('fLN').value.trim();
       var fn = document.getElementById('fFN').value.trim();
       var ph = document.getElementById('fPH').value.trim();
+      var em = document.getElementById('fEM').value.trim();
       if (!ln || !fn || !ph) { toast('Please fill in your name and phone number'); return false; }
+      if (!em) { toast('Please enter your email address'); return false; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { toast('Please enter a valid email address'); return false; }
     }
     if (n === 2) {
       var date = cdpGetValue('cdp_date');
@@ -1525,15 +1586,68 @@ textarea.inp{resize:none;height:80px;line-height:1.6;}
       window._fbQueue.push([fbId, fbData]);
     }
 
+    // ---- Guest acknowledgement -------------------------------
+    function sendGuestAck() {
+      if (!EJS_TEMPLATE_GUEST || !email) return;
+      var deadline = '';
+      try {
+        var d = new Date(date + 'T12:00:00');
+        d.setDate(d.getDate() - 3);
+        deadline = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric', year:'numeric'});
+      } catch (e) { deadline = '3 days before your reservation date'; }
+
+      var guestBody = [
+        'Dear ' + firstName + ',',
+        '',
+        'Thank you for your reservation inquiry at Obscure Table.',
+        'We have received the following request:',
+        '',
+        'Reference Code: ' + code,
+        'Date:           ' + (date ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', {weekday:'long',month:'long',day:'numeric',year:'numeric'}) : '-'),
+        'Time:           ' + (time ? fmt12(time) : '-'),
+        'Party Size:     ' + party,
+        'Menu:           ' + (menuStr || '-'),
+        '',
+        'Estimated Total:  ' + fmtPHP(menuTotal),
+        '50% Downpayment:  ' + fmtPHP(menuDeposit),
+        '',
+        'PLEASE NOTE: This is an acknowledgement of your inquiry, not yet a',
+        'confirmed booking. Your reservation is confirmed only once the 50%',
+        'downpayment has been received.',
+        '',
+        'Kindly settle the downpayment on or before ' + deadline + '.',
+        'We will follow up shortly with the payment details.',
+        '',
+        'Cancellations made less than 48 hours before your reservation are',
+        'non-refundable.',
+        '',
+        'We look forward to welcoming you.',
+        '',
+        'Warm regards,',
+        'Obscure Table',
+        'reservation.obscuretableph@outlook.com',
+        'Where every seat tells a story'
+      ].join('\n');
+
+      emailjs.send(EJS_SERVICE, EJS_TEMPLATE_GUEST, {
+        to_email: email,
+        subject:  'Obscure Table - Reservation Inquiry Received (' + code + ')',
+        message:  guestBody,
+        reply_to: 'reservation.obscuretableph@outlook.com'
+      }).catch(function(err) { console.error('Guest ack failed:', err); });
+    }
+
     emailjs.send('service_51rt6nq', 'template_yfe626s', {
       to_email: 'reservation.obscuretableph@outlook.com',
       subject:  'New Inquiry - ' + code + ' - ' + lastName + ', ' + firstName,
       message:  message,
       reply_to: email || phone
     }).then(function() {
+      sendGuestAck();
       showSuccess(code, firstName);
     }).catch(function(err) {
       console.error('EmailJS:', err);
+      sendGuestAck();
       showSuccess(code, firstName); // show anyway - Firebase already written
     }).finally(function() {
       btn.textContent = 'Submit Inquiry';
