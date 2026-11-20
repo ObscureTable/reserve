@@ -1089,9 +1089,14 @@
       return true;
     }).sort((a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
     if(!data.length){list.innerHTML=`<div class="list-empty"><span>✦</span><span>No reservations found</span></div>`;updateStats();return;}
-    let html='<div class="list-inner">',lastDate='';
+    let html='<div class="list-inner">',lastDate='',todayAnchored=false;
     data.forEach(r=>{
-      if(currentView==='all'&&r.date!==lastDate){const d=new Date(r.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});html+=`<div class="list-section-head">${d}</div>`;lastDate=r.date;}
+      if(currentView==='all'&&r.date!==lastDate){
+        const d=new Date(r.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric'});
+        const isAnchor=!todayAnchored&&r.date>=todayStr();
+        if(isAnchor)todayAnchored=true;
+        html+=`<div class="list-section-head"${isAnchor?' id="todayAnchor"':''}>${d}</div>`;lastDate=r.date;
+      }
       const sm=STATUS_META[r.status]||STATUS_META.pending;
       const pm=PAYMENT_META[r.payment||'unpaid']||PAYMENT_META.unpaid;
       const{hr,ampm}=fmtTime(r.time);
@@ -1110,6 +1115,10 @@
     });
     html+='</div>';
     list.innerHTML=html;
+    if(currentView==='all'){
+      const anchor=document.getElementById('todayAnchor');
+      if(anchor)anchor.scrollIntoView({block:'start'});
+    }
     updateStats();
   };
 
