@@ -8,10 +8,21 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   var cfg={apiKey:"AIzaSyDGyboz57n06VHx_6N6nkSfi6CjcousUMU",authDomain:"obscure-table.firebaseapp.com",databaseURL:"https://obscure-table-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"obscure-table",storageBucket:"obscure-table.firebasestorage.app",messagingSenderId:"170560318474",appId:"1:170560318474:web:734bb2a7f6404fac43c3f3"};
   var app=initializeApp(cfg);var db=getDatabase(app);
   window._fbWriteOrder=async function(id,data){await set(ref(db,'chicharonillo_orders/'+id),data);};
+  // Counts existing, non-cancelled orders for a given pickup date - used to enforce the daily order cap.
+  window._fbCountOrdersForDate=async function(dateStr){
+    try{
+      var q=query(ref(db,'chicharonillo_orders'),orderByChild('date'),equalTo(dateStr));
+      var snap=await get(q);
+      if(!snap.exists())return 0;
+      var n=0;
+      snap.forEach(function(child){var v=child.val();if(v&&v.status!=='cancelled')n++;});
+      return n;
+    }catch(e){throw e;}
+  };
   window._fbReady=true;
   if(window._fbQ){window._fbQ.forEach(function(x){window._fbWriteOrder(x[0],x[1]);});window._fbQ=[];}
 </script>
@@ -156,7 +167,10 @@ select.inp{cursor:pointer;background:#fff;}
   <div class="fld">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <label class="lb" style="margin-bottom:0">Pickup Date <span class="rq">*</span></label>
-      <button class="eb" id="btnD" onclick="promptDatePin()">Block Dates</button>
+      <div style="display:flex;gap:6px">
+        <button class="eb" id="btnCap" onclick="promptCapPin()">Order Cap</button>
+        <button class="eb" id="btnD" onclick="promptDatePin()">Block Dates</button>
+      </div>
     </div>
     <div id="dpW">
       <div class="dpf" id="dpF">
@@ -185,6 +199,15 @@ select.inp{cursor:pointer;background:#fff;}
       </div>
     </div>
     <div class="bn" id="bN"><p id="bM"></p></div>
+    <div class="ep" id="epCap" style="display:none">
+      <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px">Daily Order Cap</div>
+      <div style="font-size:14px;color:var(--mu);font-style:italic;margin-bottom:12px;line-height:1.6">Maximum number of Chicharonillo orders accepted per pickup date. Once a date reaches this count, guests are shown it as unavailable. Set to 0 for no limit.</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="nCap" class="inp" min="0" style="flex:1;padding:8px 2px;font-size:17px" placeholder="e.g. 3">
+        <button id="btnSaveCap" style="background:var(--gb);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:10px;padding:9px 16px;cursor:pointer;font-weight:700;white-space:nowrap">Save</button>
+      </div>
+      <div id="capCur" style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--mu);margin-top:10px"></div>
+    </div>
     <div class="ep" id="epD" style="display:none">
       <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px">Block Dates</div>
       <div style="font-size:14px;color:var(--mu);font-style:italic;margin-bottom:12px;line-height:1.6">Tap dates to block/unblock. Switch to Months or Years to block in bulk.</div>
@@ -210,7 +233,15 @@ select.inp{cursor:pointer;background:#fff;}
 
 <!-- STEP 3: Order -->
 <div class="stp" id="stp3">
-  <div class="si"><div class="sit">Your order</div><div class="sis">Select quantity</div></div>
+  <div class="si" style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px">
+    <div><div class="sit">Your order</div><div class="sis">Select quantity</div></div>
+    <button class="eb" id="btnPrice" onclick="promptPricePin()">Edit Price</button>
+  </div>
+  <div class="ep" id="epPrice" style="display:none">
+    <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px">Edit Item Prices</div>
+    <div id="priceEdItems" style="margin-bottom:10px"></div>
+    <button id="btnSavePrice" style="background:var(--gb);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:10px;padding:9px 16px;cursor:pointer;font-weight:700;width:100%">Save Prices</button>
+  </div>
   <div id="oG"></div>
   <div id="oSW" style="display:none">
     <div style="background:rgba(200,85,16,.06);border:1.5px solid var(--bd);border-radius:12px;padding:14px 16px;margin-top:14px">
@@ -220,7 +251,7 @@ select.inp{cursor:pointer;background:#fff;}
         <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--mu)">Total</div>
         <div style="font-family:'Courier Prime',monospace;font-size:17px;color:var(--gold);font-weight:700" id="oTV">PHP 0</div>
       </div>
-      <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--mu);margin-top:8px;font-style:italic">50% downpayment required to confirm order</div>
+      <div style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--mu);margin-top:8px;font-style:italic">Full payment required to confirm order</div>
     </div>
   </div>
 </div>
@@ -229,7 +260,7 @@ select.inp{cursor:pointer;background:#fff;}
 <div class="stp" id="stp4">
   <div class="si"><div class="sit">Review</div><div class="sis">Confirm your order</div></div>
   <div id="rC"></div>
-  <div class="pol">A <strong style="color:var(--gold);font-style:normal">50% downpayment</strong> is required to confirm your pickup order. Cancellations less than <strong style="color:#9a2a1a;font-style:normal">48 hours</strong> before pickup are non-refundable.</div>
+  <div class="pol">A <strong style="color:var(--gold);font-style:normal">full payment</strong> is required to confirm your pickup order. Cancellations less than <strong style="color:#9a2a1a;font-style:normal">48 hours</strong> before pickup are non-refundable.</div>
 </div>
 
 <!-- Success -->
@@ -244,7 +275,7 @@ select.inp{cursor:pointer;background:#fff;}
   </div>
   <div class="scs-imp">
     <div class="scs-it">Important</div>
-    <div class="scs-ib">Please screenshot this screen and save your order code. Your order is only confirmed once the 50% downpayment has been settled. Our team will be in touch with payment details.</div>
+    <div class="scs-ib">Please screenshot this screen and save your order code. Your order is only confirmed once full payment has been settled. Our team will be in touch with payment details.</div>
   </div>
   <div style="font-family:'Courier Prime',monospace;font-size:10px;color:var(--gold);letter-spacing:.12em;margin-top:12px">@chicharonillo</div>
 </div>
@@ -271,9 +302,15 @@ var PIN_DEF='1234', dpPinOk=false, tPinOk=false;
 var MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
 var SM=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var BM="We're sorry, this date is unavailable. Please select another date.";
-var ITEMS=[
+var DEFAULT_ITEMS=[
   {id:'whole',icon:'&#127993;',name:'Whole Chicharonillo',desc:'A whole Chicharonillo served with Garlic Rice, sauces, and condiments. Feeds approximately 8-10.',price:14950,priceLabel:'PHP 14,950'}
 ];
+function loadItems(){
+  try{var s=localStorage.getItem('otc_items');if(s){var arr=JSON.parse(s);if(Array.isArray(arr)&&arr.length)return arr;}}catch(e){}
+  return DEFAULT_ITEMS;
+}
+function saveItems(arr){try{localStorage.setItem('otc_items',JSON.stringify(arr));}catch(e){}}
+var ITEMS=loadItems();
 
 // HELPERS
 function toast(m){var e=document.getElementById('T');e.textContent=m;e.classList.add('on');setTimeout(function(){e.classList.remove('on');},2500);}
@@ -283,6 +320,8 @@ function gv(id){var el=document.getElementById(id);return el?el.value.trim():'';
 
 // BLOCKED DATES (uses otc_ prefix - separate from reservation tool)
 function gBD(){try{return JSON.parse(localStorage.getItem('otc_blocked_dates')||'[]');}catch(e){return[];}}
+function gCap(){try{var v=parseInt(localStorage.getItem('otc_daily_cap')||'0',10);return isNaN(v)?0:v;}catch(e){return 0;}}
+function sCap(n){try{localStorage.setItem('otc_daily_cap',String(n));}catch(e){}}
 function sBD(d){try{localStorage.setItem('otc_blocked_dates',JSON.stringify(d));}catch(e){}}
 function gBF(){try{return localStorage.getItem('otc_block_from')||null;}catch(e){return null;}}
 function sBF(v){try{if(v)localStorage.setItem('otc_block_from',v);else localStorage.removeItem('otc_block_from');}catch(e){}}
@@ -426,16 +465,64 @@ function dpRend(){
     g.querySelectorAll('button[data-y]').forEach(function(btn){btn.addEventListener('click',function(){dpYr=parseInt(this.getAttribute('data-y'));dpView='months';dpRend();});});
   }
 }
-function chkBlk(ds){
+var capCheckInFlight=false;
+async function chkBlk(ds){
   var n=document.getElementById('bN'),m=document.getElementById('bM');
-  if(isBlk(ds)){dBlk=true;if(m)m.textContent=BM;if(n)n.style.display='block';var ts=document.getElementById('fTime');if(ts){ts.disabled=true;ts.value='';selTime='';}}
-  else{dBlk=false;if(n)n.style.display='none';var ts=document.getElementById('fTime');if(ts)ts.disabled=false;}
+  if(isBlk(ds)){dBlk=true;capCheckInFlight=false;if(m)m.textContent=BM;if(n)n.style.display='block';var ts=document.getElementById('fTime');if(ts){ts.disabled=true;ts.value='';selTime='';}dpUpd();return;}
+  var cap=gCap();
+  if(cap>0&&window._fbCountOrdersForDate){
+    capCheckInFlight=true;
+    if(m)m.textContent='Checking availability...';if(n)n.style.display='block';
+    try{
+      var cnt=await window._fbCountOrdersForDate(ds);
+      if(dpVal!==ds){capCheckInFlight=false;return;} // guest already picked a different date
+      if(cnt>=cap){
+        dBlk=true;capCheckInFlight=false;
+        if(m)m.textContent="We're sorry, this date has reached its order cap. Please select another date.";
+        if(n)n.style.display='block';
+        var ts=document.getElementById('fTime');if(ts){ts.disabled=true;ts.value='';selTime='';}
+        dpUpd();
+        return;
+      }
+    }catch(e){
+      // Network/read issue: fail open rather than wrongly blocking a valid date
+      if(dpVal!==ds){capCheckInFlight=false;return;}
+    }
+  }
+  dBlk=false;capCheckInFlight=false;if(n)n.style.display='none';var ts=document.getElementById('fTime');if(ts)ts.disabled=false;
   dpUpd();
 }
 
 // PIN prompts
 function promptDatePin(){if(dpPinOk){togEp('epD','btnD','Block Dates','Close');if(document.getElementById('epD').style.display!=='none')rCal();return;}var p=prompt('Enter staff PIN:');if(p===gpin()){dpPinOk=true;togEp('epD','btnD','Block Dates','Close');rCal();}else if(p!==null)toast('Incorrect PIN');}
+var capPinOk=false;
+function promptCapPin(){if(capPinOk){togEp('epCap','btnCap','Order Cap','Close');if(document.getElementById('epCap').style.display!=='none')rCapEd();return;}var p=prompt('Enter staff PIN:');if(p===gpin()){capPinOk=true;togEp('epCap','btnCap','Order Cap','Close');rCapEd();}else if(p!==null)toast('Incorrect PIN');}
+function rCapEd(){var cap=gCap();var el=document.getElementById('capCur');if(el)el.textContent=cap>0?('Current cap: '+cap+' order'+(cap>1?'s':'')+' per day'):'Current: No limit';var inp=document.getElementById('nCap');if(inp)inp.value=cap>0?cap:'';}
+function saveCap(){var inp=document.getElementById('nCap');var v=parseInt(inp.value,10);if(isNaN(v)||v<0){toast('Enter a valid number (0 for no limit)');return;}sCap(v);rCapEd();dpUpd();toast(v>0?('Cap set to '+v+' per day'):'Cap removed - no limit');}
 function promptTimePin(){if(tPinOk){togEp('epT','btnT','Edit Times','Close');return;}var p=prompt('Enter staff PIN:');if(p===gpin()){tPinOk=true;togEp('epT','btnT','Edit Times','Close');rTEd();}else if(p!==null)toast('Incorrect PIN');}
+var pricePinOk=false;
+function promptPricePin(){if(pricePinOk){togEp('epPrice','btnPrice','Edit Price','Close');if(document.getElementById('epPrice').style.display!=='none')rPriceEd();return;}var p=prompt('Enter staff PIN:');if(p===gpin()){pricePinOk=true;togEp('epPrice','btnPrice','Edit Price','Close');rPriceEd();}else if(p!==null)toast('Incorrect PIN');}
+function rPriceEd(){
+  var c=document.getElementById('priceEdItems');if(!c)return;c.innerHTML='';
+  ITEMS.forEach(function(item){
+    var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:10px;margin-bottom:10px;background:#fff;border:1px solid var(--bd);border-radius:8px;padding:10px 12px';
+    var nm=document.createElement('div');nm.style.cssText='flex:1;font-size:15px;color:var(--ink)';nm.textContent=item.name;
+    var inp=document.createElement('input');inp.type='number';inp.min='0';inp.className='inp';inp.style.cssText='width:120px;padding:8px 2px;font-size:16px';inp.value=item.price;inp.setAttribute('data-id',item.id);
+    row.appendChild(nm);row.appendChild(inp);c.appendChild(row);
+  });
+}
+function savePrices(){
+  var c=document.getElementById('priceEdItems');if(!c)return;
+  var inputs=c.querySelectorAll('input[data-id]');var changed=false;
+  inputs.forEach(function(inp){
+    var id=inp.getAttribute('data-id');var v=parseFloat(inp.value);
+    if(isNaN(v)||v<0)return;
+    var item=ITEMS.find(function(m){return m.id===id;});
+    if(item){item.price=v;item.priceLabel='PHP '+v.toLocaleString();changed=true;}
+  });
+  if(changed){saveItems(ITEMS);rOG();toast('Price updated');}
+  else{toast('Enter a valid price');}
+}
 function togEp(pid,bid,open,close){var p=document.getElementById(pid),b=document.getElementById(bid);var isOpen=p.style.display==='block';p.style.display=isOpen?'none':'block';if(b)b.textContent=isOpen?open:close;if(!isOpen)setTimeout(function(){p.scrollIntoView({behavior:'smooth',block:'nearest'});},100);}
 
 // TIME SLOTS
@@ -529,7 +616,7 @@ function updProg(){
 function showStep(n){document.querySelectorAll('.stp').forEach(function(p){p.classList.remove('on');});var el=document.getElementById('stp'+n);if(el)el.classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
 function validate(n){
   if(n===1){if(!gv('fLN')||!gv('fFN')||!gv('fPH')){toast('Please fill in your name and phone number');return false;}}
-  if(n===2){if(!dpVal){toast('Please select a pickup date');return false;}if(dBlk){toast('This date is unavailable');return false;}if(!gv('fTime')){selTime='';toast('Please select a pickup time');return false;}selTime=gv('fTime');}
+  if(n===2){if(!dpVal){toast('Please select a pickup date');return false;}if(capCheckInFlight){toast('Checking date availability, please wait a moment...');return false;}if(dBlk){toast('This date is unavailable');return false;}if(!gv('fTime')){selTime='';toast('Please select a pickup time');return false;}selTime=gv('fTime');}
   if(n===3){if(!Object.keys(oQty).length){toast('Please select at least one item');return false;}}
   return true;
 }
@@ -562,15 +649,33 @@ function bldRev(){
 
 // SUBMIT
 function genCode(ln){var L=(ln||'').replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X');var dd=dpVal?dpVal.replace(/-/g,'').slice(4):'0000';var r=Math.random().toString(36).substring(2,5).toUpperCase();return 'OTC-'+L+dd+'-'+r;}
-function submitOrder(){
+async function submitOrder(){
   var btn=document.getElementById('btnNx');btn.textContent='Sending...';btn.disabled=true;
+  // Best-effort final cap re-check at the moment of submission. There is no
+  // backend here to make this atomic, so two guests submitting for the same
+  // date within moments of each other could both still get through - this
+  // catches the far more common case where time has simply passed since the
+  // date was first picked (earlier in the same visit, or a stale open tab).
+  var cap=gCap();
+  if(cap>0&&window._fbCountOrdersForDate){
+    try{
+      var cnt=await window._fbCountOrdersForDate(dpVal);
+      if(cnt>=cap){
+        btn.textContent='Next';btn.disabled=false;
+        toast("This date just reached its order cap - please choose another date.");
+        dBlk=true;chkBlk(dpVal);
+        step=2;showStep(step);updProg();
+        return;
+      }
+    }catch(e){ /* network issue - fail open, submission proceeds */ }
+  }
   var ln=gv('fLN'),fn=gv('fFN'),ph=gv('fPH'),em=gv('fEM');
   var code=genCode(ln);
   var total=ITEMS.reduce(function(s,m){return s+(oQty[m.id]||0)*m.price;},0);
-  var down=Math.ceil(total/2);
+  var down=total; // full payment required (no partial downpayment for Chicharonillo pickup orders)
   var orderLines=ITEMS.filter(function(m){return oQty[m.id]>0;}).map(function(m){return m.name+' x'+oQty[m.id]+' ('+m.priceLabel+')';}).join(', ');
-  var fbData={code:code,lastName:ln,firstName:fn,phone:ph,email:em,date:dpVal,time:selTime,items:oQty,orderText:orderLines,total:total,downPayment:down,status:'pending',payment:'unpaid',created:Date.now()};
-  var msg='OT CHICHARONILLO PICKUP ORDER\n==============================\nOrder Code: '+code+'\n\nCUSTOMER\nName: '+ln+', '+fn+'\nPhone: '+ph+'\nEmail: '+(em||'-')+'\n\nPICKUP\nDate: '+fmtD(dpVal)+'\nTime: '+fmtT(selTime)+'\n\nORDER\n'+orderLines+'\n\nTotal: PHP '+total.toLocaleString()+'\nDownpayment (50%): PHP '+down.toLocaleString()+'\n==============================';
+  var fbData={code:code,lastName:ln,firstName:fn,phone:ph,email:em,date:dpVal,time:selTime,items:oQty,orderText:orderLines,total:total,downPayment:down,fullPaymentRequired:true,status:'pending',payment:'unpaid',created:Date.now()};
+  var msg='OT CHICHARONILLO PICKUP ORDER\n==============================\nOrder Code: '+code+'\n\nCUSTOMER\nName: '+ln+', '+fn+'\nPhone: '+ph+'\nEmail: '+(em||'-')+'\n\nPICKUP\nDate: '+fmtD(dpVal)+'\nTime: '+fmtT(selTime)+'\n\nORDER\n'+orderLines+'\n\nTotal: PHP '+total.toLocaleString()+'\nFull Payment Required: PHP '+down.toLocaleString()+'\n==============================';
   if(window._fbReady&&window._fbWriteOrder){window._fbWriteOrder(fbData.created,fbData).catch(function(){});}
   else{window._fbQ=window._fbQ||[];window._fbQ.push([fbData.created,fbData]);}
   emailjs.send('service_51rt6nq','template_yfe626s',{to_email:'reservation.obscuretableph@outlook.com',message:msg}).then(function(){showSuccess(code,fn);}).catch(function(){showSuccess(code,fn);}).finally?emailjs.send:'';
@@ -588,6 +693,8 @@ document.getElementById('dpTM').addEventListener('click',function(){dpView='mont
 document.getElementById('dpTY').addEventListener('click',function(){dpView='years';dpRend();});
 document.getElementById('dpF').addEventListener('click',function(e){e.stopPropagation();dpToggle();});
 document.getElementById('btnAS').addEventListener('click',addSlot);
+document.getElementById('btnSaveCap').addEventListener('click',saveCap);
+document.getElementById('btnSavePrice').addEventListener('click',savePrices);
 document.addEventListener('click',function(e){var w=document.getElementById('dpW');if(w&&!w.contains(e.target))dpClose();});
 
 // INIT

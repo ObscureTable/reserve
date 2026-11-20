@@ -73,7 +73,7 @@
     <div class="field-wrap"><label>Time</label><input id="f_time" type="text" placeholder="e.g. 7:00 PM" oninput="update()"></div>
     <div class="field-wrap"><label id="lbl_party">Party Size</label><input id="f_party" type="number" min="1" placeholder="e.g. 4" oninput="update()"></div>
     <div class="field-wrap"><label>Booking Total (PHP)</label><input id="f_total" type="number" placeholder="e.g. 34000" oninput="autoCompute()"></div>
-    <div class="field-wrap"><label>Downpayment (PHP) &mdash; auto 50%</label><input id="f_amount" type="number" placeholder="auto-computed" oninput="update()"></div>
+    <div class="field-wrap"><label id="f_amount_label">Downpayment (PHP) &mdash; auto 50%</label><input id="f_amount" type="number" placeholder="auto-computed" oninput="update()"></div>
   </div>
   <div class="btn-row">
     <button class="btn" onclick="copyEmail()">⎘ Copy Email to Clipboard</button>
@@ -112,7 +112,7 @@
       <td style="padding:24px 40px 0;">
         <p style="font-size:17px;color:#1a1208;line-height:1.7;margin:0 0 12px;">Dear <strong id="p_name">—</strong>,</p>
         <p id="p_intro_reservation" style="font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your reservation inquiry at Obscure Table. To secure your booking, kindly settle the <strong style="color:#8a6020;">50% downpayment</strong> on or before <strong style="color:#8a6020;" id="p_deadline">3 days prior to your booking date</strong> at your earliest convenience to confirm your booking.</p>
-        <p id="p_intro_chicharonillo" style="display:none;font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your Chicharonillo pickup order. To confirm your order, kindly settle the <strong style="color:#b84a08;">50% downpayment</strong> at your earliest convenience.</p>
+        <p id="p_intro_chicharonillo" style="display:none;font-size:16px;color:#5a4828;line-height:1.75;margin:0;">Thank you for your Chicharonillo pickup order. To confirm your order, kindly settle <strong style="color:#b84a08;">full payment</strong> at your earliest convenience.</p>
       </td>
     </tr>
 
@@ -140,7 +140,7 @@
             <td style="padding:11px 18px;font-size:16px;color:#1a1208;text-align:right;" id="p_party">—</td>
           </tr>
           <tr>
-            <td style="padding:11px 18px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#7a6040;">Downpayment Due <span style="text-transform:none;font-style:italic;font-size:10px;color:#a89878">(excl. VAT &amp; SC)</span></td>
+            <td style="padding:11px 18px;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#7a6040;"><span id="p_amount_label">Downpayment Due</span> <span style="text-transform:none;font-style:italic;font-size:10px;color:#a89878">(excl. VAT &amp; SC)</span></td>
             <td style="padding:11px 18px;font-size:17px;color:#8a6020;font-weight:bold;text-align:right;" id="p_amount">—</td>
           </tr>
         </table>
@@ -192,7 +192,7 @@
             <div style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#9a2a1a;font-weight:700;margin-bottom:8px;">⚠ Important</div>
             <p id="p_policy_confirm" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your reservation is only confirmed upon receipt of the downpayment. The remaining 50% balance, plus applicable VAT and service charge, is due on the day of your visit.</p>
             <p id="p_policy_corkage" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">A corkage fee of <strong style="font-style:normal;color:#8a6020;">PHP 1,000 per bottle</strong> applies for wine brought in.</p>
-            <p id="p_policy_confirm_chicha" style="display:none;font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your order is only confirmed upon receipt of the downpayment. The remaining 50% balance, plus applicable VAT and service charge, is due upon pickup.</p>
+            <p id="p_policy_confirm_chicha" style="display:none;font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your order is only confirmed upon receipt of full payment, plus applicable VAT and service charge.</p>
             <p style="font-size:14px;color:#5a4828;line-height:1.7;margin:0;font-style:italic;">Cancellations made <strong style="font-style:normal;color:#9a2a1a;">less than 48 hours</strong> before your reservation are non-refundable.</p>
           </td></tr>
         </table>
@@ -253,12 +253,14 @@
     document.getElementById('lbl_code').textContent = type==='reservation' ? 'Booking Code' : 'Order Code';
     document.getElementById('lbl_date').textContent = type==='reservation' ? 'Reservation Date' : 'Pickup Date';
     document.getElementById('lbl_party').textContent = type==='reservation' ? 'Party Size' : 'Order / Qty';
+    document.getElementById('p_amount_label').textContent = type==='reservation' ? 'Downpayment Due' : 'Full Payment Due';
+    document.getElementById('f_amount_label').textContent = type==='reservation' ? 'Downpayment (PHP) \u2014 auto 50%' : 'Full Payment (PHP) \u2014 auto 100%';
 
     // Update placeholder
     document.getElementById('f_code').placeholder = type==='reservation' ? 'e.g. OT-DEL0512-18K4P' : 'e.g. OTC-DEL0512-K4P';
     document.getElementById('f_party').placeholder = type==='reservation' ? 'e.g. 4 guests' : 'e.g. 1x Whole';
 
-    update();
+    autoCompute();
   }
 
   function fmtAmount(val) {
@@ -294,13 +296,13 @@
     }
   }
 
-  // Booking Total -> 50% downpayment
+  // Booking Total -> downpayment (reservations: 50%) or full payment (Chicharonillo pickup: 100%)
   function autoCompute() {
     const totalEl = document.getElementById('f_total');
     const amtEl   = document.getElementById('f_amount');
     const total   = parseFloat(totalEl.value);
     if (!isNaN(total) && total > 0) {
-      amtEl.value = Math.round(total / 2);
+      amtEl.value = currentType === 'chicharonillo' ? Math.round(total) : Math.round(total / 2);
     } else {
       amtEl.value = '';
     }
@@ -318,22 +320,22 @@
       document.getElementById('f_date').value  = parts[2] || '';
       document.getElementById('f_time').value  = parts[3] || '';
       document.getElementById('f_party').value = parts[4] || '';
-      // FOH sends the booking total (field 6) and the exact downpayment (field 7).
-      // The downpayment is pasted verbatim - never re-divided here.
+
+      // Auto-detect type from code prefix FIRST, so the amount is computed
+      // under the correct rule (reservations: 50%, Chicharonillo pickup: full payment)
+      const isChicha = (parts[1]||'').startsWith('OTC-');
+      setType(isChicha ? 'chicharonillo' : 'reservation');
+
+      // FOH sends the booking total (field 6) and, when available, the exact
+      // amount due (field 7) - that figure is pasted verbatim and never re-divided.
       document.getElementById('f_total').value = parts[5] || '';
       if (parts.length >= 7 && parts[6]) {
         document.getElementById('f_amount').value = parts[6];
-      } else if (parts[5]) {
-        document.getElementById('f_amount').value = Math.round(parseFloat(parts[5]) / 2) || '';
+        update();
       } else {
-        document.getElementById('f_amount').value = '';
+        autoCompute(); // falls back to the type-correct rule now that f_total is set
       }
 
-      // Auto-detect type from code prefix
-      if((parts[1]||'').startsWith('OTC-')) setType('chicharonillo');
-      else setType('reservation');
-
-      update();
       const hint = document.getElementById('pasteHint');
       hint.style.display = 'inline';
       setTimeout(()=>hint.style.display='none', 3000);
