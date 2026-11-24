@@ -26,7 +26,7 @@
   // Shared staff settings (price + daily cap) so changes reach every guest's device, not just the staff phone
   window._fbSavePrices=async function(map){await set(ref(db,'config/chicharonillo_prices'),map);};
   window._fbSaveCap=async function(n){await set(ref(db,'config/chicharonillo_cap'),n>0?n:null);};
-  onValue(ref(db,'config/chicharonillo_prices'),function(snap){if(window.applyRemotePrices)window.applyRemotePrices(snap.val());});
+  onValue(ref(db,'config/chicharonillo_prices'),function(snap){if(window.applyRemotePrices)window.applyRemotePrices(snap.val());},function(e){window._cfgReadErr=(e&&e.code)||'read denied';});
   onValue(ref(db,'config/chicharonillo_cap'),function(snap){if(window.applyRemoteCap)window.applyRemoteCap(snap.val());});
   window._fbCodeExists=async function(code){
     var snap=await get(query(ref(db,'chicharonillo_orders'),orderByChild('code'),equalTo(code)));
@@ -216,6 +216,7 @@ select.inp{cursor:pointer;background:#fff;}
         <button id="btnSaveCap" style="background:var(--gb);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:10px;padding:9px 16px;cursor:pointer;font-weight:700;white-space:nowrap">Save</button>
       </div>
       <div id="capCur" style="font-family:'Courier Prime',monospace;font-size:11px;color:var(--mu);margin-top:10px"></div>
+      <div id="capSync" style="font-family:'Courier Prime',monospace;font-size:11px;margin-top:6px;line-height:1.5"></div>
     </div>
     <div class="ep" id="epD" style="display:none">
       <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:8px">Block Dates</div>
@@ -250,6 +251,7 @@ select.inp{cursor:pointer;background:#fff;}
     <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px">Edit Item Prices</div>
     <div id="priceEdItems" style="margin-bottom:10px"></div>
     <button id="btnSavePrice" style="background:var(--gb);border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:10px;padding:9px 16px;cursor:pointer;font-weight:700;width:100%">Save Prices</button>
+    <div id="priceSync" style="font-family:'Courier Prime',monospace;font-size:11px;margin-top:10px;line-height:1.5"></div>
   </div>
   <div id="oG"></div>
   <div id="oSW" style="display:none">
@@ -520,9 +522,12 @@ function promptCapPin(){if(capPinOk){togEp('epCap','btnCap','Order Cap','Close')
 function rCapEd(){var cap=gCap();var el=document.getElementById('capCur');if(el)el.textContent=cap>0?('Current cap: '+cap+' order'+(cap>1?'s':'')+' per day'):'Current: No limit';var inp=document.getElementById('nCap');if(inp)inp.value=cap>0?cap:'';}
 function saveCap(){var inp=document.getElementById('nCap');var v=parseInt(inp.value,10);if(isNaN(v)||v<0){toast('Enter a valid number (0 for no limit)');return;}sCap(v);rCapEd();dpUpd();
   var msg=v>0?('Cap set to '+v+' per day'):'Cap removed - no limit';
-  if(window._fbSaveCap){window._fbSaveCap(v).then(function(){toast(msg);}).catch(function(){toast('Saved on this device only - check connection');});}
-  else{toast('Saved on this device only - check connection');}}
+  syncStatus('capSync',true,'Saving to all guests...');
+  if(window._fbSaveCap){window._fbSaveCap(v).then(function(){toast(msg);syncStatus('capSync',true,'Synced: applies to all guests.');}).catch(function(e){toast('NOT synced to guests');syncStatus('capSync',false,'NOT synced - guests are not limited by this cap. Reason: '+fbErr(e));});}
+  else{toast('NOT synced to guests');syncStatus('capSync',false,'NOT synced - could not reach Firebase (page offline or Firebase failed to load).');}}
 function promptTimePin(){if(tPinOk){togEp('epT','btnT','Edit Times','Close');return;}var p=prompt('Enter staff PIN:');if(p===gpin()){tPinOk=true;togEp('epT','btnT','Edit Times','Close');rTEd();}else if(p!==null)toast('Incorrect PIN');}
+function syncStatus(id,ok,text){var e=document.getElementById(id);if(!e)return;e.style.color=ok?'#2a7a5a':'#9a2a1a';e.textContent=text;}
+function fbErr(e){return (e&&(e.code||e.message))?String(e.code||e.message):'unknown error';}
 var pricePinOk=false;
 function promptPricePin(){if(pricePinOk){togEp('epPrice','btnPrice','Edit Price','Close');if(document.getElementById('epPrice').style.display!=='none')rPriceEd();return;}var p=prompt('Enter staff PIN:');if(p===gpin()){pricePinOk=true;togEp('epPrice','btnPrice','Edit Price','Close');rPriceEd();}else if(p!==null)toast('Incorrect PIN');}
 function rPriceEd(){
@@ -546,8 +551,9 @@ function savePrices(){
   if(changed){
     saveItems(ITEMS);rOG();
     var map={};ITEMS.forEach(function(m){map[m.id]=m.price;});
-    if(window._fbSavePrices){window._fbSavePrices(map).then(function(){toast('Price updated for all guests');}).catch(function(){toast('Saved on this device only - check connection');});}
-    else{toast('Saved on this device only - check connection');}
+    syncStatus('priceSync',true,'Saving to all guests...');
+    if(window._fbSavePrices){window._fbSavePrices(map).then(function(){toast('Price updated for all guests');syncStatus('priceSync',true,'Synced: guests now see this price.');}).catch(function(e){toast('NOT synced to guests');syncStatus('priceSync',false,'NOT synced - guests still see the old price. Reason: '+fbErr(e));});}
+    else{toast('NOT synced to guests');syncStatus('priceSync',false,'NOT synced - could not reach Firebase (page offline or Firebase failed to load).');}
   }
   else{toast('Enter a valid price');}
 }
