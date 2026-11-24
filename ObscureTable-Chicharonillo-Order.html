@@ -8,7 +8,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, get, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  import { getDatabase, ref, set, get, query, orderByChild, equalTo, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
   var cfg={apiKey:"AIzaSyDGyboz57n06VHx_6N6nkSfi6CjcousUMU",authDomain:"obscure-table.firebaseapp.com",databaseURL:"https://obscure-table-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"obscure-table",storageBucket:"obscure-table.firebasestorage.app",messagingSenderId:"170560318474",appId:"1:170560318474:web:734bb2a7f6404fac43c3f3"};
   var app=initializeApp(cfg);var db=getDatabase(app);
   window._fbWriteOrder=async function(id,data){await set(ref(db,'chicharonillo_orders/'+id),data);};
@@ -22,6 +22,15 @@
       snap.forEach(function(child){var v=child.val();if(v&&v.status!=='cancelled')n++;});
       return n;
     }catch(e){throw e;}
+  };
+  // Shared staff settings (price + daily cap) so changes reach every guest's device, not just the staff phone
+  window._fbSavePrices=async function(map){await set(ref(db,'config/chicharonillo_prices'),map);};
+  window._fbSaveCap=async function(n){await set(ref(db,'config/chicharonillo_cap'),n>0?n:null);};
+  onValue(ref(db,'config/chicharonillo_prices'),function(snap){if(window.applyRemotePrices)window.applyRemotePrices(snap.val());});
+  onValue(ref(db,'config/chicharonillo_cap'),function(snap){if(window.applyRemoteCap)window.applyRemoteCap(snap.val());});
+  window._fbCodeExists=async function(code){
+    var snap=await get(query(ref(db,'chicharonillo_orders'),orderByChild('code'),equalTo(code)));
+    return snap.exists();
   };
   window._fbReady=true;
   if(window._fbQ){window._fbQ.forEach(function(x){window._fbWriteOrder(x[0],x[1]);});window._fbQ=[];}
@@ -311,6 +320,17 @@ function loadItems(){
 }
 function saveItems(arr){try{localStorage.setItem('otc_items',JSON.stringify(arr));}catch(e){}}
 var ITEMS=loadItems();
+window.applyRemotePrices=function(map){
+  // map null => no override stored; keep defaults/local cache
+  if(!map||typeof map!=='object')return;
+  var changed=false;
+  ITEMS.forEach(function(m){var v=parseFloat(map[m.id]);if(!isNaN(v)&&v>=0&&v!==m.price){m.price=v;m.priceLabel='PHP '+v.toLocaleString();changed=true;}});
+  if(changed){saveItems(ITEMS);if(typeof rOG==='function')rOG();if(typeof rPriceEd==='function'&&pricePinOk)rPriceEd();}
+};
+window.applyRemoteCap=function(n){
+  var v=parseInt(n,10);sCap(isNaN(v)||v<0?0:v);
+  if(typeof rCapEd==='function'&&capPinOk)rCapEd();
+};
 
 // HELPERS
 function toast(m){var e=document.getElementById('T');e.textContent=m;e.classList.add('on');setTimeout(function(){e.classList.remove('on');},2500);}
@@ -498,7 +518,10 @@ function promptDatePin(){if(dpPinOk){togEp('epD','btnD','Block Dates','Close');i
 var capPinOk=false;
 function promptCapPin(){if(capPinOk){togEp('epCap','btnCap','Order Cap','Close');if(document.getElementById('epCap').style.display!=='none')rCapEd();return;}var p=prompt('Enter staff PIN:');if(p===gpin()){capPinOk=true;togEp('epCap','btnCap','Order Cap','Close');rCapEd();}else if(p!==null)toast('Incorrect PIN');}
 function rCapEd(){var cap=gCap();var el=document.getElementById('capCur');if(el)el.textContent=cap>0?('Current cap: '+cap+' order'+(cap>1?'s':'')+' per day'):'Current: No limit';var inp=document.getElementById('nCap');if(inp)inp.value=cap>0?cap:'';}
-function saveCap(){var inp=document.getElementById('nCap');var v=parseInt(inp.value,10);if(isNaN(v)||v<0){toast('Enter a valid number (0 for no limit)');return;}sCap(v);rCapEd();dpUpd();toast(v>0?('Cap set to '+v+' per day'):'Cap removed - no limit');}
+function saveCap(){var inp=document.getElementById('nCap');var v=parseInt(inp.value,10);if(isNaN(v)||v<0){toast('Enter a valid number (0 for no limit)');return;}sCap(v);rCapEd();dpUpd();
+  var msg=v>0?('Cap set to '+v+' per day'):'Cap removed - no limit';
+  if(window._fbSaveCap){window._fbSaveCap(v).then(function(){toast(msg);}).catch(function(){toast('Saved on this device only - check connection');});}
+  else{toast('Saved on this device only - check connection');}}
 function promptTimePin(){if(tPinOk){togEp('epT','btnT','Edit Times','Close');return;}var p=prompt('Enter staff PIN:');if(p===gpin()){tPinOk=true;togEp('epT','btnT','Edit Times','Close');rTEd();}else if(p!==null)toast('Incorrect PIN');}
 var pricePinOk=false;
 function promptPricePin(){if(pricePinOk){togEp('epPrice','btnPrice','Edit Price','Close');if(document.getElementById('epPrice').style.display!=='none')rPriceEd();return;}var p=prompt('Enter staff PIN:');if(p===gpin()){pricePinOk=true;togEp('epPrice','btnPrice','Edit Price','Close');rPriceEd();}else if(p!==null)toast('Incorrect PIN');}
@@ -520,7 +543,12 @@ function savePrices(){
     var item=ITEMS.find(function(m){return m.id===id;});
     if(item){item.price=v;item.priceLabel='PHP '+v.toLocaleString();changed=true;}
   });
-  if(changed){saveItems(ITEMS);rOG();toast('Price updated');}
+  if(changed){
+    saveItems(ITEMS);rOG();
+    var map={};ITEMS.forEach(function(m){map[m.id]=m.price;});
+    if(window._fbSavePrices){window._fbSavePrices(map).then(function(){toast('Price updated for all guests');}).catch(function(){toast('Saved on this device only - check connection');});}
+    else{toast('Saved on this device only - check connection');}
+  }
   else{toast('Enter a valid price');}
 }
 function togEp(pid,bid,open,close){var p=document.getElementById(pid),b=document.getElementById(bid);var isOpen=p.style.display==='block';p.style.display=isOpen?'none':'block';if(b)b.textContent=isOpen?open:close;if(!isOpen)setTimeout(function(){p.scrollIntoView({behavior:'smooth',block:'nearest'});},100);}
@@ -648,7 +676,14 @@ function bldRev(){
 }
 
 // SUBMIT
-function genCode(ln){var L=(ln||'').replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X');var dd=dpVal?dpVal.replace(/-/g,'').slice(4):'0000';var r=Math.random().toString(36).substring(2,5).toUpperCase();return 'OTC-'+L+dd+'-'+r;}
+function genCode(ln){
+  var L=(ln||'').replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X');
+  var dd=dpVal?dpVal.replace(/-/g,'').slice(4):'0000';
+  var A='ABCDEFGHJKMNPQRSTUVWXYZ23456789',r='',n=5,buf=new Uint32Array(n);
+  try{(window.crypto||window.msCrypto).getRandomValues(buf);}catch(e){for(var k=0;k<n;k++)buf[k]=Math.floor(Math.random()*4294967296);}
+  for(var q=0;q<n;q++)r+=A[buf[q]%A.length];
+  return 'OTC-'+L+dd+'-'+r;
+}
 async function submitOrder(){
   var btn=document.getElementById('btnNx');btn.textContent='Sending...';btn.disabled=true;
   // Best-effort final cap re-check at the moment of submission. There is no
@@ -671,6 +706,8 @@ async function submitOrder(){
   }
   var ln=gv('fLN'),fn=gv('fFN'),ph=gv('fPH'),em=gv('fEM');
   var code=genCode(ln);
+  // Make sure the code is not already used by an existing order; regenerate if it is
+  if(window._fbCodeExists){try{for(var t=0;t<5&&await window._fbCodeExists(code);t++)code=genCode(ln);}catch(e){/* offline: proceed with the random code */}}
   var total=ITEMS.reduce(function(s,m){return s+(oQty[m.id]||0)*m.price;},0);
   var down=total; // full payment required (no partial downpayment for Chicharonillo pickup orders)
   var orderLines=ITEMS.filter(function(m){return oQty[m.id]>0;}).map(function(m){return m.name+' x'+oQty[m.id]+' ('+m.priceLabel+')';}).join(', ');
