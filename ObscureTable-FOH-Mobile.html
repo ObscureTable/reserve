@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="theme-color" content="#f5f0e8">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
 <title>Obscure Table — FOH</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <script type="module">
@@ -60,7 +61,7 @@
   // ── Live listener for Chicharonillo orders ─────────────────
   onValue(CHICHA_REF, (snapshot) => {
     const val = snapshot.val();
-    window.chicharonilloOrders = val ? Object.values(val) : [];
+    window.chicharonilloOrders = val ? Object.entries(val).map(([k,v]) => Object.assign({}, v, {id: v.id || k, name: v.name || v.lastName || '', first: v.first || v.firstName || '', order: v.order || v.items || null})) : [];
     if (window.renderChicharonilloOrders) window.renderChicharonilloOrders();
   });
 
@@ -242,7 +243,7 @@
 <div class="app">
   <!-- Top Bar -->
   <div class="topbar">
-    <div><div class="topbar-name">Obscure</div><div class="topbar-sub">Table · FOH</div></div>
+    <div><div class="topbar-name">Obscure</div><div class="topbar-sub">Table · FOH</div><div style="font-family:'Courier Prime',monospace;font-size:8px;letter-spacing:.08em;opacity:.45;margin-top:2px">build 24 Nov 8:58pm</div></div>
     <div style="text-align:right"><div class="topbar-time" id="clock">—</div><div class="topbar-date" id="dateDisplay">—</div></div>
   </div>
   <!-- Stats -->
@@ -540,9 +541,9 @@
     cancelled: {label:'Cancelled', color:'#8a2010', bg:'rgba(138,32,16,0.1)'},
   };
   const CHICHA_PAYMENT = {
-    unpaid:       {label:'Awaiting Deposit', color:'#c84030'},
+    unpaid:       {label:'Awaiting Payment', color:'#c84030'},
     deposit_paid: {label:'Deposit Paid',     color:'#1a4a7a'},
-    fully_paid:   {label:'Fully Paid',       color:'#1a6a4a'},
+    fully_paid:   {label:'Payment Received', color:'#1a6a4a'},
   };
   const CHICHA_ITEMS = {
     whole: {icon:'🐷', name:'Whole Chicharonillo', price:14950},
@@ -631,8 +632,8 @@
       </div>
       <!-- Payment actions -->
       <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px">
-        ${(o.payment||'unpaid')==='unpaid'?`<div onclick="updateChicharonilloPayment('${id}','deposit_paid')" style="background:rgba(26,74,122,0.12);border:1.5px solid #1a4a7a;border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#4a8aba;font-weight:700">✓ Deposit Received</div>`:''}
-        ${(o.payment||'unpaid')==='deposit_paid'?`<div onclick="updateChicharonilloPayment('${id}','fully_paid')" style="background:rgba(26,106,74,0.12);border:1.5px solid #1a6a4a;border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#2a9a6a;font-weight:700">✓ Full Payment Received</div>`:''}
+        ${(o.payment||'unpaid')==='unpaid'?`<div onclick="updateChicharonilloPayment('${id}','fully_paid')" style="background:rgba(26,106,74,0.12);border:1.5px solid #1a6a4a;border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#2a9a6a;font-weight:700">✓ Payment Received</div>`:''}
+        ${(o.payment||'unpaid')==='deposit_paid'?`<div onclick="updateChicharonilloPayment('${id}','fully_paid')" style="background:rgba(26,106,74,0.12);border:1.5px solid #1a6a4a;border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#2a9a6a;font-weight:700">✓ Balance Received</div>`:''}
         ${(o.payment||'unpaid')!=='unpaid'?`<div onclick="updateChicharonilloPayment('${id}','unpaid')" style="background:rgba(138,32,16,0.07);border:1.5px solid rgba(138,32,16,0.3);border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#c84030;font-weight:700">↩ Reset Payment</div>`:''}
       </div>
       <!-- Delete -->
@@ -648,7 +649,7 @@
       </div>
       <div style="background:#f0e8d8;border:1.5px solid rgba(180,74,8,0.18);border-radius:12px;overflow:hidden;margin-bottom:12px">
         <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#b84a08;padding:10px 16px;border-bottom:1px solid rgba(180,74,8,0.12);background:rgba(180,74,8,0.06);font-weight:700">Contact & Pickup</div>
-        ${[['Status',`<span style="color:${sm.color};font-weight:700">${sm.label}</span>`],['Payment',`<span style="color:${pm.color};font-weight:700">${pm.label}</span>`],['Pickup Date',fmtDate(o.date)],['Pickup Time',fmtTime(o.time)],['Phone',`<a href="tel:${o.phone}" style="color:#c85a10;text-decoration:none;font-weight:700">${o.phone||'—'}</a>`],['Email',o.email||'—'],['Downpayment',`PHP ${(o.downPayment||0).toLocaleString()}`],['Balance',`PHP ${((o.total||0)-(o.downPayment||0)).toLocaleString()}`],['Notes',o.notes||'—']].map(([k,v])=>`
+        ${[['Status',`<span style="color:${sm.color};font-weight:700">${sm.label}</span>`],['Payment',`<span style="color:${pm.color};font-weight:700">${pm.label}</span>`],['Pickup Date',fmtDate(o.date)],['Pickup Time',fmtTime(o.time)],['Phone',`<a href="tel:${o.phone}" style="color:#c85a10;text-decoration:none;font-weight:700">${o.phone||'—'}</a>`],['Email',o.email||'—'],[o.fullPaymentRequired?'Payment Required':'Downpayment',`PHP ${(o.downPayment||0).toLocaleString()}`],['Balance Due',`PHP ${(((o.payment||'unpaid')==='fully_paid'?0:(o.payment||'unpaid')==='deposit_paid'?(o.total||0)-(o.downPayment||0):(o.total||0))).toLocaleString()}`],['Notes',o.notes||'—']].map(([k,v])=>`
           <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid rgba(200,90,16,0.07)">
             <span style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#b08050">${k}</span>
             <span style="font-size:15px;color:#1a0e04;text-align:right;max-width:60%">${v}</span>
