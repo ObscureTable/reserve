@@ -194,6 +194,7 @@
             <p id="p_policy_vat" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">All prices exclude VAT and service charge.</p>
             <p id="p_policy_corkage" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">A corkage fee of <strong style="font-style:normal;color:#8a6020;">PHP 1,000 per bottle</strong> applies for wine brought in.</p>
             <p id="p_policy_confirm_chicha" style="display:none;font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your order is only confirmed upon receipt of full payment.</p>
+            <p id="p_policy_vat_chicha" style="display:none;font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">All prices are inclusive of VAT.</p>
             <p id="p_policy_cancel" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0;font-style:italic;">Cancellations made <strong style="font-style:normal;color:#9a2a1a;">less than 48 hours</strong> before your reservation are non-refundable.</p>
             <p id="p_policy_cancel_chicha" style="display:none;font-size:14px;color:#5a4828;line-height:1.7;margin:0;font-style:italic;"><strong style="font-style:normal;color:#9a2a1a;">Strictly No Cancellations.</strong></p>
           </td></tr>
@@ -246,6 +247,7 @@
     document.getElementById('p_policy_corkage').style.display = type==='reservation' ? 'block' : 'none';
     document.getElementById('p_policy_vat').style.display = type==='reservation' ? 'block' : 'none';
     document.getElementById('p_policy_confirm_chicha').style.display = type==='chicharonillo' ? 'block' : 'none';
+    document.getElementById('p_policy_vat_chicha').style.display = type==='chicharonillo' ? 'block' : 'none';
     document.getElementById('p_policy_cancel').style.display = type==='reservation' ? 'block' : 'none';
     document.getElementById('p_policy_cancel_chicha').style.display = type==='chicharonillo' ? 'block' : 'none';
 
