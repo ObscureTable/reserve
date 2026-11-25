@@ -65,6 +65,11 @@
     if (window.renderChicharonilloOrders) window.renderChicharonilloOrders();
   });
 
+  window._fbSetChicha = async (id, data) => { await set(ref(db, `chicharonillo_orders/${id}`), data); };
+  window.chichaPrices = {}; window.chichaCap = 0;
+  onValue(ref(db, 'config/chicharonillo_prices'), (snap) => { window.chichaPrices = snap.val() || {}; });
+  onValue(ref(db, 'config/chicharonillo_cap'), (snap) => { window.chichaCap = parseInt(snap.val(),10) || 0; });
+
   window._fbReady = true;
   window._fbUpdate = async (id, data) => { await update(ref(db, `reservations/${id}`), data); };
   window._fbSave   = async (id, data) => { await set(ref(db, `reservations/${id}`), data); };
@@ -243,7 +248,7 @@
 <div class="app">
   <!-- Top Bar -->
   <div class="topbar">
-    <div><div class="topbar-name">Obscure</div><div class="topbar-sub">Table · FOH</div><div style="font-family:'Courier Prime',monospace;font-size:8px;letter-spacing:.08em;opacity:.45;margin-top:2px">build 25 Nov 9:36am</div></div>
+    <div><div class="topbar-name">Obscure</div><div class="topbar-sub">Table · FOH</div><div style="font-family:'Courier Prime',monospace;font-size:8px;letter-spacing:.08em;opacity:.45;margin-top:2px">build 25 Nov 10:05am</div></div>
     <div style="text-align:right"><div class="topbar-time" id="clock">—</div><div class="topbar-date" id="dateDisplay">—</div></div>
   </div>
   <!-- Stats -->
@@ -381,7 +386,7 @@
         <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz48c3ZnIGlkPSJMYXllcl8xIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzMjc1IDEyNTciPjxkZWZzPjxzdHlsZT4uY2xzLTF7ZmlsbDojZDg2NjNmO30uY2xzLTJ7ZmlsbDojMDU0YTUxO308L3N0eWxlPjwvZGVmcz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik01MTguMTUsNzc2LjgzYy01MC40OSwwLTk3LjI1LTIyLjY2LTEwNi43MS03My40NC04LjAzLTQzLjYsMi44Ny05OS41NCwzNy4wMS0xMjcuOTQsMTQuMDYtMTEuNDcsNDMuMDMtMTYuNjQsNjkuOTktMTYuNjQsMTcuNzksMCwzNC43MSwyLjI5LDQ2LjE4LDYuMDIsMjQuNjcsOC4wMywxNS4yLDQ5LjkxLDE0LjkyLDc2LjMxLTEwLjA0LTIuNTgtMzEuODQtNS43NC00OS45MS01Ljc0LTEwLjA0LDAtMTkuMjIuODYtMjQuMzgsMy43My0zMi4xMywxNy41LTIwLjY1LDY0LjI2LDE1LjQ5LDY5LjEzLDE2LjY0LDIuMywzOS44Ny0xMC42MSw1My4zNi0xMC42MSw1Ljc0LDAsOS43NSwyLjI5LDEwLjMzLDkuNzUsMS43MiwyMC45NCw1Ljc0LDU1LjY1LTE0LjYzLDYxLjY4LTE2LjkyLDUuMTYtMzQuNDIsNy43NS01MS42NCw3Ljc1WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTY2Ni40Miw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTkxMy42OSw3NzYuMjZsLTE4LjA3LS44Ni0xNC4wNi0uMjktOC4zMi0xLjQzLTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDguNTctMjIuOTUuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuMTQuMjktNTEuMzUuMjktMTIuMzQuODYtMjQuNjcuODYtMzcuMDEuMjktMTAuMDQuNTctMjAuMzcsMS40My0zMC42OS4yOS0uNTcuMjktMi41OC41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uMjkuODYtLjU3LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjQzLDE3Ljc5LTEuNDNoMjAuOTRjNy4xNy0uMjksMTQuMDYtLjU3LDIwLjk0LS4yOSwyLjI5LDAsNC41OSwwLDYuNi44NiwxLjcyLjg2LDIuODcsMi4yOSwzLjczLDQuMDIuODYsMi41OCwxLjQzLDUuNDUsMS43Miw4LjMyLjI5LDMuNDQuMjksNy4xNy41NywxMC42MS4yOSwxMC45LS4yOSwyMi4wOS0uNTcsMzIuOTktLjU3LDIwLjM3LS41Nyw0MS4wMi0uNTcsNjEuMzkuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksNy43NS0uMjksMjMuNTItLjI5LDIzLjUybC0uODYsMS40My0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0LDEuMTVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTA5NS4wNCw3NzYuODNjLTUwLjQ5LDAtOTcuMjUtMjIuNjYtMTA2LjcxLTczLjQ0LTguMDMtNDMuNiwyLjg3LTk5LjU0LDM3LjAxLTEyNy45NCwxNC4wNi0xMS40Nyw0My4wMy0xNi42NCw2OS45OS0xNi42NCwxNy43OSwwLDM0LjcxLDIuMjksNDYuMTgsNi4wMiwyNC42Nyw4LjAzLDE1LjIsNDkuOTEsMTQuOTIsNzYuMzEtMTAuMDQtMi41OC0zMS44NC01Ljc0LTQ5LjkxLTUuNzQtMTAuMDQsMC0xOS4yMi44Ni0yNC4zOCwzLjczLTMyLjEzLDE3LjUtMjAuNjUsNjQuMjYsMTUuNDksNjkuMTMsMTYuNjQsMi4zLDM5Ljg3LTEwLjYxLDUzLjM2LTEwLjYxLDUuNzQsMCw5Ljc1LDIuMjksMTAuMzMsOS43NSwxLjcyLDIwLjk0LDUuNzQsNTUuNjUtMTQuNjMsNjEuNjgtMTYuOTIsNS4xNi0zNC40Miw3Ljc1LTUxLjY0LDcuNzVaIi8+PHBhdGggY2xhc3M9ImNscy0yIiBkPSJNMTI0My4zMSw3NzQuODJsLTMyLjEzLTEuMTUtOC4zMi0xLjE1LTEuMTUtLjg2cy0uODYtMzEuODQtLjg2LTQ3LjYyYzAtMTEuNDcuNTctMjMuMjQuODYtMzQuNzEuMjktMTcuMjEuMjktMzQuNDIuMjktNTEuNjQuMjktMTIuMDUuODYtMjQuMzguODYtMzYuNzIuMjktMTAuMzMuNTctMjAuNjUsMS40My0zMC42OS4yOS0uNTcuMjktMi44Ny41Ny0zLjE2LjU3LS41NywxLjE1LS44NiwxLjcyLS41Ny4yOS0uNTcuODYtLjU3LDEuNDMtLjg2LDUuNzQtMS4xNSwxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OCwwLDE0LjA2LDAsMjAuOTQtLjI5LDcuMTcsMCwxNC4wNi0uMjksMjAuOTQtLjI5LDIuMjksMCw0LjU5LjI5LDYuNiwxLjE1LDEuNzIuODYsMi44NywyLjMsMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuNjEuMjksMTAuOS0uMjksMjEuOC0uNTcsMzIuOTktLjI5LDcuMTctLjI5LDE0LjM0LS4yOSwyMS41MWg0Ny4wNXYtNS43NGMuMjktMTIuMzMuODYtMjQuMzgsMS4xNS0zNi43MiwwLTEwLjMzLjI5LTIwLjY1LDEuMTUtMzAuNjkuMjktLjU3LjI5LTIuODcuNTctMy40NC41Ny0uMjksMS4xNS0uNTcsMS43Mi0uNTcuNTctLjI5LDEuMTUtLjI5LDEuNDMtLjU3LDUuNzQtMS40MywxMS43Ni0xLjE1LDE3Ljc5LTEuMTUsNi44OC0uMjksMTQuMDYtLjI5LDIwLjk0LS4yOXMxNC4wNi0uMjksMjAuOTQtLjI5YzIuMjksMCw0LjU5LDAsNi42LDEuMTUsMS43Mi41NywyLjg3LDIuMjksMy43Myw0LjAyLjg2LDIuNTgsMS40Myw1LjQ1LDEuNzIsOC4zMi4yOSwzLjQ0LjI5LDYuODguNTcsMTAuMzMuMjksMTEuMTktLjI5LDIyLjA5LS41NywzMy4yOC0uMjksMTAuMDQtLjI5LDIwLjM3LS4yOSwzMC42OXMtLjI5LDIwLjM3LS4yOSwzMC40MWMuNTcsMjEuMjMuODYsNDIuMTcuODYsNjMuNC0uMjksOC4wMy0uMjksMjMuODEtLjI5LDIzLjgxbC0uODYsMS4xNXYuMjlsLTIuMDEsMi4wMS02LjAyLDEuMTUtMjcuNTQuODYtMzEuODQtMS4xNS04LjYxLTEuNDMtMS4xNS0uNTdzLS44Ni0zMS44NC0uODYtNDcuNjJjMC02LjYuMjktMTMuMi4yOS0xOS43OWgtNDYuMThjLjI5LDQuMy4yOSw4LjMyLjI5LDEyLjYyLjI5LDkuNzUuMjksMTkuNzkuMjksMjkuNTUtLjI5LDguMDMtLjI5LDIzLjgxLS4yOSwyMy44MWwtLjg2LDEuMTV2LjI5bC0yLjAxLDIuMDEtNi4wMiwxLjE1LTI3LjU0Ljg2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTE0NzEuOSw3NzAuMjNjLTExLjE5LDAtMjEuMjMtLjg2LTI0Ljk2LTQuMy04LjYxLTcuNzUtLjg2LTQzLjYsMC01Ni41MSwzLjczLTUwLjc4LTQuMy0xMjkuOTUsNTQuNS0xNDEuNzEsMTIuMzQtMi4zLDI2LjY4LTQuNTksNDAuNDUtNC41OSwyNC45NiwwLDQ4Ljc3LDYuNiw1OS4wOSwyOS44MywyMy41Miw1My4wNywxOC42NSwxMTYuNDcsMjMuNTIsMTc1LjI3LTEwLjYxLDAtMzUuNTcsMS43Mi01My4wNywxLjcyLTcuNDYsMC0xMy40OC0uMjktMTYuNjQtMS4xNS0uODYtMTIuMDUsMC0yNC4xLDAtMzYuNDMtMTMuNDgtLjU3LTI3LjI1LS41Ny00MC43My41Ny00Ljg4LjI5LDIuMjksMzUuODYtNS43NCwzNS44Ni02LjYsMC0yMi4zOCwxLjQzLTM2LjQzLDEuNDNaTTE1NTAuNSw2NzYuNDNjLTEuNDMtMjIuMzgtOC44OS0zMy44NS0xNi4zNS0zMy44NXMtMTQuOTIsMTAuOS0xNi4wNiwzMy4yOGMxMC42MS4yOSwyMS41MS4yOSwzMi40Mi41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xODI2LjYyLDc2Ny44N2MtMy41OSwwLTguODQtMS4xLTEyLjk4LTEuMzgtMTkuNi0uODMtMzkuMjEsMC01OC41NC0uODMtNC4xNC0xNy45NS02LjM1LTM2LjQ1LTE0LjkxLTUyLjQ2LTEuOTMtMy41OS01LjI1LTUuMjUtOC4yOC01LjI1LTMuNTksMC02LjYzLDIuNDktNi42Myw3LjE4LDAsMTYuNTctLjU1LDMzLjQxLjU1LDQ5Ljk4LTguMDEtLjU1LTQ0LjE4LTEuMS02Mi4xMi0xLjFoLTguODRjLTYuMDcsMC0yLjQ4LTEyLjE1LTEuOTMtMTguMjIsMy41OS01Ny4xNi00Ljk3LTExNC41OS0xLjM4LTE3MS43NCwxMi40Mi02LjYzLDU4LjU0LTguMDEsNzguMTQtOC4wMSwyMi45MiwwLDQ3Ljc3LjI4LDY4Ljc1LDEwLjc3LDIxLjI2LDEwLjQ5LDM3LDM5LjIxLDMzLjY5LDYyLjk1LTMuMDQsMjEuNTQtMTkuODgsMzkuNzYtMzUuODksNTQuOTUsMTguMjIsMTguMjIsMzAuMSw0My4wNywzNS44OSw2Ny45MiwxLjEsNC4xNC0xLjY2LDUuMjUtNS41Miw1LjI1Wk0xNzMyLjE5LDY2MS44NGM0MC4zMSwwLDQ4Ljg3LTQ1LjI4LDMuNTktNDYuNjYtMS45MywwLTMuODctLjI4LTYuMDctLjI4LTMuODcsMC03LjQ1LjgzLTcuMTgsNC40MiwxLjM4LDEzLjgxLDEuMSwyOC4xNi44Myw0MS45NywzLjA0LjU1LDYuMDcuNTUsOC44NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0xOTQwLjQ4LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0xOTM5LjEsNzAwLjIyYzIwLjE2LjI4LDM1LjYyLTE4LjIyLDMxLjQ4LTM4LjEtMi43Ni0xNC4wOC0xNS40Ni0yNC44NS0yOS44Mi0yNS40LTQuNDIsMC04Ljg0LjgzLTEyLjk4LDIuMjEtOC4yOCwzLjMxLTE0LjkxLDEwLjIyLTE3Ljk1LDE4LjUtMi4yMSw1LjUyLTIuNzYsMTEuODctMS4zOCwxNy40LDIuNDksMTQuNjMsMTYuMDEsMjUuNCwzMC42NSwyNS40WiIvPjxwYXRoIGNsYXNzPSJjbHMtMiIgZD0iTTIxMjMuNzUsNzY2LjIxYy0xMS42LDAtNTYuMzMuNTUtNjYuODItMy44Nyw0LjY5LTU1LjIyLS4yOC0xMTAuNzIuMjgtMTY2LjIyLDAtMjYuNzgsMS4zOC0yOC40NCwyNi41MS0yOC45OSw0LjE0LDAsMTEuMDUtLjU1LDE4LjIyLS41NSwxMC4yMiwwLDIwLjk4LjgzLDI1LjEzLDQuOTcsOS4xMSw5LjM5LDI5LjU0LDYxLjAyLDM1LjA3LDcyLjYyLTEuMzgtMjMuNzUsMS4xLTQ4LjA0LTMuMDQtNzEuNzksMjQuMy0uMjgsNDguMzItMy41OSw3Mi42Mi0yLjIxLTUuMjUsNjQuMzMtOC41NiwxMjguOTQtMy44NywxOTMtMjIuMzcsMi4yMS00NS4wMSwxLjY2LTY3LjM3LDEuNjYtMTQuMzYtMjMuMTktMjIuOTItNDkuNDItMzUuODktNzMuMTcuMjgsMjQuODUtMS45Myw0OS43LS44Myw3NC41NVoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yMjg5LjcyLDc2OS44bC0xNy4zOS0uODMtMTMuNTMtLjI4LTguMDEtMS4zOC0xLjEtLjgzcy0uODMtMzAuNjUtLjgzLTQ1LjgzYzAtMTEuMDUuNTUtMjIuMDkuODMtMzMuNDEuMjgtMTYuNTcuMjgtMzIuODYuMjgtNDkuNDIuMjgtMTEuODcuODMtMjMuNzUuODMtMzUuNjIuMjgtOS42Ni41NS0xOS42LDEuMzgtMjkuNTQuMjgtLjU1LjI4LTIuNDkuNTUtMy4wNC41NS0uNTUsMS4xLS44MywxLjY2LS41NS4yOC0uMjguODMtLjU1LDEuMzgtLjU1LDUuNTItMS4zOCwxMS4zMi0xLjM4LDE3LjEyLTEuMzhoMjAuMTZjNi45LS4yOCwxMy41My0uNTUsMjAuMTYtLjI4LDIuMjEsMCw0LjQyLDAsNi4zNS44MywxLjY2LjgzLDIuNzYsMi4yMSwzLjU5LDMuODcuODMsMi40OSwxLjM4LDUuMjUsMS42Niw4LjAxLjI4LDMuMzEuMjgsNi45LjU1LDEwLjIyLjI4LDEwLjQ5LS4yOCwyMS4yNi0uNTUsMzEuNzUtLjU1LDE5LjYtLjU1LDM5LjQ4LS41NSw1OS4wOS41NSwyMC40My44Myw0MC41OS44Myw2MS4wMi0uMjgsNy40Ni0uMjgsMjIuNjQtLjI4LDIyLjY0bC0uODMsMS4zOC0xLjkzLDEuOTMtNS44LDEuMS0yNi41MSwxLjFaIi8+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNMjM0OC42Myw3NjIuNjNjLTEuNjYtNjQuMzMtNS44LTEyOC45NC0xLjEtMTkzLDExLjYtNC4xNCwyNC41Ny02LjA3LDM3LTYuMDcsOC4yOCwwLDE2LjAxLjgzLDIzLjc1LDIuNDgsMTIuNDIsMi43NiwxMi4xNSwyMS4yNiwxMS44NywzMy45Ni0uMjgsMzIuMzEtMi4yMSw2NC42MS0xLjkzLDk2LjkyLDIyLjA5LjU1LDQ0LjQ1LDEuNjYsNjYuNTQsMS42Ni0uODMsMjIuMDktMy4wNCw0NC43My0xLjM4LDY2LjgyLTE4LjUsMC0xMTYuMjQtLjI4LTEzNC43NC0yLjc2WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTI0OTQuMDgsNzYyLjYzYy0xLjY2LTY0LjMzLTUuOC0xMjguOTQtMS4xLTE5MywxMS42LTQuMTQsMjQuNTctNi4wNywzNy02LjA3LDguMjgsMCwxNi4wMS44MywyMy43NSwyLjQ4LDEyLjQyLDIuNzYsMTIuMTUsMjEuMjYsMTEuODcsMzMuOTYtLjI4LDMyLjMxLTIuMjEsNjQuNjEtMS45Myw5Ni45MiwyMi4wOS41NSw0NC40NSwxLjY2LDY2LjU0LDEuNjYtLjgzLDIyLjA5LTMuMDQsNDQuNzMtMS4zOCw2Ni44Mi0xOC41LDAtMTE2LjI0LS4yOC0xMzQuNzQtMi43NloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0yNzM1Ljk1LDc2Ny44N2MtNDguNiwwLTk0Ljk4LTMzLjY5LTEwMy41NC04Mi44My0zLjA0LTE1Ljc0LTEuOTMtMzIuNTgsMy4zMS00Ny43NywxNC42My00Mi41Miw1NC45NS02OS44NiwxMDAuMjMtNjkuODYsNTEuMzYsMCwxMDAuNSwzNi43MiwxMDUuMiw5MC4wMSwxLjEsMTAuMjIuODMsMjAuNzEtMS42NiwzMC42NS0xMC4yMiw0OC4wNC01NS4yMiw3OS44LTEwMy41NCw3OS44Wk0yNzM0LjU3LDcwMC4yMmMyMC4xNi4yOCwzNS42Mi0xOC4yMiwzMS40OC0zOC4xLTIuNzYtMTQuMDgtMTUuNDYtMjQuODUtMjkuODItMjUuNC00LjQyLDAtOC44NC44My0xMi45OCwyLjIxLTguMjgsMy4zMS0xNC45MSwxMC4yMi0xNy45NSwxOC41LTIuMjEsNS41Mi0yLjc2LDExLjg3LTEuMzgsMTcuNCwyLjQ4LDE0LjYzLDE2LjAxLDI1LjQsMzAuNjUsMjUuNFoiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMjUuOTgsNTI3LjQ4bDEyLjQtMTUuODZjMy4yLTQuMSw5LjI5LTQuNDIsMTIuOTEtLjY4bDU4LjM5LDUzLjk3YzIuOTcsMy4wNywzLjIyLDcuODcuNTksMTEuMjNsLTQuMyw1LjVjLTIuNzMsMy40OS03LjY4LDQuMzItMTEuNCwxLjkybC02Ni40OS00My42MmMtNC4yMy0yLjczLTUuMTktOC41MS0yLjA5LTEyLjQ3WiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTM4Ny4xNSw0OTAuNzJsMTcuNzMtOS41M2M0LjU4LTIuNDYsMTAuMjgtLjMxLDEyLjA5LDQuNTdsMjEuNDMsNTMuN2MxLjQ5LDQuMDEtLjIxLDguNS0zLjk4LDEwLjUybC02LjE1LDMuM2MtMy45MSwyLjEtOC43Ny44Ny0xMS4yMS0yLjgzbC0zMy4wMS00Ny40N2MtMi43Ny00LjItMS4zNC05Ljg4LDMuMS0xMi4yNloiLz48cGF0aCBjbGFzcz0iY2xzLTEiIGQ9Ik0zMTcuNDUsNTc5Ljg1bC00Ljk4LDE5LjVjLTEuMjksNS4wNCwyLjE4LDEwLjA1LDcuMzUsMTAuNjNsNTcuMjgsNy44NWM0LjI1LjQ4LDguMi0yLjI1LDkuMjUtNi40bDEuNzMtNi43NmMxLjEtNC4zLTEuMjctOC43Mi01LjQ1LTEwLjJsLTU0LjAzLTIwLjZjLTQuNzUtMS42Ny05LjkxLDEuMDgtMTEuMTUsNS45NloiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTYyLjc5LDY1NC40djIwLjEzYzAsNS4yLTQuNiw5LjItOS43NSw4LjQ5bC03OS4yNC02LjU1Yy00LjIzLS41OS03LjM4LTQuMjEtNy4zOC04LjQ5di02Ljk4YzAtNC40NCwzLjM5LTguMTQsNy44LTguNTNsNzkuMjQtNi42YzUuMDEtLjQ1LDkuMzMsMy41LDkuMzMsOC41M1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDcyMS4wNGwtOC4wOSwxOC40M2MtMi4wOSw0Ljc2LTcuOTEsNi41OC0xMi4zNCwzLjg1bC00OS45Ni0yOS4xYy0zLjY0LTIuMjQtNS4wNy02LjgyLTMuMzUtMTAuNzRsMi44MS02LjM5YzEuNzgtNC4wNiw2LjM3LTYuMDksMTAuNTgtNC42N2w1NS4yNSwxNy4wNmM0Ljc3LDEuNiw3LjE0LDYuOTYsNS4xMSwxMS41N1oiLz48cGF0aCBjbGFzcz0iY2xzLTIiIGQ9Ik0yOTM3LjI1LDYwNy45bC04LjA5LTE4LjQzYy0yLjA5LTQuNzYtNy45MS02LjU4LTEyLjM0LTMuODVsLTQ5Ljk2LDI5LjFjLTMuNjQsMi4yNC01LjA3LDYuODItMy4zNSwxMC43NGwyLjgxLDYuMzljMS43OCw0LjA2LDYuMzcsNi4wOSwxMC41OCw0LjY3bDU1LjI1LTE3LjA2YzQuNzctMS42LDcuMTQtNi45Niw1LjExLTExLjU3WiIvPjwvc3ZnPgo=" alt="OT Chicharonillo" style="display:block;height:32px;width:auto;margin-bottom:4px;">
         <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.2em;color:#b84a08;text-transform:uppercase;margin-top:2px">Pickup Orders</div>
       </div>
-      <div style="font-family:'Courier Prime',monospace;font-size:11px;color:#7a4820" id="chicharonilloCount">0 orders</div>
+      <div style="text-align:right"><div style="font-family:'Courier Prime',monospace;font-size:11px;color:#7a4820;margin-bottom:6px" id="chicharonilloCount">0 orders</div><button onclick="openChichaAdd()" style="background:#c85a10;border:none;border-radius:8px;color:#fff;font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:8px 12px;cursor:pointer;font-weight:700">+ New Order</button></div>
     </div>
     <input id="chicharonilloSearch" type="search" placeholder="Search by name, code…" oninput="renderChicharonilloOrders()" style="width:100%;background:#fff;border:1.5px solid rgba(180,74,8,0.22);border-radius:10px;color:#1a0e04;padding:10px 14px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none;box-sizing:border-box">
   </div>
@@ -415,6 +420,44 @@
 <div class="toast" id="toast"></div>
 
 <!-- Add Sheet -->
+<div class="sheet-overlay" id="chichaAddOverlay" onclick="closeChichaAdd()"></div>
+<div class="sheet" id="chichaAddSheet" style="z-index:410">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head"><div class="sheet-title">New Pickup Order</div><button class="sheet-close" onclick="closeChichaAdd()">×</button></div>
+  <div class="sheet-body">
+    <div class="field-row">
+      <div class="field-group"><label class="field-label">Last Name *</label><input class="field-input" id="caLast" type="text" placeholder="Surname" autocapitalize="words"></div>
+      <div class="field-group"><label class="field-label">First Name *</label><input class="field-input" id="caFirst" type="text" placeholder="First name" autocapitalize="words"></div>
+    </div>
+    <div class="field-group"><label class="field-label">Phone *</label><input class="field-input" id="caPhone" type="tel" placeholder="09XX XXX XXXX"></div>
+    <div class="field-group"><label class="field-label">Email</label><input class="field-input" id="caEmail" type="email" placeholder="Optional"></div>
+    <div class="field-row">
+      <div class="field-group"><label class="field-label">Pickup Date *</label><input class="field-input" id="caDate" type="date" oninput="chichaAddCheck()"></div>
+      <div class="field-group"><label class="field-label">Pickup Time *</label><input class="field-input" id="caTime" type="time" value="12:00"></div>
+    </div>
+    <div class="field-row">
+      <div class="field-group"><label class="field-label">Quantity *</label><input class="field-input" id="caQty" type="number" min="1" value="1" oninput="chichaAddCheck()"></div>
+      <div class="field-group"><label class="field-label">Price each (PHP) *</label><input class="field-input" id="caPrice" type="number" min="0" oninput="chichaAddCheck()"></div>
+    </div>
+    <div class="field-group"><label class="field-label">Payment</label>
+      <select class="field-input" id="caPay"><option value="unpaid">Awaiting Payment</option><option value="fully_paid">Payment Received</option></select></div>
+    <div class="field-group"><label class="field-label">Notes</label><textarea class="field-input" id="caNotes" placeholder="Optional"></textarea></div>
+    <div id="caTotal" style="font-family:'Courier Prime',monospace;font-size:14px;color:#b84a08;font-weight:700;margin-bottom:10px">Total: PHP 0 (full payment)</div>
+    <div id="caWarn" style="display:none;background:rgba(154,42,26,0.08);border:1.5px solid rgba(154,42,26,0.35);border-radius:10px;padding:12px;margin-bottom:12px;font-size:15px;color:#7a2010;line-height:1.5"></div>
+    <button class="btn-confirm" id="caSave" onclick="saveChichaOrder()">Place Order</button>
+  </div>
+</div>
+<div id="fohPinModal" style="display:none;position:fixed;inset:0;background:rgba(26,18,8,.6);z-index:900;align-items:center;justify-content:center;padding:20px">
+  <div style="background:var(--bg);border-radius:14px;padding:22px;width:100%;max-width:320px">
+    <div style="font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:6px">Staff override</div>
+    <div style="font-size:15px;color:#5a4020;margin-bottom:12px;line-height:1.4">Enter the staff PIN to place this order outside the normal rules.</div>
+    <input id="fohPinInput" type="password" inputmode="numeric" autocomplete="off" class="field-input" style="letter-spacing:.3em;text-align:center" onkeydown="if(event.key==='Enter')fohPinSubmit()">
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button onclick="fohPinCancel()" style="flex:1;background:transparent;border:1.5px solid rgba(139,100,40,.35);border-radius:10px;color:var(--gold);font-family:'Courier Prime',monospace;font-size:11px;padding:12px;cursor:pointer;font-weight:700">Cancel</button>
+      <button onclick="fohPinSubmit()" style="flex:1;background:var(--gold-btn);border:none;border-radius:10px;color:#fff;font-family:'Courier Prime',monospace;font-size:11px;padding:12px;cursor:pointer;font-weight:700">Override</button>
+    </div>
+  </div>
+</div>
 <div class="sheet-overlay" id="addOverlay" onclick="closeAddSheet()"></div>
 <div class="sheet" id="addSheet">
   <div class="sheet-handle"></div>
@@ -471,7 +514,7 @@
 </div>
 
 <script>
-  const todayStr=()=>new Date().toISOString().split('T')[0];
+  const todayStr=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');};
   const STATUS_META={
     pending:     {label:'Pending',      color:'#9a5a18'},
     confirmed:   {label:'Confirmed',    color:'#8b6428'},
@@ -652,7 +695,7 @@
       </div>
       <div style="background:#f0e8d8;border:1.5px solid rgba(180,74,8,0.18);border-radius:12px;overflow:hidden;margin-bottom:12px">
         <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#b84a08;padding:10px 16px;border-bottom:1px solid rgba(180,74,8,0.12);background:rgba(180,74,8,0.06);font-weight:700">Contact & Pickup</div>
-        ${[['Status',`<span style="color:${sm.color};font-weight:700">${sm.label}</span>`],['Payment',`<span style="color:${pm.color};font-weight:700">${pm.label}</span>`],['Pickup Date',fmtDate(o.date)],['Pickup Time',fmtTime(o.time)],['Phone',`<a href="tel:${o.phone}" style="color:#c85a10;text-decoration:none;font-weight:700">${o.phone||'—'}</a>`],['Email',o.email||'—'],[o.fullPaymentRequired?'Payment Required':'Downpayment',`PHP ${(o.downPayment||0).toLocaleString()}`],['Balance Due',`PHP ${(((o.payment||'unpaid')==='fully_paid'?0:(o.payment||'unpaid')==='deposit_paid'?(o.total||0)-(o.downPayment||0):(o.total||0))).toLocaleString()}`],['Notes',o.notes||'—']].map(([k,v])=>`
+        ${[['Status',`<span style="color:${sm.color};font-weight:700">${sm.label}</span>`],['Payment',`<span style="color:${pm.color};font-weight:700">${pm.label}</span>`],['Pickup Date',fmtDate(o.date)],['Pickup Time',fmtTime(o.time)],['Phone',`<a href="tel:${o.phone}" style="color:#c85a10;text-decoration:none;font-weight:700">${o.phone||'—'}</a>`],['Email',o.email||'—'],[o.fullPaymentRequired?'Payment Required':'Downpayment',`PHP ${(o.downPayment||0).toLocaleString()}`],['Balance Due',`PHP ${(((o.payment||'unpaid')==='fully_paid'?0:(o.payment||'unpaid')==='deposit_paid'?(o.total||0)-(o.downPayment||0):(o.total||0))).toLocaleString()}`],['Source',o.manual?('Entered by staff'+(o.overrideUsed?' · override':'')):'Online form'],['Notes',o.notes||'—']].map(([k,v])=>`
           <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid rgba(200,90,16,0.07)">
             <span style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#b08050">${k}</span>
             <span style="font-size:15px;color:#1a0e04;text-align:right;max-width:60%">${v}</span>
@@ -685,6 +728,107 @@
       total ? String(total) : '',
     ].join('\t');
     navigator.clipboard.writeText(text).then(()=>{ toast('Copied — paste into Payment Email Builder'); }).catch(()=>{ toast('Copy failed — check browser permissions'); });
+  }
+
+  // ── Manual Chicharonillo orders (staff) ───────────────────
+  const CHICHA_LEAD_DAYS = 2;
+  const chichaLocalStr = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const chichaMinPickupStr = () => { const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+CHICHA_LEAD_DAYS); return chichaLocalStr(d); };
+  const chichaCurrentPrice = () => { const p = Number((window.chichaPrices||{}).whole); return (!isNaN(p) && p>0) ? p : CHICHA_ITEMS.whole.price; };
+  let _chichaOverrideNeeded = false, _fohPinCb = null;
+
+  function openChichaAdd(){
+    ['caLast','caFirst','caPhone','caEmail','caNotes'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('caDate').value = chichaMinPickupStr();
+    document.getElementById('caTime').value = '12:00';
+    document.getElementById('caQty').value = 1;
+    document.getElementById('caPrice').value = chichaCurrentPrice();
+    document.getElementById('caPay').value = 'unpaid';
+    chichaAddCheck();
+    document.getElementById('chichaAddOverlay').classList.add('open');
+    document.getElementById('chichaAddSheet').classList.add('open');
+  }
+  function closeChichaAdd(){
+    document.getElementById('chichaAddOverlay').classList.remove('open');
+    document.getElementById('chichaAddSheet').classList.remove('open');
+  }
+  // Which rules would this order break? (2-day lead time, daily order cap)
+  function chichaRuleIssues(date){
+    const issues = [];
+    if (date && date < chichaMinPickupStr()) issues.push(`Pickup is inside the ${CHICHA_LEAD_DAYS}-day lead time (earliest normal date is ${chichaMinPickupStr()}).`);
+    const cap = window.chichaCap || 0;
+    if (cap > 0 && date) {
+      const n = (window.chicharonilloOrders||[]).filter(o => o.date===date && o.status!=='cancelled').length;
+      if (n >= cap) issues.push(`That date already has ${n} order${n!==1?'s':''} (daily cap is ${cap}).`);
+    }
+    return issues;
+  }
+  function chichaAddCheck(){
+    const qty = parseInt(document.getElementById('caQty').value,10)||0;
+    const price = parseFloat(document.getElementById('caPrice').value)||0;
+    document.getElementById('caTotal').textContent = `Total: PHP ${(qty*price).toLocaleString()} (full payment)`;
+    const issues = chichaRuleIssues(document.getElementById('caDate').value);
+    _chichaOverrideNeeded = issues.length > 0;
+    const w = document.getElementById('caWarn');
+    if (issues.length) { w.style.display='block'; w.innerHTML = '<strong>Staff PIN needed to override:</strong><br>' + issues.join('<br>'); }
+    else w.style.display='none';
+    document.getElementById('caSave').textContent = issues.length ? 'Place Order (PIN override)' : 'Place Order';
+  }
+  function askFohPin(cb){
+    _fohPinCb = cb;
+    const inp = document.getElementById('fohPinInput'); inp.value='';
+    document.getElementById('fohPinModal').style.display='flex';
+    setTimeout(()=>inp.focus(),60);
+  }
+  function fohPinSubmit(){
+    const inp = document.getElementById('fohPinInput');
+    if (inp.value === getDeletePin()) {
+      document.getElementById('fohPinModal').style.display='none';
+      const cb=_fohPinCb; _fohPinCb=null; if(cb) cb();
+    } else { toast('Incorrect PIN'); inp.value=''; inp.focus(); }
+  }
+  function fohPinCancel(){ document.getElementById('fohPinModal').style.display='none'; _fohPinCb=null; }
+
+  function genChichaCode(last, date){
+    const L=(last||'').replace(/[^a-zA-Z]/g,'').slice(0,3).toUpperCase().padEnd(3,'X');
+    const dd=date?date.replace(/-/g,'').slice(4):'0000';
+    const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    for (let tries=0; tries<10; tries++){
+      const buf=new Uint32Array(5); crypto.getRandomValues(buf);
+      const code='OTC-'+L+dd+'-'+Array.from(buf).map(n=>A[n%A.length]).join('');
+      if(!(window.chicharonilloOrders||[]).some(o=>o.code===code)) return code;
+    }
+    return 'OTC-'+L+dd+'-'+Date.now().toString(36).toUpperCase().slice(-5);
+  }
+
+  function saveChichaOrder(){
+    const last=document.getElementById('caLast').value.trim(), first=document.getElementById('caFirst').value.trim();
+    const phone=document.getElementById('caPhone').value.trim(), email=document.getElementById('caEmail').value.trim();
+    const date=document.getElementById('caDate').value, time=document.getElementById('caTime').value;
+    const qty=parseInt(document.getElementById('caQty').value,10), price=parseFloat(document.getElementById('caPrice').value);
+    if(!last||!first){toast('Enter the guest\'s name');return;}
+    if(!phone){toast('Enter a phone number');return;}
+    if(!date||!time){toast('Pick a pickup date and time');return;}
+    if(!(qty>=1)){toast('Quantity must be at least 1');return;}
+    if(isNaN(price)||price<0){toast('Enter a valid price');return;}
+    const issues = chichaRuleIssues(date);
+    const commit = async () => {
+      const total = qty*price, created = Date.now();
+      const order = {
+        id: String(created), code: genChichaCode(last,date),
+        lastName:last, firstName:first, phone, email, date, time,
+        items:{whole:qty}, orderText:`Whole Chicharonillo x${qty} (PHP ${price.toLocaleString()})`,
+        total, downPayment:total, fullPaymentRequired:true,
+        status:'pending', payment:document.getElementById('caPay').value,
+        notes:document.getElementById('caNotes').value.trim(), created,
+        manual:true, leadTimeOverride: date < chichaMinPickupStr(), overrideUsed: issues.length>0
+      };
+      const btn=document.getElementById('caSave'); btn.disabled=true;
+      try { await window._fbSetChicha(order.id, order); toast(`Order placed — ${order.code}`); closeChichaAdd(); }
+      catch(e) { toast('Could not save order — check connection'); }
+      btn.disabled=false;
+    };
+    if (issues.length) askFohPin(commit); else commit();
   }
 
   function closeChicharonilloDetail() {

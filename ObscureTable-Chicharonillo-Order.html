@@ -201,6 +201,7 @@ select.inp{cursor:pointer;background:#fff;}
         <button class="eb" id="btnD" onclick="promptDatePin()">Block Dates</button>
       </div>
     </div>
+    <div style="font-size:14px;color:var(--mu);font-style:italic;margin-bottom:8px;line-height:1.5">Pickup orders must be placed at least 2 days in advance.</div>
     <div id="dpW">
       <div class="dpf" id="dpF">
         <span id="dpTxt" style="color:var(--mu);font-style:italic">Tap to choose a date</span>
@@ -327,6 +328,9 @@ var PIN_DEF='1234', dpPinOk=false, tPinOk=false;
 var MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
 var SM=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var BM="We're sorry, this date is unavailable. Please select another date.";
+var LEAD_DAYS=2; // pickup must be at least this many days after the day the order is placed
+function minPickup(){var d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+LEAD_DAYS);return d;}
+function minPickupStr(){var d=minPickup();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
 var DEFAULT_ITEMS=[
   {id:'whole',icon:'&#127993;',name:'Whole Chicharonillo',desc:'A whole Chicharonillo served with Garlic Rice, sauces, and condiments. Feeds approximately 8-10.',price:14950,priceLabel:'PHP 14,950'}
 ];
@@ -481,7 +485,7 @@ function dpRend(){
     for(var i=0;i<fd;i++) gh+='<div class="dy" style="cursor:default"></div>';
     for(var d=1;d<=dim;d++){
       var ds=dpYr+'-'+pad(dpMo+1)+'-'+pad(d);
-      var dt=new Date(dpYr,dpMo,d),isPast=dt<today,isTod=dt.getTime()===today.getTime(),isB=isBlk(ds),isSel=ds===dpVal;
+      var dt=new Date(dpYr,dpMo,d),isPast=dt<minPickup(),isTod=dt.getTime()===today.getTime(),isB=isBlk(ds),isSel=ds===dpVal;
       var cls='dy';if(isPast)cls+=' dp';else if(isB)cls+=' db';if(isTod)cls+=' dt';if(isSel)cls+=' ds';
       gh+='<button class="'+cls+'" data-ds="'+ds+'" '+(isPast||isB?'disabled':'')+'>'+d+'</button>';
     }
@@ -670,7 +674,7 @@ function updProg(){
 function showStep(n){document.querySelectorAll('.stp').forEach(function(p){p.classList.remove('on');});var el=document.getElementById('stp'+n);if(el)el.classList.add('on');window.scrollTo({top:0,behavior:'smooth'});}
 function validate(n){
   if(n===1){if(!gv('fLN')||!gv('fFN')||!gv('fPH')){toast('Please fill in your name and phone number');return false;}}
-  if(n===2){if(!dpVal){toast('Please select a pickup date');return false;}if(capCheckInFlight){toast('Checking date availability, please wait a moment...');return false;}if(dBlk){toast('This date is unavailable');return false;}if(!gv('fTime')){selTime='';toast('Please select a pickup time');return false;}selTime=gv('fTime');}
+  if(n===2){if(!dpVal){toast('Please select a pickup date');return false;}if(dpVal<minPickupStr()){toast('Orders must be placed at least '+LEAD_DAYS+' days before pickup');return false;}if(capCheckInFlight){toast('Checking date availability, please wait a moment...');return false;}if(dBlk){toast('This date is unavailable');return false;}if(!gv('fTime')){selTime='';toast('Please select a pickup time');return false;}selTime=gv('fTime');}
   if(n===3){if(!Object.keys(oQty).length){toast('Please select at least one item');return false;}}
   return true;
 }
@@ -717,6 +721,7 @@ async function submitOrder(){
   // date within moments of each other could both still get through - this
   // catches the far more common case where time has simply passed since the
   // date was first picked (earlier in the same visit, or a stale open tab).
+  if(dpVal<minPickupStr()){btn.textContent='Next';btn.disabled=false;toast('Orders must be placed at least '+LEAD_DAYS+' days before pickup. Please choose a later date.');step=2;showStep(step);updProg();return;}
   var cap=gCap();
   if(cap>0&&window._fbCountOrdersForDate){
     try{
