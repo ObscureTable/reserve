@@ -61,7 +61,7 @@
   // ── Live listener for Chicharonillo orders ─────────────────
   onValue(CHICHA_REF, (snapshot) => {
     const val = snapshot.val();
-    window.chicharonilloOrders = val ? Object.entries(val).map(([k,v]) => Object.assign({}, v, {id: v.id || k, name: v.name || v.lastName || '', first: v.first || v.firstName || '', order: v.order || v.items || null})) : [];
+    window.chicharonilloOrders = val ? Object.entries(val).map(([k,v]) => Object.assign({}, v, {id: v.id || k, name: v.name || v.lastName || '', first: v.first || v.firstName || ''})) : [];
     if (window.renderChicharonilloOrders) window.renderChicharonilloOrders();
   });
 
@@ -406,6 +406,7 @@
       <div class="sheet-title" id="chicharonilloDetailName" style="color:#1a0e04">—</div>
       <div id="chicharonilloDetailCode" style="font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:0.1em;color:#c85a10;font-weight:700">—</div>
     </div>
+    <button id="copyChichaPaymentBtn" onclick="copyChichaForPaymentEmail()" style="background:rgba(200,90,16,0.1);border:1.5px solid rgba(200,90,16,0.35);border-radius:8px;color:#b84a08;font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;padding:5px 10px;cursor:pointer;font-weight:700;white-space:nowrap;margin-left:auto;margin-right:10px">⎘ Copy for Payment Email</button>
     <button class="sheet-close" onclick="closeChicharonilloDetail()" style="color:#b84a08">×</button>
   </div>
   <div class="sheet-body" id="chicharonilloDetailBody" style="background:#faf4ec"></div>
@@ -604,9 +605,11 @@
     }).join('');
   };
 
+  let _currentChichaId = null;
   function openChicharonilloDetail(id) {
     const o = window.chicharonilloOrders.find(x=>String(x.id)===String(id));
     if (!o) return;
+    _currentChichaId = id;
     const sm = CHICHA_STATUS[o.status||'pending']||CHICHA_STATUS.pending;
     const pm = CHICHA_PAYMENT[o.payment||'unpaid']||CHICHA_PAYMENT.unpaid;
     const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}) : '—';
@@ -658,6 +661,30 @@
 
     document.getElementById('chicharonilloDetailOverlay').classList.add('open');
     document.getElementById('chicharonilloDetailSheet').classList.add('open');
+  }
+
+  // Copies the order in the same tab-separated format the Payment Email Builder pastes from.
+  // Chicharonillo orders require full payment, so the amount due is the order total.
+  function copyChichaForPaymentEmail() {
+    const o = window.chicharonilloOrders.find(x=>String(x.id)===String(_currentChichaId));
+    if (!o) { toast('No order loaded'); return; }
+    const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'}) : '';
+    const fmtTime = t => { if(!t) return ''; const[h,m]=t.split(':').map(Number); return `${h>12?h-12:h||12}:${String(m).padStart(2,'0')} ${h>=12?'PM':'AM'}`; };
+    const qtyMap = o.order || o.items;
+    const orderText = qtyMap
+      ? Object.entries(qtyMap).map(([itemId,qty])=>{const it=CHICHA_ITEMS[itemId];return it?`${qty}x ${it.name}`:'';}).filter(Boolean).join(', ')
+      : (o.orderText||'');
+    const total = Number(o.total)||0;
+    const text = [
+      `${o.first||''} ${o.name||''}`.trim(),
+      o.code||'',
+      fmtDate(o.date),
+      fmtTime(o.time),
+      orderText,
+      total ? String(total) : '',
+      total ? String(total) : '',
+    ].join('\t');
+    navigator.clipboard.writeText(text).then(()=>{ toast('Copied — paste into Payment Email Builder'); }).catch(()=>{ toast('Copy failed — check browser permissions'); });
   }
 
   function closeChicharonilloDetail() {
