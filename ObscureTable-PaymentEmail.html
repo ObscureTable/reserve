@@ -190,7 +190,8 @@
         <table width="100%" style="background:rgba(154,42,26,0.05);border:1px solid rgba(154,42,26,0.2);">
           <tr><td style="padding:14px 18px;">
             <div style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#9a2a1a;font-weight:700;margin-bottom:8px;">⚠ Important</div>
-            <p id="p_policy_confirm" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your reservation is only confirmed upon receipt of the downpayment. The remaining 50% balance, plus applicable VAT and service charge, is due on the day of your visit.</p>
+            <p id="p_policy_confirm" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your reservation is only confirmed upon receipt of the downpayment. The remaining 50% balance is due on the day of your visit.</p>
+            <p id="p_policy_vat" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">All prices exclude VAT and service charge.</p>
             <p id="p_policy_corkage" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">A corkage fee of <strong style="font-style:normal;color:#8a6020;">PHP 1,000 per bottle</strong> applies for wine brought in.</p>
             <p id="p_policy_confirm_chicha" style="display:none;font-size:14px;color:#5a4828;line-height:1.7;margin:0 0 6px;font-style:italic;">Your order is only confirmed upon receipt of full payment.</p>
             <p id="p_policy_cancel" style="font-size:14px;color:#5a4828;line-height:1.7;margin:0;font-style:italic;">Cancellations made <strong style="font-style:normal;color:#9a2a1a;">less than 48 hours</strong> before your reservation are non-refundable.</p>
@@ -243,6 +244,7 @@
     // Toggle policy
     document.getElementById('p_policy_confirm').style.display = type==='reservation' ? 'block' : 'none';
     document.getElementById('p_policy_corkage').style.display = type==='reservation' ? 'block' : 'none';
+    document.getElementById('p_policy_vat').style.display = type==='reservation' ? 'block' : 'none';
     document.getElementById('p_policy_confirm_chicha').style.display = type==='chicharonillo' ? 'block' : 'none';
     document.getElementById('p_policy_cancel').style.display = type==='reservation' ? 'block' : 'none';
     document.getElementById('p_policy_cancel_chicha').style.display = type==='chicharonillo' ? 'block' : 'none';
