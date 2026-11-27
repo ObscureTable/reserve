@@ -248,7 +248,7 @@
 <div class="app">
   <!-- Top Bar -->
   <div class="topbar">
-    <div><div class="topbar-name">Obscure</div><div class="topbar-sub">Table · FOH</div><div style="font-family:'Courier Prime',monospace;font-size:8px;letter-spacing:.08em;opacity:.45;margin-top:2px">build 25 Nov 10:15am</div></div>
+    <div><div class="topbar-name">Obscure</div><div class="topbar-sub">Table · FOH</div><div style="font-family:'Courier Prime',monospace;font-size:8px;letter-spacing:.08em;opacity:.45;margin-top:2px">build 27 Nov 3:45pm</div></div>
     <div style="text-align:right"><div class="topbar-time" id="clock">—</div><div class="topbar-date" id="dateDisplay">—</div></div>
   </div>
   <!-- Stats -->
@@ -423,7 +423,7 @@
 <div class="sheet-overlay" id="chichaAddOverlay" onclick="closeChichaAdd()"></div>
 <div class="sheet" id="chichaAddSheet" style="z-index:410">
   <div class="sheet-handle"></div>
-  <div class="sheet-head"><div class="sheet-title">New Pickup Order</div><button class="sheet-close" onclick="closeChichaAdd()">×</button></div>
+  <div class="sheet-head"><div class="sheet-title" id="chichaSheetTitle">New Pickup Order</div><button class="sheet-close" onclick="closeChichaAdd()">×</button></div>
   <div class="sheet-body">
     <div class="field-row">
       <div class="field-group"><label class="field-label">Last Name *</label><input class="field-input" id="caLast" type="text" placeholder="Surname" autocapitalize="words"></div>
@@ -439,9 +439,9 @@
       <div class="field-group"><label class="field-label">Quantity *</label><input class="field-input" id="caQty" type="number" min="1" value="1" oninput="chichaAddCheck()"></div>
       <div class="field-group"><label class="field-label">Price each (PHP) *</label><input class="field-input" id="caPrice" type="number" min="0" oninput="chichaAddCheck()"></div>
     </div>
-    <div class="field-group"><label class="field-label">Payment</label>
+    <div class="field-group" id="caPayWrap"><label class="field-label">Payment</label>
       <select class="field-input" id="caPay"><option value="unpaid">Awaiting Payment</option><option value="fully_paid">Payment Received</option></select></div>
-    <div class="field-group"><label class="field-label">Notes</label><textarea class="field-input" id="caNotes" placeholder="Optional"></textarea></div>
+    <div class="field-group"><label class="field-label">Reservation Notes</label><textarea class="field-input" id="caNotes" placeholder="Optional — internal, not seen by guest"></textarea></div>
     <div id="caTotal" style="font-family:'Courier Prime',monospace;font-size:14px;color:#b84a08;font-weight:700;margin-bottom:10px">Total: PHP 0 (full payment)</div>
     <div id="caWarn" style="display:none;background:rgba(154,42,26,0.08);border:1.5px solid rgba(154,42,26,0.35);border-radius:10px;padding:12px;margin-bottom:12px;font-size:15px;color:#7a2010;line-height:1.5"></div>
     <button class="btn-confirm" id="caSave" onclick="saveChichaOrder()">Place Order</button>
@@ -610,7 +610,7 @@
     let data = [...window.chicharonilloOrders].filter(o => {
       if (chicharonilloFilter === 'unpaid_payment') return (o.payment||'unpaid') === 'unpaid';
       if (chicharonilloFilter !== 'all' && o.status !== chicharonilloFilter) return false;
-      if (q && !`${o.name||''} ${o.first||''} ${o.code||''} ${o.phone||''}`.toLowerCase().includes(q)) return false;
+      if (q && !`${o.name||''} ${o.first||''} ${o.code||''} ${o.phone||''} ${chichaNoteOf(o)}`.toLowerCase().includes(q)) return false;
       return true;
     }).sort((a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
 
@@ -640,6 +640,7 @@
           </div>
         </div>
         <div style="font-size:14px;color:#7a4820;margin-bottom:6px">${orderItems}</div>
+        ${chichaNoteOf(o)?`<div style="font-size:13px;color:#6a3a9a;margin-bottom:6px;line-height:1.4">✎ ${chichaEsc(chichaNoteOf(o))}</div>`:''}
         <div style="display:flex;justify-content:space-between;padding-top:8px;border-top:1px solid rgba(180,74,8,0.1)">
           <span style="font-family:'Courier Prime',monospace;font-size:10px;color:#7a4820">${fmtDate(o.date)} · ${fmtTime(o.time)}</span>
           <span style="font-family:'Courier Prime',monospace;font-size:11px;color:#f0a040;font-weight:700">PHP ${(o.total||0).toLocaleString()}</span>
@@ -682,6 +683,8 @@
         ${(o.payment||'unpaid')==='deposit_paid'?`<div onclick="updateChicharonilloPayment('${id}','fully_paid')" style="background:rgba(26,106,74,0.12);border:1.5px solid #1a6a4a;border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#2a9a6a;font-weight:700">✓ Balance Received</div>`:''}
         ${(o.payment||'unpaid')!=='unpaid'?`<div onclick="updateChicharonilloPayment('${id}','unpaid')" style="background:rgba(138,32,16,0.07);border:1.5px solid rgba(138,32,16,0.3);border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#c84030;font-weight:700">↩ Reset Payment</div>`:''}
       </div>
+      <!-- Edit -->
+      <div onclick="openChichaEdit('${id}')" style="background:rgba(200,90,16,0.1);border:1.5px solid rgba(200,90,16,0.4);border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#b84a08;font-weight:700;margin-bottom:12px">✎ Edit Booking Details</div>
       <!-- Delete -->
       <div onclick="deleteChicharonilloOrder('${id}')" style="background:rgba(138,32,16,0.07);border:1.5px solid rgba(138,32,16,0.3);border-radius:12px;padding:14px;text-align:center;cursor:pointer;font-family:'Courier Prime',monospace;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#c84030;font-weight:700;margin-bottom:14px">🗑 Delete Order</div>
       <!-- Details -->
@@ -695,11 +698,18 @@
       </div>
       <div style="background:#f0e8d8;border:1.5px solid rgba(180,74,8,0.18);border-radius:12px;overflow:hidden;margin-bottom:12px">
         <div style="font-family:'Courier Prime',monospace;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#b84a08;padding:10px 16px;border-bottom:1px solid rgba(180,74,8,0.12);background:rgba(180,74,8,0.06);font-weight:700">Contact & Pickup</div>
-        ${[['Status',`<span style="color:${sm.color};font-weight:700">${sm.label}</span>`],['Payment',`<span style="color:${pm.color};font-weight:700">${pm.label}</span>`],['Pickup Date',fmtDate(o.date)],['Pickup Time',fmtTime(o.time)],['Phone',`<a href="tel:${o.phone}" style="color:#c85a10;text-decoration:none;font-weight:700">${o.phone||'—'}</a>`],['Email',o.email||'—'],[o.fullPaymentRequired?'Payment Required':'Downpayment',`PHP ${(o.downPayment||0).toLocaleString()}`],['Balance Due',`PHP ${(((o.payment||'unpaid')==='fully_paid'?0:(o.payment||'unpaid')==='deposit_paid'?(o.total||0)-(o.downPayment||0):(o.total||0))).toLocaleString()}`],['Source',o.manual?('Entered by staff'+(o.overrideUsed?' · override':'')):'Online form'],['Notes',o.notes||'—']].map(([k,v])=>`
+        ${[['Status',`<span style="color:${sm.color};font-weight:700">${sm.label}</span>`],['Payment',`<span style="color:${pm.color};font-weight:700">${pm.label}</span>`],['Pickup Date',fmtDate(o.date)],['Pickup Time',fmtTime(o.time)],['Phone',`<a href="tel:${o.phone}" style="color:#c85a10;text-decoration:none;font-weight:700">${o.phone||'—'}</a>`],['Email',o.email||'—'],[o.fullPaymentRequired?'Payment Required':'Downpayment',`PHP ${(o.downPayment||0).toLocaleString()}`],['Balance Due',`PHP ${(((o.payment||'unpaid')==='fully_paid'?0:(o.payment||'unpaid')==='deposit_paid'?(o.total||0)-(o.downPayment||0):(o.total||0))).toLocaleString()}`],['Source',o.manual?('Entered by staff'+(o.overrideUsed?' · override':'')):'Online form'],...(o.editedAt?[['Last Edited',new Date(o.editedAt).toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'})]]:[])].map(([k,v])=>`
           <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 16px;border-bottom:1px solid rgba(200,90,16,0.07)">
             <span style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:#b08050">${k}</span>
             <span style="font-size:15px;color:#1a0e04;text-align:right;max-width:60%">${v}</span>
           </div>`).join('')}
+      </div>
+      <!-- Reservation notes -->
+      <div style="margin-bottom:16px">
+        <div style="font-family:'Courier Prime',monospace;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#b84a08;font-weight:700;margin-bottom:8px">Reservation Notes <span style="color:#b08050;font-size:9px;letter-spacing:0.08em">(internal &mdash; not seen by guest)</span></div>
+        <textarea id="chichaNoteInput" placeholder="Add notes about this booking &mdash; special requests, call history, pickup arrangements, follow-ups&hellip;" style="width:100%;background:#fff;border:1.5px solid rgba(180,74,8,0.25);border-radius:12px;color:#1a0e04;padding:14px 16px;font-family:'Cormorant Garamond',serif;font-size:16px;outline:none;resize:none;height:104px;line-height:1.6;box-sizing:border-box">${chichaEsc(chichaNoteOf(o))}</textarea>
+        <button onclick="saveChichaNote('${id}')" style="width:100%;background:#b84a08;border:none;border-radius:12px;color:#fff;padding:14px;font-family:'Courier Prime',monospace;font-size:12px;letter-spacing:0.16em;text-transform:uppercase;font-weight:700;cursor:pointer;margin-top:8px">Save Reservation Note</button>
+        ${o.staffNoteBy?`<div style="font-family:'Courier Prime',monospace;font-size:9px;color:#b08050;text-align:center;margin-top:8px;letter-spacing:0.08em">Last updated ${chichaEsc(o.staffNoteBy)}</div>`:''}
       </div>`;
 
     document.getElementById('chicharonilloDetailOverlay').classList.add('open');
@@ -737,7 +747,54 @@
   const chichaCurrentPrice = () => { const p = Number((window.chichaPrices||{}).whole); return (!isNaN(p) && p>0) ? p : CHICHA_ITEMS.whole.price; };
   let _chichaOverrideNeeded = false, _fohPinCb = null;
 
+  const chichaEsc = t => String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // Reservation note: staffNotes (new), falling back to the older plain `notes` field on staff-entered orders
+  const chichaNoteOf = o => (o.staffNotes!==undefined ? o.staffNotes : (o.notes||'')) || '';
+  const chichaStamp = () => new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'});
+  let _chichaEditId = null;
+  function chichaQtyOf(o){
+    const m = o.items||o.order||{};
+    let q = Number(m.whole);
+    if (!(q>=1)) { const t=/x\s*(\d+)/i.exec(o.orderText||''); q = t?Number(t[1]):1; }
+    return q>=1 ? q : 1;
+  }
+  function setChichaSheetMode(editing){
+    document.getElementById('chichaSheetTitle').textContent = editing ? 'Edit Booking' : 'New Pickup Order';
+    document.getElementById('caPayWrap').style.display = editing ? 'none' : '';
+  }
+  function openChichaEdit(id){
+    const o = (window.chicharonilloOrders||[]).find(x=>String(x.id)===String(id));
+    if (!o) return;
+    _chichaEditId = String(o.id);
+    setChichaSheetMode(true);
+    const qty = chichaQtyOf(o), total = Number(o.total)||0;
+    document.getElementById('caLast').value = o.name||o.lastName||'';
+    document.getElementById('caFirst').value = o.first||o.firstName||'';
+    document.getElementById('caPhone').value = o.phone||'';
+    document.getElementById('caEmail').value = o.email||'';
+    document.getElementById('caDate').value = o.date||'';
+    document.getElementById('caTime').value = o.time||'12:00';
+    document.getElementById('caQty').value = qty;
+    document.getElementById('caPrice').value = Math.round(total/qty*100)/100;
+    document.getElementById('caNotes').value = chichaNoteOf(o);
+    chichaAddCheck();
+    document.getElementById('caSave').textContent = 'Save Changes';
+    document.getElementById('chichaAddOverlay').classList.add('open');
+    document.getElementById('chichaAddSheet').classList.add('open');
+  }
+  async function saveChichaNote(id){
+    const el = document.getElementById('chichaNoteInput');
+    if (!el) return;
+    const text = el.value.trim();
+    try {
+      await window._fbUpdateChicha(id,{staffNotes:text, staffNoteBy:text?chichaStamp():'', notes:null});
+      toast(text?'Reservation note saved ✓':'Reservation note cleared');
+      closeChicharonilloDetail();
+    } catch(e) { toast('Save failed — check connection'); }
+  }
+
   function openChichaAdd(){
+    _chichaEditId = null; setChichaSheetMode(false);
     ['caLast','caFirst','caPhone','caEmail','caNotes'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('caDate').value = chichaMinPickupStr();
     document.getElementById('caTime').value = '12:00';
@@ -749,16 +806,19 @@
     document.getElementById('chichaAddSheet').classList.add('open');
   }
   function closeChichaAdd(){
+    _chichaEditId = null;
     document.getElementById('chichaAddOverlay').classList.remove('open');
     document.getElementById('chichaAddSheet').classList.remove('open');
   }
   // Which rules would this order break? (2-day lead time, daily order cap)
   function chichaRuleIssues(date){
     const issues = [];
+    const ed = _chichaEditId ? (window.chicharonilloOrders||[]).find(o=>String(o.id)===_chichaEditId) : null;
+    if (ed && ed.date===date) return issues; // pickup date not changing — no rule applies
     if (date && date < chichaMinPickupStr()) issues.push(`Pickup is inside the ${CHICHA_LEAD_DAYS}-day lead time (earliest normal date is ${chichaMinPickupStr()}).`);
     const cap = window.chichaCap || 0;
     if (cap > 0 && date) {
-      const n = (window.chicharonilloOrders||[]).filter(o => o.date===date && o.status!=='cancelled').length;
+      const n = (window.chicharonilloOrders||[]).filter(o => o.date===date && o.status!=='cancelled' && String(o.id)!==_chichaEditId).length;
       if (n >= cap) issues.push(`That date already has ${n} order${n!==1?'s':''} (daily cap is ${cap}).`);
     }
     return issues;
@@ -772,7 +832,7 @@
     const w = document.getElementById('caWarn');
     if (issues.length) { w.style.display='block'; w.innerHTML = '<strong>Staff PIN needed to override:</strong><br>' + issues.join('<br>'); }
     else w.style.display='none';
-    document.getElementById('caSave').textContent = issues.length ? 'Place Order (PIN override)' : 'Place Order';
+    document.getElementById('caSave').textContent = _chichaEditId ? (issues.length ? 'Save Changes (PIN override)' : 'Save Changes') : (issues.length ? 'Place Order (PIN override)' : 'Place Order');
   }
   function askFohPin(cb){
     _fohPinCb = cb;
@@ -812,6 +872,29 @@
     if(!(qty>=1)){toast('Quantity must be at least 1');return;}
     if(isNaN(price)||price<0){toast('Enter a valid price');return;}
     const issues = chichaRuleIssues(date);
+    if (_chichaEditId) {
+      const id = _chichaEditId;
+      const old = (window.chicharonilloOrders||[]).find(o=>String(o.id)===id) || {};
+      const commitEdit = async () => {
+        const total = Math.round(qty*price*100)/100;
+        const note = document.getElementById('caNotes').value.trim();
+        const upd = {
+          name:last, first, lastName:last, firstName:first, phone, email, date, time,
+          items:{whole:qty}, order:null,
+          orderText:`Whole Chicharonillo x${qty} (PHP ${price.toLocaleString()})`,
+          total, downPayment: old.fullPaymentRequired ? total : Math.round(total/2),
+          staffNotes:note, notes:null, editedAt:Date.now()
+        };
+        if (note !== chichaNoteOf(old)) upd.staffNoteBy = note ? chichaStamp() : '';
+        if (issues.length) { upd.overrideUsed = true; upd.leadTimeOverride = date < chichaMinPickupStr(); }
+        const btn=document.getElementById('caSave'); btn.disabled=true;
+        try { await window._fbUpdateChicha(id, upd); toast('Booking updated ✓'); closeChichaAdd(); openChicharonilloDetail(id); }
+        catch(e) { toast('Could not save changes — check connection'); }
+        btn.disabled=false;
+      };
+      if (issues.length) askFohPin(commitEdit); else commitEdit();
+      return;
+    }
     const commit = async () => {
       const total = qty*price, created = Date.now();
       const order = {
@@ -820,7 +903,7 @@
         items:{whole:qty}, orderText:`Whole Chicharonillo x${qty} (PHP ${price.toLocaleString()})`,
         total, downPayment:total, fullPaymentRequired:true,
         status:'pending', payment:document.getElementById('caPay').value,
-        notes:document.getElementById('caNotes').value.trim(), created,
+        staffNotes:document.getElementById('caNotes').value.trim(), created,
         manual:true, leadTimeOverride: date < chichaMinPickupStr(), overrideUsed: issues.length>0
       };
       const btn=document.getElementById('caSave'); btn.disabled=true;
